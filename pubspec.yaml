@@ -65,6 +65,10 @@ dependencies:
     sdk: flutter
   intl: ^0.20.2
 
+  # Telephony integration
+  flutter_tele:
+    path: ../gost_simbox_tele
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

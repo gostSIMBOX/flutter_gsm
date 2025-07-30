@@ -99,10 +99,9 @@ class _DashboardScreenState extends State<DashboardScreen>
                           const SizedBox(height: 24),
                           _buildLinesSection(),
                           const SizedBox(height: 24),
-                          _buildSipStatus(),
+                          _buildQuickActions(),
                           const SizedBox(height: 24),
-                          _buildConnectionStats(),
-                          const SizedBox(height: 100), // Bottom padding
+                          _buildRecentActivity(),
                         ],
                       ),
                     ),
@@ -113,8 +112,6 @@ class _DashboardScreenState extends State<DashboardScreen>
           ],
         ),
       ),
-      floatingActionButton: _buildFloatingActionButton(),
-      bottomNavigationBar: _buildBottomNavigationBar(),
     );
   }
 
@@ -125,47 +122,39 @@ class _DashboardScreenState extends State<DashboardScreen>
         color: const Color(0xFF1A1A1A),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 10,
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 8,
             offset: const Offset(0, 2),
           ),
         ],
       ),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Icons.router,
-              color: Colors.blue[400],
-              size: 28,
-            ),
+          const Icon(
+            Icons.phone_android,
+            color: Colors.white,
+            size: 32,
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  AppLocalizations.of(context)?.appTitle ?? 'GSM-SIP Gateway',
-                  style: AppTextStyles.poppins(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                  'GSM-SIP Gateway',
+                  style: TextStyles.headline.copyWith(
                     color: Colors.white,
+                    fontSize: 20,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Consumer<DashboardProvider>(
+                Consumer<GatewayProvider>(
                   builder: (context, provider, child) {
+                    final status = provider.status;
                     return Text(
-                      '${provider.activeLinesCount} active lines • ${provider.activeCallsCount} calls',
-                      style: AppTextStyles.poppins(
+                      _getStatusText(status.state),
+                      style: TextStyles.body.copyWith(
+                        color: _getStatusColor(status.state),
                         fontSize: 14,
-                        color: Colors.grey[400],
                       ),
                     );
                   },
@@ -173,13 +162,41 @@ class _DashboardScreenState extends State<DashboardScreen>
               ],
             ),
           ),
-          IconButton(
-            onPressed: () => Navigator.pushNamed(context, '/settings'),
-            icon: Icon(
-              Icons.settings,
-              color: Colors.grey[400],
-              size: 24,
-            ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: Colors.white),
+            onSelected: (value) => _handleMenuAction(value),
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'settings',
+                child: Row(
+                  children: [
+                    Icon(Icons.settings),
+                    SizedBox(width: 8),
+                    Text('Settings'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'logs',
+                child: Row(
+                  children: [
+                    Icon(Icons.list_alt),
+                    SizedBox(width: 8),
+                    Text('Logs'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'info',
+                child: Row(
+                  children: [
+                    Icon(Icons.info),
+                    SizedBox(width: 8),
+                    Text('Info'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -188,197 +205,70 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Widget _buildQuickStats() {
     return Consumer<DashboardProvider>(
-      builder: (context, provider, child) {
-        return Row(
+      builder: (context, dashboardProvider, child) {
+        return GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+          childAspectRatio: 1.5,
           children: [
-            Expanded(
-              child:           _buildQuickStatCardWithTooltip(
-            icon: Icons.phone,
-            title: 'Active Lines',
-            value: '${provider.activeLinesCount}',
-            color: Colors.green,
-            tooltip: 'Number of currently active phone lines (GSM/SIP)',
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildQuickStatCardWithTooltip(
-            icon: Icons.call,
-            title: 'Active Calls',
-            value: '${provider.activeCallsCount}',
-            color: Colors.orange,
-            tooltip: 'Number of calls currently in progress',
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildQuickStatCardWithTooltip(
-            icon: Icons.account_balance_wallet,
-            title: 'Total Balance',
-            value: '\$${provider.totalBalance.toStringAsFixed(2)}',
-            color: Colors.blue,
-            tooltip: 'Total available balance across all phone lines',
-          ),
-        ),
+            StatsCard(
+              title: 'Total Calls',
+              value: dashboardProvider.totalCalls.toString(),
+              icon: Icons.call,
+              color: Colors.blue,
+              onTap: () => Navigator.pushNamed(context, '/analytics'),
+            ),
+            StatsCard(
+              title: 'SMS Messages',
+              value: dashboardProvider.totalSms.toString(),
+              icon: Icons.sms,
+              color: Colors.green,
+              onTap: () => Navigator.pushNamed(context, '/sms'),
+            ),
+            StatsCard(
+              title: 'Active Lines',
+              value: dashboardProvider.activeLines.toString(),
+              icon: Icons.phone,
+              color: Colors.orange,
+              onTap: () => Navigator.pushNamed(context, '/lines'),
+            ),
+            StatsCard(
+              title: 'Uptime',
+              value: dashboardProvider.uptime,
+              icon: Icons.timer,
+              color: Colors.purple,
+              onTap: () => Navigator.pushNamed(context, '/info'),
+            ),
           ],
         );
       },
     );
   }
 
-  Widget _buildQuickStatCard({
-    required IconData icon,
-    required String title,
-    required String value,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: color.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        children: [
-          Icon(
-            icon,
-            color: color,
-            size: 24,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: AppTextStyles.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: AppTextStyles.poppins(
-              fontSize: 12,
-              color: Colors.grey[400],
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickStatCardWithTooltip({
-    required IconData icon,
-    required String title,
-    required String value,
-    required Color color,
-    required String tooltip,
-  }) {
-    return Tooltip(
-      message: tooltip,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF1A1A1A),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: color.withOpacity(0.3),
-            width: 1,
-          ),
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: color,
-              size: 24,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: AppTextStyles.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              style: AppTextStyles.poppins(
-                fontSize: 12,
-                color: Colors.grey[400],
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildActiveCalls() {
-    return Consumer<DashboardProvider>(
+    return Consumer<GatewayProvider>(
       builder: (context, provider, child) {
-        if (provider.isLoadingCalls) {
-          return _buildLoadingCard();
-        }
-
-        if (provider.activeCalls.isEmpty) {
-          return Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1A1A1A),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              children: [
-                Icon(
-                  Icons.call_end,
-                  size: 48,
-                  color: Colors.grey[600],
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'No Active Calls',
-                  style: AppTextStyles.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey[400],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'All lines are available for incoming calls',
-                  style: AppTextStyles.poppins(
-                    fontSize: 14,
-                    color: Colors.grey[500],
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          );
+        final currentCall = provider.status.currentCall;
+        
+        if (currentCall == null) {
+          return const SizedBox.shrink();
         }
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Active Calls',
-              style: AppTextStyles.poppins(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+              'Active Call',
+              style: TextStyles.headline.copyWith(
                 color: Colors.white,
+                fontSize: 18,
               ),
             ),
-            const SizedBox(height: 16),
-            ...provider.activeCalls.map((call) => ActiveCallCard(call: call)),
+            const SizedBox(height: 12),
+            ActiveCallCard(call: currentCall),
           ],
         );
       },
@@ -387,9 +277,137 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   Widget _buildLinesSection() {
     return Consumer<DashboardProvider>(
+      builder: (context, dashboardProvider, child) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Connection Status',
+              style: TextStyles.headline.copyWith(
+                color: Colors.white,
+                fontSize: 18,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: SipStatusCard(
+                    isConnected: dashboardProvider.sipConnected,
+                    isRegistered: dashboardProvider.sipRegistered,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: StatusCard(
+                    title: 'GSM Network',
+                    status: dashboardProvider.gsmConnected ? 'Connected' : 'Disconnected',
+                    icon: Icons.signal_cellular_alt,
+                    color: dashboardProvider.gsmConnected ? Colors.green : Colors.red,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildQuickActions() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Quick Actions',
+          style: TextStyles.headline.copyWith(
+            color: Colors.white,
+            fontSize: 18,
+          ),
+        ),
+        const SizedBox(height: 12),
+        GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+          childAspectRatio: 1.8,
+          children: [
+            _buildActionCard(
+              title: 'Make Call',
+              icon: Icons.call,
+              color: Colors.green,
+              onTap: () => Navigator.pushNamed(context, '/calls'),
+            ),
+            _buildActionCard(
+              title: 'Send SMS',
+              icon: Icons.sms,
+              color: Colors.blue,
+              onTap: () => Navigator.pushNamed(context, '/sms'),
+            ),
+            _buildActionCard(
+              title: 'Statistics',
+              icon: Icons.analytics,
+              color: Colors.orange,
+              onTap: () => Navigator.pushNamed(context, '/analytics'),
+            ),
+            _buildActionCard(
+              title: 'Settings',
+              icon: Icons.settings,
+              color: Colors.purple,
+              onTap: () => Navigator.pushNamed(context, '/settings'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionCard({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      color: const Color(0xFF1A1A1A),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color: color,
+                size: 32,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                title,
+                style: TextStyles.body.copyWith(
+                  color: Colors.white,
+                  fontSize: 14,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRecentActivity() {
+    return Consumer<GatewayProvider>(
       builder: (context, provider, child) {
-        if (provider.isLoadingLines) {
-          return _buildLoadingCard();
+        final recentCalls = provider.status.recentCalls;
+        
+        if (recentCalls.isEmpty) {
+          return const SizedBox.shrink();
         }
 
         return Column(
@@ -399,317 +417,132 @@ class _DashboardScreenState extends State<DashboardScreen>
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Phone Lines',
-                  style: AppTextStyles.poppins(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
+                  'Recent Calls',
+                  style: TextStyles.headline.copyWith(
                     color: Colors.white,
+                    fontSize: 18,
                   ),
                 ),
-                Text(
-                  '${provider.activeLinesCount}/${provider.totalLinesCount}',
-                  style: AppTextStyles.poppins(
-                    fontSize: 14,
-                    color: Colors.grey[400],
+                TextButton(
+                  onPressed: () => Navigator.pushNamed(context, '/calls'),
+                  child: Text(
+                    'View All',
+                    style: TextStyles.body.copyWith(
+                      color: Colors.blue,
+                    ),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
-            ...provider.lines.map((line) => LineCard(line: line)),
+            const SizedBox(height: 12),
+            ...recentCalls.take(3).map((call) => _buildRecentCallItem(call)),
           ],
         );
       },
     );
   }
 
-  Widget _buildSipStatus() {
-    return Consumer<DashboardProvider>(
-      builder: (context, provider, child) {
-        if (provider.isLoadingSip) {
-          return _buildLoadingCard();
-        }
-
-        if (provider.sipConnection == null) {
-          return Container();
-        }
-
-        return SipStatusCard(connection: provider.sipConnection!);
-      },
-    );
-  }
-
-  Widget _buildConnectionStats() {
-    return Consumer<DashboardProvider>(
-      builder: (context, provider, child) {
-        if (provider.isLoadingStats) {
-          return _buildLoadingCard();
-        }
-
-        if (provider.connectionStats == null) {
-          return Container();
-        }
-
-        return StatsCard(stats: provider.connectionStats!);
-      },
-    );
-  }
-
-  Widget _buildLoadingCard() {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFloatingActionButton() {
-    return Consumer<DashboardProvider>(
-      builder: (context, provider, child) {
-        return FloatingActionButton.extended(
-          onPressed: () {
-            // Show call dialer or quick actions
-            _showQuickActions(context);
-          },
-          backgroundColor: Colors.blue[600],
-          foregroundColor: Colors.white,
-          icon: const Icon(Icons.add_call),
-          label: Text(
-            'Quick Call',
-            style: AppTextStyles.poppins(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildBottomNavigationBar() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, -2),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: [
-          _buildBottomNavItem(
-            icon: Icons.dashboard,
-            label: 'Dashboard',
-            isSelected: true,
-            onTap: () {},
-          ),
-          _buildBottomNavItem(
-            icon: Icons.analytics,
-            label: 'Analytics',
-            isSelected: false,
-            onTap: () => Navigator.pushNamed(context, '/analytics'),
-          ),
-          _buildBottomNavItem(
-            icon: Icons.phone,
-            label: 'Lines',
-            isSelected: false,
-            onTap: () => Navigator.pushNamed(context, '/lines'),
-          ),
-          _buildBottomNavItem(
-            icon: Icons.sim_card,
-            label: 'SIMs',
-            isSelected: false,
-            onTap: () => Navigator.pushNamed(context, '/sims'),
-          ),
-          _buildBottomNavItem(
-            icon: Icons.cell_tower,
-            label: 'BS',
-            isSelected: false,
-            onTap: () => Navigator.pushNamed(context, '/base-stations'),
-          ),
-          _buildBottomNavItem(
-            icon: Icons.audiotrack,
-            label: 'Codecs',
-            isSelected: false,
-            onTap: () => Navigator.pushNamed(context, '/codecs'),
-          ),
-          _buildBottomNavItem(
-            icon: Icons.sms,
-            label: 'SMS',
-            isSelected: false,
-            onTap: () => Navigator.pushNamed(context, '/sms'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBottomNavItem({
-    required IconData icon,
-    required String label,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            color: isSelected ? Colors.blue[400] : Colors.grey[600],
-            size: 24,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: AppTextStyles.poppins(
-              fontSize: 12,
-              color: isSelected ? Colors.blue[400] : Colors.grey[600],
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showQuickActions(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: const Color(0xFF1A1A1A),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[600],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Text(
-              'Quick Actions',
-              style: AppTextStyles.poppins(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildQuickActionButton(
-                    icon: Icons.call,
-                    label: 'Make Call',
-                    onTap: () {
-                      Navigator.pop(context);
-                      // TODO: Implement call dialer
-                    },
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildQuickActionButton(
-                    icon: Icons.refresh,
-                    label: 'Refresh',
-                    onTap: () {
-                      Navigator.pop(context);
-                      final provider = Provider.of<DashboardProvider>(context, listen: false);
-                      provider.refresh();
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildQuickActionButton(
-                    icon: Icons.analytics,
-                    label: 'Analytics',
-                    onTap: () {
-                      Navigator.pop(context);
-                      // TODO: Navigate to analytics
-                    },
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _buildQuickActionButton(
-                    icon: Icons.settings,
-                    label: 'Settings',
-                    onTap: () {
-                      Navigator.pop(context);
-                      Navigator.pushNamed(context, '/settings');
-                    },
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildQuickActionButton({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: const Color(0xFF2A2A2A),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: Colors.grey[700]!,
-            width: 1,
+  Widget _buildRecentCallItem(dynamic call) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      color: const Color(0xFF1A1A1A),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: call.direction == 'incoming' ? Colors.green : Colors.blue,
+          child: Icon(
+            call.direction == 'incoming' ? Icons.call_received : Icons.call_made,
+            color: Colors.white,
+            size: 20,
           ),
         ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: Colors.blue[400],
-              size: 24,
-            ),
-            const SizedBox(height: 8),
-            Text(
-              label,
-              style: AppTextStyles.poppins(
-                fontSize: 12,
-                color: Colors.white,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          ],
+        title: Text(
+          call.number,
+          style: TextStyles.body.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w500,
+          ),
         ),
+        subtitle: Text(
+          _formatDateTime(call.startTime),
+          style: TextStyles.body.copyWith(
+            color: Colors.grey,
+            fontSize: 12,
+          ),
+        ),
+        trailing: Icon(
+          Icons.arrow_forward_ios,
+          color: Colors.grey,
+          size: 16,
+        ),
+        onTap: () => Navigator.pushNamed(context, '/calls'),
       ),
     );
+  }
+
+  String _getStatusText(dynamic state) {
+    switch (state) {
+      case 'stopped':
+        return 'Stopped';
+      case 'starting':
+        return 'Starting...';
+      case 'running':
+        return 'Running';
+      case 'registered':
+        return 'Registered';
+      case 'callInProgress':
+        return 'Call in Progress';
+      case 'error':
+        return 'Error';
+      default:
+        return 'Unknown';
+    }
+  }
+
+  Color _getStatusColor(dynamic state) {
+    switch (state) {
+      case 'stopped':
+        return Colors.red;
+      case 'starting':
+        return Colors.orange;
+      case 'running':
+        return Colors.blue;
+      case 'registered':
+        return Colors.green;
+      case 'callInProgress':
+        return Colors.purple;
+      case 'error':
+        return Colors.red;
+      default:
+        return Colors.grey;
+    }
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+    
+    if (difference.inDays > 0) {
+      return '${difference.inDays}d ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m ago';
+    } else {
+      return 'Just now';
+    }
+  }
+
+  void _handleMenuAction(String action) {
+    switch (action) {
+      case 'settings':
+        Navigator.pushNamed(context, '/settings');
+        break;
+      case 'logs':
+        Navigator.pushNamed(context, '/logs');
+        break;
+      case 'info':
+        Navigator.pushNamed(context, '/info');
+        break;
+    }
   }
 } 
