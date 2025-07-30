@@ -4,6 +4,7 @@ import 'package:logger/logger.dart';
 import '../models/call_statistics.dart';
 import '../models/active_call.dart';
 import '../models/sms_message.dart';
+import '../models/gateway_status.dart';
 
 class StatisticsService {
   static final StatisticsService _instance = StatisticsService._internal();
