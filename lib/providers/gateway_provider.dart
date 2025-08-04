@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
+import 'package:logger/logger.dart';
 import '../models/gateway_config.dart';
 import '../models/gateway_status.dart';
-import '../models/active_call.dart';
 import '../models/sms_message.dart';
 import '../services/gateway_service.dart';
 import '../services/sms_service.dart';
@@ -14,6 +14,7 @@ class GatewayProvider extends ChangeNotifier {
   final SmsService _smsService = SmsService();
   final StatisticsService _statisticsService = StatisticsService();
   final StorageService _storageService = StorageService();
+  final Logger _logger = Logger();
 
   GatewayStatus _status = GatewayStatus(
     state: GatewayState.stopped,
@@ -82,7 +83,7 @@ class GatewayProvider extends ChangeNotifier {
       _isInitialized = true;
       notifyListeners();
     } catch (e) {
-      print('Error initializing gateway provider: $e');
+      _logger.e('Error initializing gateway provider: $e');
     }
   }
 
@@ -101,7 +102,7 @@ class GatewayProvider extends ChangeNotifier {
       await _gatewayService.initialize(_config!);
       await _gatewayService.start();
     } catch (e) {
-      print('Error starting gateway: $e');
+      _logger.e('Error starting gateway: $e');
       rethrow;
     }
   }
@@ -110,25 +111,25 @@ class GatewayProvider extends ChangeNotifier {
     try {
       await _gatewayService.stop();
     } catch (e) {
-      print('Error stopping gateway: $e');
+      _logger.e('Error stopping gateway: $e');
       rethrow;
     }
   }
 
   Future<void> makeCall(String number) async {
     try {
-      await _gatewayService.makeCall(number);
+      await _gatewayService.makeCall(number, null, null, null);
     } catch (e) {
-      print('Error making call: $e');
+      _logger.e('Error making call: $e');
       rethrow;
     }
   }
 
   Future<void> answerCall() async {
     try {
-      await _gatewayService.answerCall();
+      await _gatewayService.answerCall('current_call');
     } catch (e) {
-      print('Error answering call: $e');
+      _logger.e('Error answering call: $e');
       rethrow;
     }
   }
@@ -137,7 +138,7 @@ class GatewayProvider extends ChangeNotifier {
     try {
       await _gatewayService.endCall();
     } catch (e) {
-      print('Error ending call: $e');
+      _logger.e('Error ending call: $e');
       rethrow;
     }
   }
@@ -147,7 +148,7 @@ class GatewayProvider extends ChangeNotifier {
       final result = await _smsService.sendSms(number, message);
       return result;
     } catch (e) {
-      print('Error sending SMS: $e');
+      _logger.e('Error sending SMS: $e');
       return false;
     }
   }
@@ -157,7 +158,7 @@ class GatewayProvider extends ChangeNotifier {
       final result = await _smsService.deleteSms(messageId);
       return result;
     } catch (e) {
-      print('Error deleting SMS: $e');
+      _logger.e('Error deleting SMS: $e');
       return false;
     }
   }
@@ -167,7 +168,7 @@ class GatewayProvider extends ChangeNotifier {
       final result = await _smsService.markAsRead(messageId);
       return result;
     } catch (e) {
-      print('Error marking SMS as read: $e');
+      _logger.e('Error marking SMS as read: $e');
       return false;
     }
   }
@@ -192,20 +193,20 @@ class GatewayProvider extends ChangeNotifier {
     return await _gatewayService.getDeviceInfo();
   }
 
-  Future<void> addCallToStatistics(CallInfo call) async {
-    await _statisticsService.addCall(call);
+  Future<void> addCallToStatistics(Map<String, dynamic> callInfo) async {
+    _statisticsService.addCall(callInfo);
   }
 
   Future<Map<String, dynamic>> getSmsStatistics() async {
-    return await _statisticsService.getSmsStatistics();
+    return _statisticsService.getSmsStatistics();
   }
 
   Future<List<Map<String, dynamic>>> getTopCalledNumbers({int limit = 10}) async {
-    return await _statisticsService.getTopCalledNumbers(limit: limit);
+    return _statisticsService.getTopCalledNumbers(limit: limit);
   }
 
   Future<List<Map<String, dynamic>>> getTopSmsContacts({int limit = 10}) async {
-    return await _statisticsService.getTopSmsContacts(limit: limit);
+    return _statisticsService.getTopSmsContacts(limit: limit);
   }
 
   Future<void> clearLogs() async {

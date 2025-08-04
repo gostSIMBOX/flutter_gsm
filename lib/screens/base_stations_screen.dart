@@ -237,7 +237,7 @@ class _BaseStationsScreenState extends State<BaseStationsScreen> {
           color: const Color(0xFF1A1A1A),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: Colors.grey[800]!,
+            color: Colors.grey[800] ?? Colors.grey,
             width: 1,
           ),
         ),
@@ -303,10 +303,10 @@ class _BaseStationsScreenState extends State<BaseStationsScreen> {
                 });
               },
               backgroundColor: const Color(0xFF2A2A2A),
-              selectedColor: Colors.blue[600],
+              selectedColor: Colors.blue[600] ?? Colors.blue,
               checkmarkColor: Colors.white,
               side: BorderSide(
-                color: isSelected ? Colors.blue[600]! : Colors.grey[700]!,
+                color: isSelected ? (Colors.blue[600] ?? Colors.blue) : (Colors.grey[700] ?? Colors.grey),
                 width: 1,
               ),
             ),
@@ -357,7 +357,7 @@ class _BaseStationsScreenState extends State<BaseStationsScreen> {
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: Colors.grey[800]!,
+          color: Colors.grey[800] ?? Colors.grey,
           width: 1,
         ),
       ),
@@ -465,7 +465,7 @@ class _BaseStationsScreenState extends State<BaseStationsScreen> {
                           style: AppTextStyles.poppins(fontSize: 12),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue[600],
+                          backgroundColor: Colors.blue[600] ?? Colors.blue,
                           padding: const EdgeInsets.symmetric(vertical: 8),
                         ),
                       ),
@@ -482,7 +482,7 @@ class _BaseStationsScreenState extends State<BaseStationsScreen> {
                           style: AppTextStyles.poppins(fontSize: 12),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.green[600],
+                          backgroundColor: Colors.green[600] ?? Colors.green,
                           padding: const EdgeInsets.symmetric(vertical: 8),
                         ),
                       ),
@@ -507,7 +507,7 @@ class _BaseStationsScreenState extends State<BaseStationsScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          color: Colors.grey[800],
+          color: Colors.grey[800] ?? Colors.grey,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
