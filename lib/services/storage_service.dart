@@ -1,11 +1,14 @@
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:logger/logger.dart';
 import '../models/gateway_config.dart';
 
 class StorageService {
   static final StorageService _instance = StorageService._internal();
   factory StorageService() => _instance;
   StorageService._internal();
+
+  final Logger _logger = Logger();
 
   static const String _configKey = 'gateway_config';
   static const String _isFirstRunKey = 'is_first_run';
@@ -29,7 +32,7 @@ class StorageService {
       final configJson = jsonDecode(configString) as Map<String, dynamic>;
       return GatewayConfig.fromJson(configJson);
     } catch (e) {
-      print('Error loading config: $e');
+      _logger.e('Error loading config: $e');
       return null;
     }
   }
