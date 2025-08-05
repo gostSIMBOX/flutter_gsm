@@ -16,15 +16,37 @@ import 'screens/sims_screen.dart';
 import 'screens/base_stations_screen.dart';
 import 'screens/codecs_screen.dart';
 import 'screens/calls_screen.dart';
+import 'screens/theme_settings_screen.dart';
+import 'screens/theme_demo_screen.dart';
+import 'services/theme_service.dart';
+import 'services/localization_service.dart';
+import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
-  runApp(const MyApp());
+  // Инициализация сервисов
+  final themeService = ThemeService();
+  final localizationService = LocalizationService();
+  
+  await themeService.initialize();
+  await localizationService.initialize();
+  
+  runApp(MyApp(
+    themeService: themeService,
+    localizationService: localizationService,
+  ));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  final ThemeService themeService;
+  final LocalizationService localizationService;
+  
+  const MyApp({
+    Key? key,
+    required this.themeService,
+    required this.localizationService,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -33,44 +55,17 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => GatewayProvider()),
         ChangeNotifierProvider(create: (_) => DashboardProvider()),
         ChangeNotifierProvider(create: (_) => LanguageProvider()),
+        ChangeNotifierProvider.value(value: themeService),
+        ChangeNotifierProvider.value(value: localizationService),
       ],
-      child: Consumer<LanguageProvider>(
-        builder: (context, languageProvider, child) {
+      child: Consumer2<LanguageProvider, ThemeService>(
+        builder: (context, languageProvider, themeService, child) {
           return MaterialApp(
             title: 'GSM-SIP Gateway',
             debugShowCheckedModeBanner: false,
-            theme: ThemeData(
-              primarySwatch: Colors.blue,
-              brightness: Brightness.dark,
-              scaffoldBackgroundColor: const Color(0xFF0A0A0A),
-              appBarTheme: const AppBarTheme(
-                backgroundColor: Color(0xFF1A1A1A),
-                elevation: 0,
-                titleTextStyle: TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w600,
-                ),
-                iconTheme: IconThemeData(color: Colors.white),
-              ),
-              elevatedButtonTheme: ElevatedButtonThemeData(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[600] ?? Colors.blue,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                ),
-              ),
-              cardTheme: CardThemeData(
-                color: const Color(0xFF1A1A1A),
-                elevation: 4,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
+            theme: AppTheme.lightTheme,
+            darkTheme: AppTheme.darkTheme,
+            themeMode: themeService.themeMode,
             locale: languageProvider.currentLocale,
             supportedLocales: const [
               Locale('en'),
@@ -109,6 +104,7 @@ class MyApp extends StatelessWidget {
               '/': (context) => const DashboardScreen(),
               '/settings': (context) => const SettingsScreen(),
               '/language': (context) => const LanguageSelectionScreen(),
+              '/theme': (context) => const ThemeSettingsScreen(),
               '/info': (context) => const InfoScreen(),
               '/sms': (context) => const SmsScreen(),
               '/analytics': (context) => const AnalyticsScreen(),
@@ -117,6 +113,7 @@ class MyApp extends StatelessWidget {
               '/base-stations': (context) => const BaseStationsScreen(),
               '/codecs': (context) => const CodecsScreen(),
               '/calls': (context) => const CallsScreen(),
+              '/theme-demo': (context) => const ThemeDemoScreen(),
             },
           );
         },

@@ -8,10 +8,12 @@ import '../widgets/line_card.dart';
 import '../widgets/stats_card.dart';
 import '../widgets/active_call_card.dart';
 import '../widgets/sip_status_card.dart';
+import '../widgets/status_indicator.dart';
+import '../services/theme_service.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({Key? key}) : super(key: key);
+  const DashboardScreen({super.key});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -101,6 +103,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                           const SizedBox(height: 24),
                           _buildQuickActions(),
                           const SizedBox(height: 24),
+                          _buildThemeIndicators(),
+                          const SizedBox(height: 24),
                           _buildRecentActivity(),
                         ],
                       ),
@@ -122,7 +126,7 @@ class _DashboardScreenState extends State<DashboardScreen>
         color: const Color(0xFF1A1A1A),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.1),
+            color: Colors.black.withValues(alpha: 0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -216,28 +220,28 @@ class _DashboardScreenState extends State<DashboardScreen>
           children: [
             StatsCard(
               title: 'Total Calls',
-              value: dashboardProvider.totalCalls.toString(),
+              value: '0',
               icon: Icons.call,
               color: Colors.blue,
               onTap: () => Navigator.pushNamed(context, '/analytics'),
             ),
             StatsCard(
               title: 'SMS Messages',
-              value: dashboardProvider.totalSms.toString(),
+              value: '0',
               icon: Icons.sms,
               color: Colors.green,
               onTap: () => Navigator.pushNamed(context, '/sms'),
             ),
             StatsCard(
               title: 'Active Lines',
-              value: dashboardProvider.activeLines.toString(),
+              value: dashboardProvider.activeLinesCount.toString(),
               icon: Icons.phone,
               color: Colors.orange,
               onTap: () => Navigator.pushNamed(context, '/lines'),
             ),
             StatsCard(
               title: 'Uptime',
-              value: dashboardProvider.uptime,
+              value: '0h',
               icon: Icons.timer,
               color: Colors.purple,
               onTap: () => Navigator.pushNamed(context, '/info'),
@@ -249,11 +253,9 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildActiveCalls() {
-    return Consumer<GatewayProvider>(
-      builder: (context, provider, child) {
-        final currentCall = provider.status.currentCall;
-        
-        if (currentCall == null) {
+    return Consumer<DashboardProvider>(
+      builder: (context, dashboardProvider, child) {
+        if (dashboardProvider.activeCalls.isEmpty) {
           return const SizedBox.shrink();
         }
 
@@ -268,7 +270,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               ),
             ),
             const SizedBox(height: 12),
-            ActiveCallCard(call: currentCall),
+            ActiveCallCard(call: dashboardProvider.activeCalls.first),
           ],
         );
       },
@@ -293,17 +295,16 @@ class _DashboardScreenState extends State<DashboardScreen>
               children: [
                 Expanded(
                   child: SipStatusCard(
-                    isConnected: dashboardProvider.sipConnected,
-                    isRegistered: dashboardProvider.sipRegistered,
+                    connection: dashboardProvider.sipConnection,
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: StatusCard(
                     title: 'GSM Network',
-                    status: dashboardProvider.gsmConnected ? 'Connected' : 'Disconnected',
+                    status: 'Connected',
                     icon: Icons.signal_cellular_alt,
-                    color: dashboardProvider.gsmConnected ? Colors.green : Colors.red,
+                    color: Colors.green,
                   ),
                 ),
               ],
@@ -402,11 +403,9 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildRecentActivity() {
-    return Consumer<GatewayProvider>(
-      builder: (context, provider, child) {
-        final recentCalls = provider.status.recentCalls;
-        
-        if (recentCalls.isEmpty) {
+    return Consumer<DashboardProvider>(
+      builder: (context, dashboardProvider, child) {
+        if (dashboardProvider.activeCalls.isEmpty) {
           return const SizedBox.shrink();
         }
 
@@ -435,7 +434,7 @@ class _DashboardScreenState extends State<DashboardScreen>
               ],
             ),
             const SizedBox(height: 12),
-            ...recentCalls.take(3).map((call) => _buildRecentCallItem(call)),
+            ...dashboardProvider.activeCalls.take(3).map((call) => _buildRecentCallItem(call)),
           ],
         );
       },
@@ -456,7 +455,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           ),
         ),
         title: Text(
-          call.number,
+          call.fromNumber ?? 'Unknown',
           style: TextStyles.body.copyWith(
             color: Colors.white,
             fontWeight: FontWeight.w500,
@@ -544,5 +543,52 @@ class _DashboardScreenState extends State<DashboardScreen>
         Navigator.pushNamed(context, '/info');
         break;
     }
+  }
+
+  Widget _buildThemeIndicators() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'System Status',
+          style: TextStyles.headline.copyWith(
+            color: Colors.white,
+            fontSize: 18,
+          ),
+        ),
+        const SizedBox(height: 16),
+        Consumer<GatewayProvider>(
+          builder: (context, provider, child) {
+            final status = provider.status;
+            return Column(
+              children: [
+                // Connection Status Indicator
+                StatusIndicator(
+                  status: _getStatusText(status.state),
+                  subtitle: 'Gateway connection status',
+                  onTap: () {
+                    // Navigate to detailed status screen
+                  },
+                ),
+                const SizedBox(height: 12),
+                // Signal Level Indicator (simulated)
+                SignalIndicator(
+                  signalLevel: 75, // Simulated signal level
+                  subtitle: 'GSM signal strength',
+                ),
+                const SizedBox(height: 12),
+                // Call Status Indicator (if there's an active call)
+                if (status.state == 'callInProgress')
+                  CallStatusIndicator(
+                    callStatus: 'Active',
+                    phoneNumber: '+1234567890',
+                    duration: '2:30',
+                  ),
+              ],
+            );
+          },
+        ),
+      ],
+    );
   }
 } 

@@ -176,4 +176,99 @@ class AppColors {
   static const Color callInactive = darkTextSecondary;
   static const Color smsUnread = warning;
   static const Color smsRead = darkTextSecondary;
+
+  // Цвета для прогресс-баров
+  static const Color progressBackground = Color(0xFFE5E7EB);
+  static const Color progressFill = accent;
+
+  // Методы для получения цветов в зависимости от темы
+  static Color getBackgroundPrimary(Brightness brightness) {
+    return brightness == Brightness.light ? lightBackgroundPrimary : darkBackgroundPrimary;
+  }
+
+  static Color getBackgroundSecondary(Brightness brightness) {
+    return brightness == Brightness.light ? lightBackgroundSecondary : darkBackgroundSecondary;
+  }
+
+  static Color getBackgroundTertiary(Brightness brightness) {
+    return brightness == Brightness.light ? lightBackgroundSecondary : darkBackgroundSecondary;
+  }
+
+  static Color getTextPrimary(Brightness brightness) {
+    return brightness == Brightness.light ? lightTextPrimary : darkTextPrimary;
+  }
+
+  static Color getTextSecondary(Brightness brightness) {
+    return brightness == Brightness.light ? lightTextSecondary : darkTextSecondary;
+  }
+
+  static Color getTextTertiary(Brightness brightness) {
+    return brightness == Brightness.light ? lightTextTertiary : darkTextTertiary;
+  }
+
+  static Color getCardBackground(Brightness brightness) {
+    return brightness == Brightness.light ? lightCardBackground : darkCardBackground;
+  }
+
+  static Color getCardBackgroundSecondary(Brightness brightness) {
+    return brightness == Brightness.light ? lightCardBackgroundSecondary : darkCardBackgroundSecondary;
+  }
+
+  static Color getCardShadow(Brightness brightness) {
+    return brightness == Brightness.light ? lightCardShadow : darkCardShadow;
+  }
+
+  static Color getNavigationBackground(Brightness brightness) {
+    return brightness == Brightness.light ? lightNavigationBackground : darkNavigationBackground;
+  }
+
+  static Color getNavigationText(Brightness brightness) {
+    return brightness == Brightness.light ? lightNavigationText : darkNavigationText;
+  }
+
+  static Color getDialogBackground(Brightness brightness) {
+    return brightness == Brightness.light ? lightCardBackground : darkCardBackground;
+  }
+
+  static Color getDialogText(Brightness brightness) {
+    return brightness == Brightness.light ? lightTextPrimary : darkTextPrimary;
+  }
+
+  static Color getDialogTextSecondary(Brightness brightness) {
+    return brightness == Brightness.light ? lightTextSecondary : darkTextSecondary;
+  }
+
+  static Color getIconPrimary(Brightness brightness) {
+    return brightness == Brightness.light ? lightTextPrimary : darkTextPrimary;
+  }
+
+  static Color getIconSecondary(Brightness brightness) {
+    return brightness == Brightness.light ? lightTextSecondary : darkTextSecondary;
+  }
+
+  static Color getIconTertiary(Brightness brightness) {
+    return brightness == Brightness.light ? lightTextTertiary : darkTextTertiary;
+  }
+
+  static Color getInputBackground(Brightness brightness) {
+    return brightness == Brightness.light ? lightInputBackground : darkInputBackground;
+  }
+
+  static Color getInputBorder(Brightness brightness) {
+    return brightness == Brightness.light ? lightInputBorder : darkInputBorder;
+  }
+
+  static Color getInputBorderFocused(Brightness brightness) {
+    return brightness == Brightness.light ? lightInputBorderFocused : darkInputBorderFocused;
+  }
+
+  static Color getInputText(Brightness brightness) {
+    return brightness == Brightness.light ? lightTextPrimary : darkTextPrimary;
+  }
+
+  static List<Color> getCardGradient(Brightness brightness) {
+    return brightness == Brightness.light 
+        ? [lightCardBackground, lightCardBackgroundSecondary]
+        : [darkCardBackground, darkCardBackgroundSecondary];
+  }
 } 

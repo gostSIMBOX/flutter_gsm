@@ -1,6 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
-import 'package:logger/logger.dart';
 import 'package:flutter_tele/flutter_tele.dart';
 import '../models/sms_message.dart';
 
@@ -9,9 +7,7 @@ class SmsService {
   factory SmsService() => _instance;
   SmsService._internal();
 
-  final Logger _logger = Logger();
   final TeleEndpoint _teleEndpoint = TeleEndpoint();
-  
   final StreamController<List<SmsMessage>> _messagesController = 
       StreamController<List<SmsMessage>>.broadcast();
   final StreamController<SmsMessage> _newMessageController = 
@@ -24,58 +20,35 @@ class SmsService {
   StreamSubscription? _smsEventSubscription;
 
   Future<void> initialize() async {
-    _log('Initializing SMS service');
-    
     try {
       // Setup SMS event listeners
-      await _setupSmsListeners();
-      
+      _smsEventSubscription = _teleEndpoint.on('sms_received').listen((event) {
+        _handleNewSms(event);
+      });
+
       // Load existing messages
       await loadMessages();
-      
-      _log('SMS service initialized successfully');
     } catch (e) {
-      _log('Error initializing SMS service: $e');
-      throw Exception('Failed to initialize SMS service: $e');
+      print('Error initializing SMS service: $e');
     }
   }
 
   Future<void> loadMessages() async {
     try {
       final rawMessages = await _teleEndpoint.getSmsMessages();
-      _messages = rawMessages.map((json) => SmsMessage.fromJson(json)).toList();
-      _messages.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+      _messages = rawMessages.map((msg) => SmsMessage.fromJson(msg)).toList();
       _messagesController.add(_messages);
-      _log('Loaded ${_messages.length} SMS messages');
     } catch (e) {
-      _log('Error loading SMS messages: $e');
+      print('Error loading SMS messages: $e');
     }
   }
 
   Future<bool> sendSms(String number, String message) async {
-    _log('Sending SMS to: $number');
-    
     try {
       final result = await _teleEndpoint.sendSms(number, message);
-      _log('SMS sent successfully: $result');
-      
-      // Add to messages list
-      final newMessage = SmsMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        address: number,
-        body: message,
-        timestamp: DateTime.now(),
-        type: SmsType.sent,
-        status: SmsStatus.sent,
-      );
-      
-      _messages.insert(0, newMessage);
-      _messagesController.add(_messages);
-      _newMessageController.add(newMessage);
-      
-      return true;
+      return result['success'] == true;
     } catch (e) {
-      _log('Error sending SMS: $e');
+      print('Error sending SMS: $e');
       return false;
     }
   }
@@ -83,14 +56,9 @@ class SmsService {
   Future<bool> deleteSms(String messageId) async {
     try {
       final result = await _teleEndpoint.deleteSms(messageId);
-      _log('SMS deleted: $result');
-      
-      _messages.removeWhere((msg) => msg.id == messageId);
-      _messagesController.add(_messages);
-      
-      return true;
+      return result['success'] == true;
     } catch (e) {
-      _log('Error deleting SMS: $e');
+      print('Error deleting SMS: $e');
       return false;
     }
   }
@@ -98,17 +66,9 @@ class SmsService {
   Future<bool> markAsRead(String messageId) async {
     try {
       final result = await _teleEndpoint.markSmsAsRead(messageId);
-      _log('SMS marked as read: $result');
-      
-      final index = _messages.indexWhere((msg) => msg.id == messageId);
-      if (index != -1) {
-        _messages[index] = _messages[index].copyWith(isRead: true);
-        _messagesController.add(_messages);
-      }
-      
-      return true;
+      return result['success'] == true;
     } catch (e) {
-      _log('Error marking SMS as read: $e');
+      print('Error marking SMS as read: $e');
       return false;
     }
   }
@@ -118,47 +78,33 @@ class SmsService {
   }
 
   Future<List<SmsMessage>> getMessagesByNumber(String number) async {
-    return _messages.where((msg) => msg.address == number).toList();
+    return _messages.where((msg) => msg.number == number).toList();
   }
 
   Future<List<SmsMessage>> searchMessages(String query) async {
     return _messages.where((msg) => 
-      msg.address.toLowerCase().contains(query.toLowerCase()) ||
-      msg.body.toLowerCase().contains(query.toLowerCase())
+      msg.number.contains(query) || 
+      msg.message.contains(query)
     ).toList();
   }
 
   Future<Map<String, int>> getMessageCounts() async {
     final counts = <String, int>{};
-    for (final type in SmsType.values) {
-      counts[type.name] = _messages.where((msg) => msg.type == type).length;
+    for (final msg in _messages) {
+      counts[msg.type.name] = (counts[msg.type.name] ?? 0) + 1;
     }
     return counts;
   }
 
-  Future<void> _setupSmsListeners() async {
-    _smsEventSubscription = _teleEndpoint.on('sms_received').listen((event) {
-      _log('SMS received: $event');
-      _handleNewSms(event);
-    });
-  }
-
   void _handleNewSms(Map<String, dynamic> event) {
     try {
-      final newMessage = SmsMessage.fromJson(event);
-      _messages.insert(0, newMessage);
+      final smsMessage = SmsMessage.fromJson(event);
+      _messages.insert(0, smsMessage);
       _messagesController.add(_messages);
-      _newMessageController.add(newMessage);
-      _log('New SMS added: ${newMessage.address}');
+      _newMessageController.add(smsMessage);
     } catch (e) {
-      _log('Error handling new SMS: $e');
+      print('Error handling new SMS: $e');
     }
-  }
-
-  void _log(String message) {
-    final timestamp = DateTime.now().toIso8601String();
-    final logMessage = '[$timestamp] SMS Service: $message';
-    _logger.i(logMessage);
   }
 
   void dispose() {

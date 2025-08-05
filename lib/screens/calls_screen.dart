@@ -2,196 +2,177 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/gateway_provider.dart';
 import '../models/active_call.dart';
-import '../models/gateway_status.dart';
+import '../utils/text_styles.dart';
 
 class CallsScreen extends StatefulWidget {
-  const CallsScreen({Key? key}) : super(key: key);
+  const CallsScreen({super.key});
 
   @override
   State<CallsScreen> createState() => _CallsScreenState();
 }
 
 class _CallsScreenState extends State<CallsScreen> {
-  final TextEditingController _numberController = TextEditingController();
-  final TextEditingController _messageController = TextEditingController();
+  List<ActiveCall> _calls = [];
+  bool _isLoading = false;
+  String? _error;
 
   @override
-  void dispose() {
-    _numberController.dispose();
-    _messageController.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _loadCalls();
+  }
+
+  Future<void> _loadCalls() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
+
+    try {
+      // Simulate loading calls
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      _calls = [
+        ActiveCall(
+          id: 'call1',
+          direction: 'incoming',
+          fromNumber: '+1234567890',
+          toNumber: '+0987654321',
+          startTime: DateTime.now().subtract(const Duration(minutes: 30)),
+          duration: const Duration(minutes: 5, seconds: 30),
+          status: 'completed',
+          lineId: '1',
+          isSipSpeakerEnabled: false,
+          isGsmSpeakerEnabled: true,
+          isSipMicrophoneEnabled: true,
+          isGsmMicrophoneEnabled: false,
+          isRecording: false,
+          recordingPath: '',
+          sipMos: 4.2,
+          gsmMos: 4.0,
+          sipJitter: 12.5,
+          gsmJitter: 8.3,
+          sipLatency: 42.1,
+          gsmLatency: 35.7,
+        ),
+        ActiveCall(
+          id: 'call2',
+          direction: 'outgoing',
+          fromNumber: '+0987654321',
+          toNumber: '+1234567890',
+          startTime: DateTime.now().subtract(const Duration(hours: 2)),
+          duration: const Duration(minutes: 2, seconds: 15),
+          status: 'completed',
+          lineId: '2',
+          isSipSpeakerEnabled: true,
+          isGsmSpeakerEnabled: false,
+          isSipMicrophoneEnabled: false,
+          isGsmMicrophoneEnabled: true,
+          isRecording: true,
+          recordingPath: '/recordings/call2.wav',
+          sipMos: 4.5,
+          gsmMos: 4.2,
+          sipJitter: 10.2,
+          gsmJitter: 7.8,
+          sipLatency: 38.5,
+          gsmLatency: 32.1,
+        ),
+      ];
+    } catch (e) {
+      _error = e.toString();
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFF0A0A0A),
       appBar: AppBar(
-        title: const Text('Calls'),
+        title: const Text('Call History'),
+        backgroundColor: const Color(0xFF1A1A1A),
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
-            onPressed: () {
-              // Refresh call history
-            },
+            onPressed: _loadCalls,
+          ),
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            onPressed: _showFilterDialog,
           ),
         ],
       ),
-      body: Consumer<GatewayProvider>(
-        builder: (context, provider, child) {
-          final status = provider.status;
-          final currentCall = status.currentCall;
-          final recentCalls = status.recentCalls;
-
-          return Column(
-            children: [
-              // Current call status
-              if (currentCall != null) _buildCurrentCallCard(currentCall),
-              
-              // Call controls
-              _buildCallControls(provider),
-              
-              // Recent calls
-              Expanded(
-                child: _buildRecentCallsList(recentCalls),
-              ),
-            ],
-          );
-        },
+      body: _buildBody(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _makeCall,
+        backgroundColor: Colors.green,
+        child: const Icon(Icons.call, color: Colors.white),
       ),
     );
   }
 
-  Widget _buildCurrentCallCard(CallInfo call) {
-    return Card(
-      margin: const EdgeInsets.all(16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  call.direction == CallDirection.incoming 
-                    ? Icons.call_received 
-                    : Icons.call_made,
-                  color: _getCallStateColor(call.state),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'Current Call',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              call.number,
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              _getCallStateText(call.state),
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: _getCallStateColor(call.state),
-              ),
-            ),
-            if (call.startTime != null) ...[
-              const SizedBox(height: 4),
-              Text(
-                'Started: ${_formatDateTime(call.startTime!)}',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ],
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCallControls(GatewayProvider provider) {
-    return Card(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Number input
-            TextField(
-              controller: _numberController,
-              decoration: const InputDecoration(
-                labelText: 'Phone Number',
-                hintText: 'Enter phone number',
-                prefixIcon: Icon(Icons.phone),
-              ),
-              keyboardType: TextInputType.phone,
-            ),
-            const SizedBox(height: 16),
-            
-            // Call buttons
-            Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => _makeCall(provider),
-                    icon: const Icon(Icons.call),
-                    label: const Text('Call'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () => _sendSms(provider),
-                    icon: const Icon(Icons.sms),
-                    label: const Text('SMS'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            
-            // Message input for SMS
-            const SizedBox(height: 16),
-            TextField(
-              controller: _messageController,
-              decoration: const InputDecoration(
-                labelText: 'Message',
-                hintText: 'Enter SMS message',
-                prefixIcon: Icon(Icons.message),
-              ),
-              maxLines: 3,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildRecentCallsList(List<CallInfo> calls) {
-    if (calls.isEmpty) {
+  Widget _buildBody() {
+    if (_isLoading) {
       return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (_error != null) {
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.call_history,
+              Icons.error,
+              size: 64,
+              color: Colors.red,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Error loading calls',
+              style: TextStyles.title.copyWith(color: Colors.red),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _error!,
+              style: TextStyles.body.copyWith(color: Colors.grey),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadCalls,
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_calls.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.history,
               size: 64,
               color: Colors.grey,
             ),
-            SizedBox(height: 16),
+            const SizedBox(height: 16),
             Text(
               'No recent calls',
-              style: TextStyle(
-                fontSize: 18,
-                color: Colors.grey,
-              ),
+              style: TextStyles.title.copyWith(color: Colors.grey),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Your call history will appear here',
+              style: TextStyles.body.copyWith(color: Colors.grey),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -200,29 +181,40 @@ class _CallsScreenState extends State<CallsScreen> {
 
     return ListView.builder(
       padding: const EdgeInsets.all(16),
-      itemCount: calls.length,
+      itemCount: _calls.length,
       itemBuilder: (context, index) {
-        final call = calls[index];
+        final call = _calls[index];
         return Card(
+          color: const Color(0xFF1A1A1A),
+          margin: const EdgeInsets.only(bottom: 8),
           child: ListTile(
             leading: CircleAvatar(
-              backgroundColor: _getCallStateColor(call.state),
+              backgroundColor: _getCallDirectionColor(call.direction),
               child: Icon(
-                call.direction == CallDirection.incoming 
+                call.direction == 'incoming' 
                   ? Icons.call_received 
                   : Icons.call_made,
                 color: Colors.white,
               ),
             ),
-            title: Text(call.number),
+            title: Text(
+              call.fromNumber ?? 'Unknown',
+              style: TextStyles.body.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
             subtitle: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(_getCallStateText(call.state)),
+                Text(
+                  _getCallStatusText(call.status),
+                  style: TextStyles.caption.copyWith(color: Colors.grey),
+                ),
                 if (call.startTime != null)
                   Text(
                     _formatDateTime(call.startTime!),
-                    style: Theme.of(context).textTheme.bodySmall,
+                    style: TextStyles.caption.copyWith(color: Colors.grey),
                   ),
               ],
             ),
@@ -267,31 +259,27 @@ class _CallsScreenState extends State<CallsScreen> {
     );
   }
 
-  Color _getCallStateColor(CallState state) {
-    switch (state) {
-      case CallState.ringing:
-        return Colors.orange;
-      case CallState.connecting:
-        return Colors.blue;
-      case CallState.connected:
+  Color _getCallDirectionColor(String direction) {
+    switch (direction) {
+      case 'incoming':
         return Colors.green;
-      case CallState.disconnected:
-        return Colors.red;
+      case 'outgoing':
+        return Colors.blue;
       default:
         return Colors.grey;
     }
   }
 
-  String _getCallStateText(CallState state) {
-    switch (state) {
-      case CallState.ringing:
-        return 'Ringing';
-      case CallState.connecting:
-        return 'Connecting';
-      case CallState.connected:
+  String _getCallStatusText(String status) {
+    switch (status) {
+      case 'completed':
+        return 'Completed';
+      case 'missed':
+        return 'Missed';
+      case 'rejected':
+        return 'Rejected';
+      case 'connected':
         return 'Connected';
-      case CallState.disconnected:
-        return 'Disconnected';
       default:
         return 'Unknown';
     }
@@ -302,99 +290,42 @@ class _CallsScreenState extends State<CallsScreen> {
     final difference = now.difference(dateTime);
     
     if (difference.inDays > 0) {
-      return '${difference.inDays} days ago';
+      return '${difference.inDays}d ago';
     } else if (difference.inHours > 0) {
-      return '${difference.inHours} hours ago';
+      return '${difference.inHours}h ago';
     } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} minutes ago';
+      return '${difference.inMinutes}m ago';
     } else {
       return 'Just now';
     }
   }
 
-  void _makeCall(GatewayProvider provider) {
-    final number = _numberController.text.trim();
-    if (number.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a phone number')),
-      );
-      return;
-    }
-
-    provider.makeCall(number).then((_) {
-      _numberController.clear();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Calling $number...')),
-      );
-    }).catchError((error) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error making call: $error')),
-      );
-    });
-  }
-
-  void _sendSms(GatewayProvider provider) {
-    final number = _numberController.text.trim();
-    final message = _messageController.text.trim();
-    
-    if (number.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a phone number')),
-      );
-      return;
-    }
-    
-    if (message.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a message')),
-      );
-      return;
-    }
-
-    provider.sendSms(number, message).then((success) {
-      if (success) {
-        _numberController.clear();
-        _messageController.clear();
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('SMS sent to $number')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to send SMS')),
-        );
-      }
-    });
-  }
-
-  void _handleCallAction(String action, CallInfo call) {
+  void _handleCallAction(String action, ActiveCall call) {
     switch (action) {
       case 'call':
-        _numberController.text = call.number;
-        _makeCall(context.read<GatewayProvider>());
+        _makeCallToNumber(call.fromNumber ?? '');
         break;
       case 'sms':
-        _numberController.text = call.number;
-        // Show SMS dialog
-        _showSmsDialog(call.number);
+        _sendSmsToNumber(call.fromNumber ?? '');
         break;
       case 'info':
-        _showCallInfoDialog(call);
+        _showCallInfo(call);
         break;
     }
   }
 
-  void _showSmsDialog(String number) {
+  void _makeCall() {
+    // Show call dialog
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Send SMS to $number'),
+        title: const Text('Make Call'),
         content: TextField(
-          controller: _messageController,
           decoration: const InputDecoration(
-            labelText: 'Message',
-            hintText: 'Enter your message',
+            labelText: 'Phone Number',
+            hintText: 'Enter phone number',
           ),
-          maxLines: 3,
+          keyboardType: TextInputType.phone,
         ),
         actions: [
           TextButton(
@@ -404,16 +335,30 @@ class _CallsScreenState extends State<CallsScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              _sendSms(context.read<GatewayProvider>());
+              // TODO: Implement call functionality
             },
-            child: const Text('Send'),
+            child: const Text('Call'),
           ),
         ],
       ),
     );
   }
 
-  void _showCallInfoDialog(CallInfo call) {
+  void _makeCallToNumber(String number) {
+    // TODO: Implement call functionality
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Calling $number...')),
+    );
+  }
+
+  void _sendSmsToNumber(String number) {
+    // TODO: Implement SMS functionality
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Opening SMS to $number...')),
+    );
+  }
+
+  void _showCallInfo(ActiveCall call) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -422,23 +367,56 @@ class _CallsScreenState extends State<CallsScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Number: ${call.number}'),
-            Text('Direction: ${call.direction.name}'),
-            Text('State: ${call.state.name}'),
-            if (call.startTime != null)
-              Text('Start Time: ${_formatDateTime(call.startTime!)}'),
-            if (call.endTime != null)
-              Text('End Time: ${_formatDateTime(call.endTime!)}'),
-            if (call.startTime != null && call.endTime != null) {
-              final duration = call.endTime!.difference(call.startTime!);
-              Text('Duration: ${duration.inMinutes}:${(duration.inSeconds % 60).toString().padLeft(2, '0')}'),
-            } else const SizedBox.shrink(),
+            Text('From: ${call.fromNumber}'),
+            Text('To: ${call.toNumber}'),
+            Text('Duration: ${call.duration.inMinutes}:${(call.duration.inSeconds % 60).toString().padLeft(2, '0')}'),
+            Text('Status: ${call.status}'),
+            Text('Line ID: ${call.lineId}'),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Filter Calls'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CheckboxListTile(
+              title: const Text('Incoming'),
+              value: true,
+              onChanged: (value) {},
+            ),
+            CheckboxListTile(
+              title: const Text('Outgoing'),
+              value: true,
+              onChanged: (value) {},
+            ),
+            CheckboxListTile(
+              title: const Text('Missed'),
+              value: true,
+              onChanged: (value) {},
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Apply'),
           ),
         ],
       ),

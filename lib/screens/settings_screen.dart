@@ -5,8 +5,10 @@ import '../models/gateway_config.dart';
 import '../providers/gateway_provider.dart';
 import '../providers/language_provider.dart';
 import '../services/storage_service.dart';
+import '../services/theme_service.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'language_selection_screen.dart';
+import 'theme_settings_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({Key? key}) : super(key: key);
@@ -272,6 +274,54 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         MaterialPageRoute(
                           builder: (context) => const LanguageSelectionScreen(),
                         ),
+                      );
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+
+              // Theme Section
+              _buildSection(
+                title: 'Theme',
+                icon: Icons.palette,
+                children: [
+                  Consumer<ThemeService>(
+                    builder: (context, themeService, child) {
+                      return ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Icon(
+                          themeService.getThemeIcon(),
+                          color: Colors.blue[400],
+                        ),
+                        title: Text(
+                          'Theme Settings',
+                          style: AppTextStyles.poppins(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                        subtitle: Text(
+                          'Current: ${themeService.getThemeName()}',
+                          style: AppTextStyles.poppins(
+                            fontSize: 12,
+                            color: Colors.grey[400],
+                          ),
+                        ),
+                        trailing: const Icon(
+                          Icons.arrow_forward_ios,
+                          color: Colors.grey,
+                          size: 16,
+                        ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ThemeSettingsScreen(),
+                            ),
+                          );
+                        },
                       );
                     },
                   ),

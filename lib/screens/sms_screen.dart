@@ -79,7 +79,7 @@ class _SmsScreenState extends State<SmsScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showSendSmsDialog,
-        backgroundColor: Colors.blue[600],
+        backgroundColor: Colors.blue[600] ?? Colors.blue,
         child: const Icon(Icons.send, color: Colors.white),
       ),
     );

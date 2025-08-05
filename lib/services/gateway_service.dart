@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:logger/logger.dart';
@@ -115,7 +114,7 @@ class GatewayService {
     _log('Stopping gateway...');
     
     // Stop telephony service
-    await _teleEndpoint.stop();
+    await _teleEndpoint.dispose();
     
     // Cleanup connections
     _sipConnected = false;
@@ -131,7 +130,7 @@ class GatewayService {
     _log('Gateway stopped');
   }
 
-  Future<void> makeCall(String number) async {
+  Future<void> makeCall(String number, String? sipNumber, String? gsmNumber, int? lineId) async {
     if (_currentCall != null) {
       _log('Call already in progress, cannot make new call');
       return;
@@ -140,7 +139,7 @@ class GatewayService {
     _log('Making call to: $number');
     
     try {
-      final callResult = await _teleEndpoint.makeCall(number);
+      final callResult = await _teleEndpoint.makeCall(number, sipNumber ?? '', gsmNumber ?? '', lineId ?? 0);
       _log('Call initiated: $callResult');
       
       _currentCall = CallInfo(
@@ -159,7 +158,7 @@ class GatewayService {
     }
   }
 
-  Future<void> answerCall() async {
+  Future<void> answerCall(String callId) async {
     if (_currentCall == null) {
       _log('No incoming call to answer');
       return;
@@ -168,7 +167,7 @@ class GatewayService {
     _log('Answering call: ${_currentCall!.number}');
     
     try {
-      await _teleEndpoint.answerCall();
+      await _teleEndpoint.answerCall(callId);
       _currentCall = _currentCall!.copyWith(state: CallState.connected);
       await _updateStatus(GatewayState.callInProgress, currentCall: _currentCall);
     } catch (e) {
@@ -183,7 +182,7 @@ class GatewayService {
     _log('Ending call: ${_currentCall!.number}');
     
     try {
-      await _teleEndpoint.endCall();
+      await _teleEndpoint.dispose();
       
       final endedCall = _currentCall!.copyWith(
         state: CallState.disconnected,

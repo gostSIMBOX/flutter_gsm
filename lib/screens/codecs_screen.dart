@@ -388,10 +388,10 @@ class _CodecsScreenState extends State<CodecsScreen> {
                 });
               },
               backgroundColor: const Color(0xFF2A2A2A),
-              selectedColor: Colors.blue[600],
+              selectedColor: Colors.blue[600] ?? Colors.blue,
               checkmarkColor: Colors.white,
               side: BorderSide(
-                color: isSelected ? Colors.blue[600]! : Colors.grey[700]!,
+                color: isSelected ? (Colors.blue[600] ?? Colors.blue) : (Colors.grey[700] ?? Colors.grey),
                 width: 1,
               ),
             ),
@@ -551,7 +551,7 @@ class _CodecsScreenState extends State<CodecsScreen> {
                           style: AppTextStyles.poppins(fontSize: 12),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue[600],
+                          backgroundColor: Colors.blue[600] ?? Colors.blue,
                           padding: const EdgeInsets.symmetric(vertical: 8),
                         ),
                       ),
@@ -568,7 +568,7 @@ class _CodecsScreenState extends State<CodecsScreen> {
                           style: AppTextStyles.poppins(fontSize: 12),
                         ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey[600],
+                          backgroundColor: Colors.grey[600] ?? Colors.grey,
                           padding: const EdgeInsets.symmetric(vertical: 8),
                         ),
                       ),
