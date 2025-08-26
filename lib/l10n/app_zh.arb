@@ -1,6 +1,6 @@
 {
   "@@locale": "zh",
-  "appTitle": "GSM-SIP 网关",
+  "appTitle": "GOSTsimbox 网关",
   "configureSipCredentials": "配置您的 SIP 凭据",
   "sipUsername": "SIP 用户名",
   "sipPassword": "SIP 密码",

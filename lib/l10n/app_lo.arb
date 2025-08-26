@@ -1,6 +1,6 @@
 {
   "@@locale": "lo",
-  "appTitle": "ປະຕູຜ່ານ GSM-SIP",
+  "appTitle": "ປະຕູຜ່ານ GOSTsimbox",
   "configureSipCredentials": "ຕັ້ງຄ່າຂໍ້ມູນການຢືນຢັນ SIP ຂອງທ່ານ",
   "sipUsername": "ຊື່ຜູ້ໃຊ້ SIP",
   "sipPassword": "ລະຫັດຜ່ານ SIP",

@@ -1,6 +1,6 @@
 {
   "@@locale": "es",
-  "appTitle": "Puerta de Enlace GSM-SIP",
+  "appTitle": "Puerta de Enlace GOSTsimbox",
   "configureSipCredentials": "Configure sus credenciales SIP",
   "sipUsername": "Nombre de Usuario SIP",
   "sipPassword": "Contraseña SIP",

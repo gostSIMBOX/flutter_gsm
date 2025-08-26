@@ -1,6 +1,6 @@
 {
   "@@locale": "sw",
-  "appTitle": "Gerbang GSM-SIP",
+  "appTitle": "Gerbang GOSTsimbox",
   "configureSipCredentials": "Sanidi vipimo vya SIP vyako",
   "sipUsername": "Jina la Mtumiaji SIP",
   "sipPassword": "Nywila ya SIP",

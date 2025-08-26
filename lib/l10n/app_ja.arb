@@ -1,6 +1,6 @@
 {
   "@@locale": "ja",
-  "appTitle": "GSM-SIP ゲートウェイ",
+  "appTitle": "GOSTsimbox ゲートウェイ",
   "configureSipCredentials": "SIP認証情報を設定してください",
   "sipUsername": "SIPユーザー名",
   "sipPassword": "SIPパスワード",

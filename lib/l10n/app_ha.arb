@@ -1,6 +1,6 @@
 {
   "@@locale": "ha",
-  "appTitle": "GSM-SIP Gateway",
+  "appTitle": "GOSTsimbox Gateway",
   "configureSipCredentials": "Saita bayananai na SIP ɗinka",
   "sipUsername": "Sunan mai amfani SIP",
   "sipPassword": "Kalmar shiga SIP",

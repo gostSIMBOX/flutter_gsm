@@ -1,6 +1,6 @@
 {
   "@@locale": "ko",
-  "appTitle": "GSM-SIP 게이트웨이",
+  "appTitle": "GOSTsimbox 게이트웨이",
   "configureSipCredentials": "SIP 인증 정보를 구성하세요",
   "sipUsername": "SIP 사용자명",
   "sipPassword": "SIP 비밀번호",

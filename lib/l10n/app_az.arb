@@ -1,6 +1,6 @@
 {
   "@@locale": "az",
-  "appTitle": "GSM-SIP Gateway",
+  "appTitle": "GOSTsimbox Gateway",
   "configureSipCredentials": "SIP məlumatlarınızı konfiqurasiya edin",
   "sipUsername": "SIP İstifadəçi Adı",
   "sipPassword": "SIP Şifrəsi",

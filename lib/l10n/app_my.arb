@@ -1,6 +1,6 @@
 {
   "@@locale": "my",
-  "appTitle": "GSM-SIP Gateway",
+  "appTitle": "GOSTsimbox Gateway",
   "configureSipCredentials": "သင့် SIP credentials များကို configure လုပ်ပါ",
   "sipUsername": "SIP အသုံးပြုသူအမည်",
   "sipPassword": "SIP စကားဝှက်",

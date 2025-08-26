@@ -1,6 +1,6 @@
-# Flutter GSM-SIP Gateway
+# GOSTsimbox Gateway
 
-A modern Flutter application that provides a bidirectional bridge between GSM telephony and SIP (Session Initiation Protocol). This application replicates the functionality of the React Native GSM-SIP Gateway with an improved user interface and enhanced user experience.
+A modern Flutter application that provides a bidirectional bridge between GSM telephony + SMS using SIP and SMPP. This application replicates the functionality of the React Native GOSTsimbox Gateway with an improved user interface and enhanced user experience.
 
 ## Features
 
@@ -197,7 +197,7 @@ This project is licensed under the ISC License.
 
 ## Acknowledgments
 
-- Based on the React Native GSM-SIP Gateway
+- Based on the React Native Legacy Simbox Gateway by Anton Dodonov
 - Uses modern Flutter development practices
 - Implements Material Design principles
 

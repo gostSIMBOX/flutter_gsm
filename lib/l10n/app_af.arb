@@ -1,6 +1,6 @@
 {
   "@@locale": "af",
-  "appTitle": "GSM-SIP Gateway",
+  "appTitle": "GOSTsimbox Gateway",
   "configureSipCredentials": "Konfigureer jou SIP-inligtings",
   "sipUsername": "SIP Gebruikersnaam",
   "sipPassword": "SIP Wagwoord",

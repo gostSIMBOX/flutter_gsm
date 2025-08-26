@@ -1,6 +1,6 @@
 {
   "@@locale": "fr",
-  "appTitle": "Passerelle GSM-SIP",
+  "appTitle": "Passerelle GOSTsimbox",
   "configureSipCredentials": "Configurez vos identifiants SIP",
   "sipUsername": "Nom d'utilisateur SIP",
   "sipPassword": "Mot de passe SIP",

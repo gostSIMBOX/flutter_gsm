@@ -1,6 +1,6 @@
 {
   "@@locale": "de",
-  "appTitle": "GSM-SIP Gateway",
+  "appTitle": "GOSTsimbox Gateway",
   "configureSipCredentials": "Konfigurieren Sie Ihre SIP-Anmeldedaten",
   "sipUsername": "SIP Benutzername",
   "sipPassword": "SIP Passwort",

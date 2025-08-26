@@ -1,6 +1,6 @@
 {
   "@@locale": "th",
-  "appTitle": "เกตเวย์ GSM-SIP",
+  "appTitle": "เกตเวย์ GOSTsimbox",
   "configureSipCredentials": "กำหนดค่าข้อมูลประจำตัว SIP ของคุณ",
   "sipUsername": "ชื่อผู้ใช้ SIP",
   "sipPassword": "รหัสผ่าน SIP",

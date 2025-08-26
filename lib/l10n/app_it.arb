@@ -1,6 +1,6 @@
 {
   "@@locale": "it",
-  "appTitle": "Gateway GSM-SIP",
+  "appTitle": "Gateway GOSTsimbox",
   "configureSipCredentials": "Configura le tue credenziali SIP",
   "sipUsername": "Nome Utente SIP",
   "sipPassword": "Password SIP",

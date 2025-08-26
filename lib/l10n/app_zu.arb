@@ -1,6 +1,6 @@
 {
   "@@locale": "zu",
-  "appTitle": "I-GSM-SIP Gateway",
+  "appTitle": "I-GOSTsimbox Gateway",
   "configureSipCredentials": "Hlela amagama akho e-SIP",
   "sipUsername": "Igama lomsebenzisi le-SIP",
   "sipPassword": "Iphasiwedi ye-SIP",

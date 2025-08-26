@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Сервис для управления локализацией приложения GSM-SIP Gateway
+/// Сервис для управления локализацией приложения GOSTsimbox Gateway
 /// Позволяет переключаться между различными языками
 class LocalizationService extends ChangeNotifier {
   static const String _localeKey = 'gost_simbox_locale';
