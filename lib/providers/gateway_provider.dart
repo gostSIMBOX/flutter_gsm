@@ -6,12 +6,14 @@ import '../models/gateway_status.dart';
 import '../models/sms_message.dart';
 import '../services/gateway_service.dart';
 import '../services/sms_service.dart';
+import '../services/ussd_service.dart';
 import '../services/statistics_service.dart';
 import '../services/storage_service.dart';
 
 class GatewayProvider extends ChangeNotifier {
   final GatewayService _gatewayService = GatewayService();
   final SmsService _smsService = SmsService();
+  final UssdService _ussdService = UssdService();
   final StatisticsService _statisticsService = StatisticsService();
   final StorageService _storageService = StorageService();
   final Logger _logger = Logger();
@@ -36,8 +38,8 @@ class GatewayProvider extends ChangeNotifier {
 
   StreamSubscription<GatewayStatus>? _statusSubscription;
   StreamSubscription<String>? _logSubscription;
-  StreamSubscription<List<SmsMessage>>? _smsSubscription;
-  StreamSubscription<SmsMessage>? _newSmsSubscription;
+  StreamSubscription<List<dynamic>>? _smsSubscription;
+  StreamSubscription<dynamic>? _newSmsSubscription;
 
   GatewayProvider() {
     _initialize();
@@ -50,6 +52,7 @@ class GatewayProvider extends ChangeNotifier {
       
       // Initialize services
       await _smsService.initialize();
+      await _ussdService.initialize();
       await _statisticsService.initialize();
       
       // Subscribe to status updates
@@ -70,13 +73,13 @@ class GatewayProvider extends ChangeNotifier {
 
       // Subscribe to SMS updates
       _smsSubscription = _smsService.messagesStream.listen((messages) {
-        _smsMessages = messages;
+        _smsMessages = List<SmsMessage>.from(messages);
         notifyListeners();
       });
 
       // Subscribe to new SMS
       _newSmsSubscription = _smsService.newMessageStream.listen((message) {
-        _statisticsService.addSms(message);
+        _statisticsService.addSms(message as SmsMessage);
         notifyListeners();
       });
 
@@ -174,19 +177,40 @@ class GatewayProvider extends ChangeNotifier {
   }
 
   Future<List<SmsMessage>> getMessagesByType(SmsType type) async {
-    return await _smsService.getMessagesByType(type);
+    final messages = await _smsService.getMessagesByType(type);
+    return List<SmsMessage>.from(messages);
   }
 
   Future<List<SmsMessage>> getMessagesByNumber(String number) async {
-    return await _smsService.getMessagesByNumber(number);
+    final messages = await _smsService.getMessagesByNumber(number);
+    return List<SmsMessage>.from(messages);
   }
 
   Future<List<SmsMessage>> searchMessages(String query) async {
-    return await _smsService.searchMessages(query);
+    final messages = await _smsService.searchMessages(query);
+    return List<SmsMessage>.from(messages);
   }
 
   Future<Map<String, int>> getMessageCounts() async {
     return await _smsService.getMessageCounts();
+  }
+
+  Future<void> refreshSmsMessages() async {
+    await _smsService.refreshMessages();
+  }
+
+  Future<String?> sendUssdRequest(String ussdCode) async {
+    try {
+      final result = await _ussdService.sendUssdRequest(ussdCode);
+      return result;
+    } catch (e) {
+      _logger.e('Error sending USSD request: $e');
+      return null;
+    }
+  }
+
+  List<String> getCommonUssdCodes() {
+    return _ussdService.getCommonUssdCodes();
   }
 
   Future<Map<String, dynamic>> getDeviceInfo() async {
@@ -227,6 +251,7 @@ class GatewayProvider extends ChangeNotifier {
     _newSmsSubscription?.cancel();
     _gatewayService.dispose();
     _smsService.dispose();
+    _ussdService.dispose();
     _statisticsService.dispose();
     super.dispose();
   }

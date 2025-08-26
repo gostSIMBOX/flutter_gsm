@@ -204,14 +204,14 @@ class SipStatusCard extends StatelessWidget {
               runSpacing: 8,
               children: [
                 ...connection.activeCodecs.map((codec) => _buildCodecChip(
-                  context: context,
+                  context,
                   codec,
                   isActive: true,
                 )),
                 ...connection.supportedCodecs
                     .where((codec) => !connection.activeCodecs.contains(codec))
                     .map((codec) => _buildCodecChip(
-                      context: context,
+                      context,
                       codec,
                       isActive: false,
                     )),

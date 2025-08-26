@@ -242,12 +242,16 @@ class _DashboardScreenState extends State<DashboardScreen>
               color: AppColors.primary,
               onTap: () => Navigator.pushNamed(context, '/analytics'),
             ),
-            StatsCard(
-              title: 'SMS Messages',
-              value: '0',
-              icon: Icons.sms,
-              color: AppColors.accent,
-              onTap: () => Navigator.pushNamed(context, '/sms'),
+            Consumer<GatewayProvider>(
+              builder: (context, gatewayProvider, child) {
+                return StatsCard(
+                  title: 'SMS Messages',
+                  value: gatewayProvider.smsMessages.length.toString(),
+                  icon: Icons.sms,
+                  color: AppColors.accent,
+                  onTap: () => Navigator.pushNamed(context, '/sms'),
+                );
+              },
             ),
             StatsCard(
               title: 'Active Lines',
@@ -391,6 +395,13 @@ class _DashboardScreenState extends State<DashboardScreen>
               icon: Icons.sms,
               color: AppColors.primary,
               onTap: () => Navigator.pushNamed(context, '/sms'),
+            ),
+            _buildActionCard(
+              context: context,
+              title: 'USSD',
+              icon: Icons.phone_android,
+              color: AppColors.accent,
+              onTap: () => Navigator.pushNamed(context, '/ussd'),
             ),
             _buildActionCard(
               context: context,

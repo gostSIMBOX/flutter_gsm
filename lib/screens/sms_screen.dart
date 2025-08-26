@@ -444,7 +444,7 @@ class _SmsScreenState extends State<SmsScreen> {
   Future<void> _refreshMessages() async {
     try {
       final provider = Provider.of<GatewayProvider>(context, listen: false);
-      await provider._smsService.refreshMessages();
+      await provider.refreshSmsMessages();
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

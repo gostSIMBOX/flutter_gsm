@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter_smsussd/flutter_smsussd.dart';
+import 'package:flutter_smsussd/flutter_smsussd.dart' as smsussd;
 import '../models/sms_message.dart';
 
 class SmsService {
@@ -7,7 +7,7 @@ class SmsService {
   factory SmsService() => _instance;
   SmsService._internal();
 
-  final FlutterSmsussd _smsussd = FlutterSmsussd();
+  final smsussd.FlutterSmsussd _smsussd = smsussd.FlutterSmsussd();
   final StreamController<List<SmsMessage>> _messagesController = 
       StreamController<List<SmsMessage>>.broadcast();
   final StreamController<SmsMessage> _newMessageController = 
