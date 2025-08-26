@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:flutter_tele/flutter_tele.dart';
+import 'package:flutter_smsussd/flutter_smsussd.dart';
 import '../models/sms_message.dart';
 
 class SmsService {
@@ -7,7 +7,7 @@ class SmsService {
   factory SmsService() => _instance;
   SmsService._internal();
 
-  final TeleEndpoint _teleEndpoint = TeleEndpoint();
+  final FlutterSmsussd _smsussd = FlutterSmsussd();
   final StreamController<List<SmsMessage>> _messagesController = 
       StreamController<List<SmsMessage>>.broadcast();
   final StreamController<SmsMessage> _newMessageController = 
@@ -17,37 +17,69 @@ class SmsService {
   Stream<SmsMessage> get newMessageStream => _newMessageController.stream;
 
   List<SmsMessage> _messages = [];
-  StreamSubscription? _smsEventSubscription;
+  bool _isInitialized = false;
 
   Future<void> initialize() async {
     try {
-      // Setup SMS event listeners
-      _smsEventSubscription = _teleEndpoint.on('sms_received').listen((event) {
-        _handleNewSms(event);
-      });
+      // Check and request SMS permissions
+      final hasPermissions = await _smsussd.hasSmsPermissions();
+      if (!hasPermissions) {
+        final granted = await _smsussd.requestSmsPermissions();
+        if (!granted) {
+          throw Exception('SMS permissions not granted');
+        }
+      }
 
       // Load existing messages
       await loadMessages();
+      
+      _isInitialized = true;
+      print('SMS service initialized successfully');
     } catch (e) {
       print('Error initializing SMS service: $e');
+      rethrow;
     }
   }
 
   Future<void> loadMessages() async {
     try {
-      // final rawMessages = await _teleEndpoint.getSmsMessages();
-      // _messages = rawMessages.map((msg) => SmsMessage.fromJson(msg)).toList();
+      final rawMessages = await _smsussd.getSmsMessages();
+      _messages = rawMessages.map((msg) => SmsMessage.fromSmsussd(msg)).toList();
       _messagesController.add(_messages);
     } catch (e) {
       print('Error loading SMS messages: $e');
+      rethrow;
     }
   }
 
   Future<bool> sendSms(String number, String message) async {
     try {
-      // final result = await _teleEndpoint.sendSms(number, message);
-      // return result['success'] == true;
-      return true;
+      if (!_isInitialized) {
+        throw Exception('SMS service not initialized');
+      }
+
+      final result = await _smsussd.sendSms(
+        phoneNumber: number,
+        message: message,
+      );
+
+      if (result) {
+        // Create a new SMS message for the sent message
+        final sentMessage = SmsMessage(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          address: number,
+          body: message,
+          timestamp: DateTime.now(),
+          type: SmsType.sent,
+          status: SmsStatus.sent,
+        );
+
+        _messages.insert(0, sentMessage);
+        _messagesController.add(_messages);
+        _newMessageController.add(sentMessage);
+      }
+
+      return result;
     } catch (e) {
       print('Error sending SMS: $e');
       return false;
@@ -56,9 +88,15 @@ class SmsService {
 
   Future<bool> deleteSms(String messageId) async {
     try {
-      // final result = await _teleEndpoint.deleteSms(messageId);
-      // return result['success'] == true;
-      return true;
+      // Note: flutter_smsussd doesn't have delete functionality yet
+      // This is a placeholder for future implementation
+      final index = _messages.indexWhere((msg) => msg.id == messageId);
+      if (index != -1) {
+        _messages.removeAt(index);
+        _messagesController.add(_messages);
+        return true;
+      }
+      return false;
     } catch (e) {
       print('Error deleting SMS: $e');
       return false;
@@ -67,9 +105,15 @@ class SmsService {
 
   Future<bool> markAsRead(String messageId) async {
     try {
-      // final result = await _teleEndpoint.markSmsAsRead(messageId);
-      // return result['success'] == true;
-      return true;
+      final index = _messages.indexWhere((msg) => msg.id == messageId);
+      if (index != -1) {
+        final message = _messages[index];
+        final updatedMessage = message.copyWith(isRead: true);
+        _messages[index] = updatedMessage;
+        _messagesController.add(_messages);
+        return true;
+      }
+      return false;
     } catch (e) {
       print('Error marking SMS as read: $e');
       return false;
@@ -81,13 +125,19 @@ class SmsService {
   }
 
   Future<List<SmsMessage>> getMessagesByNumber(String number) async {
-    return _messages.where((msg) => msg.address == number).toList();
+    try {
+      final rawMessages = await _smsussd.getSmsMessagesByPhoneNumber(number);
+      return rawMessages.map((msg) => SmsMessage.fromSmsussd(msg)).toList();
+    } catch (e) {
+      print('Error getting messages by number: $e');
+      return _messages.where((msg) => msg.address == number).toList();
+    }
   }
 
   Future<List<SmsMessage>> searchMessages(String query) async {
     return _messages.where((msg) => 
-      msg.address.contains(query) || 
-      msg.body.contains(query)
+      msg.address.toLowerCase().contains(query.toLowerCase()) || 
+      msg.body.toLowerCase().contains(query.toLowerCase())
     ).toList();
   }
 
@@ -99,20 +149,20 @@ class SmsService {
     return counts;
   }
 
-  void _handleNewSms(Map<String, dynamic> event) {
-    try {
-      final smsMessage = SmsMessage.fromJson(event);
-      _messages.insert(0, smsMessage);
-      _messagesController.add(_messages);
-      _newMessageController.add(smsMessage);
-    } catch (e) {
-      print('Error handling new SMS: $e');
-    }
+  Future<void> refreshMessages() async {
+    await loadMessages();
+  }
+
+  Future<bool> hasPermissions() async {
+    return await _smsussd.hasSmsPermissions();
+  }
+
+  Future<bool> requestPermissions() async {
+    return await _smsussd.requestSmsPermissions();
   }
 
   void dispose() {
     _messagesController.close();
     _newMessageController.close();
-    _smsEventSubscription?.cancel();
   }
 } 

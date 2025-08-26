@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../utils/text_styles.dart';
+import '../models/sms_message.dart';
+import '../providers/gateway_provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class SmsScreen extends StatefulWidget {
@@ -10,7 +13,6 @@ class SmsScreen extends StatefulWidget {
 }
 
 class _SmsScreenState extends State<SmsScreen> {
-  final List<SmsMessage> _messages = [];
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _messageController = TextEditingController();
   bool _isLoading = false;
@@ -18,28 +20,10 @@ class _SmsScreenState extends State<SmsScreen> {
   @override
   void initState() {
     super.initState();
-    _loadMockMessages();
-  }
-
-  void _loadMockMessages() {
-    _messages.addAll([
-      SmsMessage(
-        id: '1',
-        phoneNumber: '+1234567890',
-        message: 'Test message from gateway',
-        timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
-        type: SmsType.outgoing,
-        status: SmsStatus.sent,
-      ),
-      SmsMessage(
-        id: '2',
-        phoneNumber: '+0987654321',
-        message: 'Incoming SMS notification',
-        timestamp: DateTime.now().subtract(const Duration(hours: 2)),
-        type: SmsType.incoming,
-        status: SmsStatus.received,
-      ),
-    ]);
+    // Load messages when screen initializes
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _refreshMessages();
+    });
   }
 
   @override
@@ -67,15 +51,21 @@ class _SmsScreenState extends State<SmsScreen> {
           ),
         ],
       ),
-      body: Column(
-        children: [
-          _buildStatsCard(),
-          Expanded(
-            child: _messages.isEmpty
-                ? _buildEmptyState()
-                : _buildMessagesList(),
-          ),
-        ],
+      body: Consumer<GatewayProvider>(
+        builder: (context, provider, child) {
+          final messages = provider.smsMessages;
+          
+          return Column(
+            children: [
+              _buildStatsCard(provider),
+              Expanded(
+                child: messages.isEmpty
+                    ? _buildEmptyState()
+                    : _buildMessagesList(messages),
+              ),
+            ],
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showSendSmsDialog,
@@ -85,7 +75,7 @@ class _SmsScreenState extends State<SmsScreen> {
     );
   }
 
-  Widget _buildStatsCard() {
+  Widget _buildStatsCard(GatewayProvider provider) {
     return Container(
       margin: const EdgeInsets.all(16),
       padding: const EdgeInsets.all(20),
@@ -98,108 +88,58 @@ class _SmsScreenState extends State<SmsScreen> {
         ),
       ),
       child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          Expanded(
-            child: _buildStatItemWithTooltip(
-              icon: Icons.inbox,
-              label: 'Total SMS',
-              value: '${_messages.length}',
-              color: Colors.blue,
-              tooltip: 'Total number of SMS messages in the system',
-            ),
+          _buildStatItem(
+            'Total',
+            provider.smsMessages.length.toString(),
+            Icons.message,
+            Colors.blue,
           ),
-          Expanded(
-            child: _buildStatItemWithTooltip(
-              icon: Icons.call_made,
-              label: 'Sent',
-              value: '${_messages.where((m) => m.type == SmsType.outgoing).length}',
-              color: Colors.green,
-              tooltip: 'Number of SMS messages sent from the gateway',
-            ),
+          _buildStatItem(
+            'Inbox',
+            provider.smsMessages
+                .where((msg) => msg.type == SmsType.inbox)
+                .length
+                .toString(),
+            Icons.inbox,
+            Colors.green,
           ),
-          Expanded(
-            child: _buildStatItemWithTooltip(
-              icon: Icons.call_received,
-              label: 'Received',
-              value: '${_messages.where((m) => m.type == SmsType.incoming).length}',
-              color: Colors.orange,
-              tooltip: 'Number of SMS messages received by the gateway',
-            ),
+          _buildStatItem(
+            'Sent',
+            provider.smsMessages
+                .where((msg) => msg.type == SmsType.sent)
+                .length
+                .toString(),
+            Icons.send,
+            Colors.orange,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatItem({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
+  Widget _buildStatItem(String label, String value, IconData icon, Color color) {
     return Column(
       children: [
-        Icon(
-          icon,
-          color: color,
-          size: 24,
-        ),
+        Icon(icon, color: color, size: 24),
         const SizedBox(height: 8),
         Text(
           value,
-          style: AppTextStyles.poppinsBold(
+          style: AppTextStyles.poppins(
             fontSize: 18,
+            fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
         ),
-        const SizedBox(height: 4),
         Text(
           label,
           style: AppTextStyles.poppins(
             fontSize: 12,
             color: Colors.grey[400],
           ),
-          textAlign: TextAlign.center,
         ),
       ],
-    );
-  }
-
-  Widget _buildStatItemWithTooltip({
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-    required String tooltip,
-  }) {
-    return Tooltip(
-      message: tooltip,
-      child: Column(
-        children: [
-          Icon(
-            icon,
-            color: color,
-            size: 24,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: AppTextStyles.poppinsBold(
-              fontSize: 18,
-              color: Colors.white,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: AppTextStyles.poppins(
-              fontSize: 12,
-              color: Colors.grey[400],
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
     );
   }
 
@@ -209,24 +149,25 @@ class _SmsScreenState extends State<SmsScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.sms,
+            Icons.message_outlined,
             size: 64,
             color: Colors.grey[600],
           ),
           const SizedBox(height: 16),
           Text(
             'No SMS messages',
-            style: AppTextStyles.poppinsBold(
+            style: AppTextStyles.poppins(
               fontSize: 18,
+              fontWeight: FontWeight.w500,
               color: Colors.grey[400],
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Send your first SMS message',
+            'Send your first message using the + button',
             style: AppTextStyles.poppins(
               fontSize: 14,
-              color: Colors.grey[500],
+              color: Colors.grey[600],
             ),
           ),
         ],
@@ -234,18 +175,21 @@ class _SmsScreenState extends State<SmsScreen> {
     );
   }
 
-  Widget _buildMessagesList() {
+  Widget _buildMessagesList(List<SmsMessage> messages) {
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: _messages.length,
+      itemCount: messages.length,
       itemBuilder: (context, index) {
-        final message = _messages[index];
+        final message = messages[index];
         return _buildMessageCard(message);
       },
     );
   }
 
   Widget _buildMessageCard(SmsMessage message) {
+    final isIncoming = message.type == SmsType.inbox;
+    final isRead = message.isRead;
+    
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -253,9 +197,9 @@ class _SmsScreenState extends State<SmsScreen> {
         color: const Color(0xFF1A1A1A),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: message.type == SmsType.outgoing
-              ? Colors.blue.withOpacity(0.3)
-              : Colors.orange.withOpacity(0.3),
+          color: isIncoming 
+              ? Colors.green.withOpacity(0.3)
+              : Colors.blue.withOpacity(0.3),
           width: 1,
         ),
       ),
@@ -263,74 +207,102 @@ class _SmsScreenState extends State<SmsScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(
-                message.type == SmsType.outgoing ? Icons.call_made : Icons.call_received,
-                color: message.type == SmsType.outgoing ? Colors.blue : Colors.orange,
-                size: 20,
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  message.phoneNumber,
-                  style: AppTextStyles.poppinsBold(
-                    fontSize: 16,
-                    color: Colors.white,
+              Row(
+                children: [
+                  Icon(
+                    isIncoming ? Icons.call_received : Icons.call_made,
+                    color: isIncoming ? Colors.green : Colors.blue,
+                    size: 16,
                   ),
+                  const SizedBox(width: 8),
+                  Text(
+                    message.address,
+                    style: AppTextStyles.poppins(
+                      fontWeight: FontWeight.w600,
+                      color: isRead ? Colors.grey[400] : Colors.white,
+                    ),
+                  ),
+                ],
+              ),
+              Text(
+                _formatTimestamp(message.timestamp),
+                style: AppTextStyles.poppins(
+                  fontSize: 12,
+                  color: Colors.grey[600],
                 ),
               ),
-              _buildStatusIcon(message.status),
             ],
           ),
           const SizedBox(height: 8),
           Text(
-            message.message,
+            message.body,
             style: AppTextStyles.poppins(
-              fontSize: 14,
-              color: Colors.grey[300],
+              color: isRead ? Colors.grey[300] : Colors.white,
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            _formatTimestamp(message.timestamp),
-            style: AppTextStyles.poppins(
-              fontSize: 12,
-              color: Colors.grey[500],
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _getStatusColor(message.status).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  message.status.name.toUpperCase(),
+                  style: AppTextStyles.poppins(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                    color: _getStatusColor(message.status),
+                  ),
+                ),
+              ),
+              if (isIncoming && !isRead)
+                Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Colors.blue,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+            ],
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatusIcon(SmsStatus status) {
-    IconData icon;
-    Color color;
-
+  Color _getStatusColor(SmsStatus status) {
     switch (status) {
       case SmsStatus.sent:
-        icon = Icons.check_circle;
-        color = Colors.green;
-        break;
-      case SmsStatus.received:
-        icon = Icons.done_all;
-        color = Colors.blue;
-        break;
+        return Colors.green;
+      case SmsStatus.delivered:
+        return Colors.blue;
       case SmsStatus.failed:
-        icon = Icons.error;
-        color = Colors.red;
-        break;
+        return Colors.red;
       case SmsStatus.pending:
-        icon = Icons.schedule;
-        color = Colors.orange;
-        break;
+        return Colors.orange;
     }
+  }
 
-    return Icon(
-      icon,
-      color: color,
-      size: 16,
-    );
+  String _formatTimestamp(DateTime timestamp) {
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+
+    if (difference.inDays > 0) {
+      return '${difference.inDays}d ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m ago';
+    } else {
+      return 'Just now';
+    }
   }
 
   void _showSendSmsDialog() {
@@ -343,8 +315,8 @@ class _SmsScreenState extends State<SmsScreen> {
         backgroundColor: const Color(0xFF1A1A1A),
         title: Text(
           'Send SMS',
-          style: AppTextStyles.poppinsBold(
-            fontSize: 18,
+          style: AppTextStyles.poppins(
+            fontWeight: FontWeight.w600,
             color: Colors.white,
           ),
         ),
@@ -357,39 +329,34 @@ class _SmsScreenState extends State<SmsScreen> {
               decoration: InputDecoration(
                 labelText: 'Phone Number',
                 labelStyle: AppTextStyles.poppins(color: Colors.grey[400]),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(color: Colors.grey[600]!),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue),
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.blue[400]!),
                 ),
               ),
+              keyboardType: TextInputType.phone,
             ),
             const SizedBox(height: 16),
             TextField(
               controller: _messageController,
               style: AppTextStyles.poppins(color: Colors.white),
-              maxLines: 3,
               decoration: InputDecoration(
                 labelText: 'Message',
                 labelStyle: AppTextStyles.poppins(color: Colors.grey[400]),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
                 enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8),
                   borderSide: BorderSide(color: Colors.grey[600]!),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 focusedBorder: OutlineInputBorder(
+                  borderSide: BorderSide(color: Colors.blue),
                   borderRadius: BorderRadius.circular(8),
-                  borderSide: BorderSide(color: Colors.blue[400]!),
                 ),
               ),
+              maxLines: 3,
             ),
           ],
         ),
@@ -437,82 +404,54 @@ class _SmsScreenState extends State<SmsScreen> {
       _isLoading = true;
     });
 
-    // Simulate sending SMS
-    await Future.delayed(const Duration(seconds: 2));
+    try {
+      final provider = Provider.of<GatewayProvider>(context, listen: false);
+      final success = await provider.sendSms(
+        _phoneController.text,
+        _messageController.text,
+      );
 
-    final newMessage = SmsMessage(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      phoneNumber: _phoneController.text,
-      message: _messageController.text,
-      timestamp: DateTime.now(),
-      type: SmsType.outgoing,
-      status: SmsStatus.sent,
-    );
-
-    setState(() {
-      _messages.insert(0, newMessage);
-      _isLoading = false;
-    });
-
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('SMS sent successfully'),
-        backgroundColor: Colors.green,
-      ),
-    );
-  }
-
-  void _refreshMessages() {
-    // Simulate refresh
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Messages refreshed'),
-        backgroundColor: Colors.blue,
-      ),
-    );
-  }
-
-  String _formatTimestamp(DateTime timestamp) {
-    final now = DateTime.now();
-    final difference = now.difference(timestamp);
-
-    if (difference.inMinutes < 1) {
-      return 'Just now';
-    } else if (difference.inMinutes < 60) {
-      return '${difference.inMinutes}m ago';
-    } else if (difference.inHours < 24) {
-      return '${difference.inHours}h ago';
-    } else {
-      return '${difference.inDays}d ago';
+      if (success) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('SMS sent successfully'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to send SMS'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 
-  @override
-  void dispose() {
-    _phoneController.dispose();
-    _messageController.dispose();
-    super.dispose();
+  Future<void> _refreshMessages() async {
+    try {
+      final provider = Provider.of<GatewayProvider>(context, listen: false);
+      await provider._smsService.refreshMessages();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error refreshing messages: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
-}
-
-enum SmsType { incoming, outgoing }
-enum SmsStatus { sent, received, failed, pending }
-
-class SmsMessage {
-  final String id;
-  final String phoneNumber;
-  final String message;
-  final DateTime timestamp;
-  final SmsType type;
-  final SmsStatus status;
-
-  SmsMessage({
-    required this.id,
-    required this.phoneNumber,
-    required this.message,
-    required this.timestamp,
-    required this.type,
-    required this.status,
-  });
 } 
