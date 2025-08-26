@@ -68,6 +68,10 @@ dependencies:
   # Telephony integration
   flutter_tele:
     path: ../gost_simbox_tele
+  
+  # SMS and USSD functionality
+  flutter_smsussd:
+    path: ../../libs/libsFlutter/flutter_smsussd
 
 dev_dependencies:
   flutter_test:
