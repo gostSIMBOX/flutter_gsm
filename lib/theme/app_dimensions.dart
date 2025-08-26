@@ -1,4 +1,4 @@
-/// Размеры и отступы приложения GSM-SIP Gateway
+/// Размеры и отступы приложения GOSTsimbox Gateway
 /// Обеспечивает консистентность дизайна
 /// Основан на технических тонах с акцентами связи и безопасности
 class AppDimensions {
@@ -119,7 +119,7 @@ class AppDimensions {
   static const double modalMaxWidth = 400.0;
   static const double modalMaxHeight = 600.0;
 
-  // Размеры для GSM-SIP Gateway специфичные
+  // Размеры для GOSTsimbox Gateway специфичные
   static const double gatewayStatusCardHeight = 120.0;
   static const double signalIndicatorSize = 32.0;
   static const double callStatusCardHeight = 140.0;

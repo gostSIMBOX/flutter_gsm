@@ -3,7 +3,7 @@ import 'app_colors.dart';
 import 'app_dimensions.dart';
 import 'app_gradients.dart';
 
-/// Общие виджеты приложения GSM-SIP Gateway
+/// Общие виджеты приложения GOSTsimbox Gateway
 /// Обеспечивает консистентность UI компонентов
 /// Поддерживает светлую и темную темы
 /// Основан на технических тонах с акцентами связи и безопасности

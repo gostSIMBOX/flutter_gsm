@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Сервис для управления темой приложения GSM-SIP Gateway
+/// Сервис для управления темой приложения GOSTsimbox Gateway
 /// Позволяет переключаться между светлой и темной темой
 class ThemeService extends ChangeNotifier {
   static const String _themeKey = 'gost_simbox_theme';

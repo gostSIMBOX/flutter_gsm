@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
-/// Градиенты для приложения GSM-SIP Gateway
+/// Градиенты для приложения GOSTsimbox Gateway
 /// Обеспечивает визуальную привлекательность и консистентность
 /// Основан на технических тонах с акцентами связи и безопасности
 class AppGradients {
@@ -58,7 +58,7 @@ class AppGradients {
     end: Alignment.bottomRight,
   );
 
-  // Градиенты для GSM-SIP Gateway
+  // Градиенты для GOSTsimbox Gateway
   static const LinearGradient gatewayConnectedGradient = LinearGradient(
     colors: [AppColors.gatewayConnected, Color(0xFF34D399)],
     begin: Alignment.centerLeft,

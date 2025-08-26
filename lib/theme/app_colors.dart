@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Цветовая палитра для GSM-SIP Gateway
+/// Цветовая палитра для GOSTsimbox Gateway
 /// Основана на технических тонах с акцентами связи и безопасности
 class AppColors {
   // Приватный конструктор
@@ -164,7 +164,7 @@ class AppColors {
     end: Alignment.bottomRight,
   );
 
-  // Специальные цвета для GSM-SIP Gateway
+  // Специальные цвета для GOSTsimbox Gateway
   static const Color gatewayConnected = success;
   static const Color gatewayDisconnected = error;
   static const Color gatewayConnecting = warning;

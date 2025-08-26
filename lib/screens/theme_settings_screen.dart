@@ -4,7 +4,7 @@ import '../services/theme_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_dimensions.dart';
 
-/// Экран настроек темы для GSM-SIP Gateway
+/// Экран настроек темы для GOSTsimbox Gateway
 class ThemeSettingsScreen extends StatelessWidget {
   const ThemeSettingsScreen({Key? key}) : super(key: key);
 

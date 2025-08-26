@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'app_colors.dart';
 
-/// Тема приложения GSM-SIP Gateway
+/// Тема приложения GOSTsimbox Gateway
 /// Основана на технических тонах с акцентами связи и безопасности
 class AppTheme {
   // Приватный конструктор
