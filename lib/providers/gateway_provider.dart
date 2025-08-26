@@ -4,15 +4,16 @@ import 'package:logger/logger.dart';
 import '../models/gateway_config.dart';
 import '../models/gateway_status.dart';
 import '../models/sms_message.dart';
+import '../models/smpp_config.dart';
 import '../services/gateway_service.dart';
-import '../services/sms_service.dart';
+import '../services/sms_service_smpp.dart';
 import '../services/ussd_service.dart';
 import '../services/statistics_service.dart';
 import '../services/storage_service.dart';
 
 class GatewayProvider extends ChangeNotifier {
   final GatewayService _gatewayService = GatewayService();
-  final SmsService _smsService = SmsService();
+  final SmsServiceSmpp _smsService = SmsServiceSmpp();
   final UssdService _ussdService = UssdService();
   final StatisticsService _statisticsService = StatisticsService();
   final StorageService _storageService = StorageService();
@@ -198,6 +199,33 @@ class GatewayProvider extends ChangeNotifier {
   Future<void> refreshSmsMessages() async {
     await _smsService.refreshMessages();
   }
+
+  // SMS Service getter
+  SmsServiceSmpp get smsService => _smsService;
+
+  // SMPP methods
+  bool get isSmppEnabled => _smsService.isSmppEnabled;
+  bool get isSmppConnected => _smsService.isSmppConnected;
+  SmppConnectionState get smppConnectionState => _smsService.smppConnectionState;
+
+  Future<bool> connectSmpp() async {
+    return await _smsService.connectSmpp();
+  }
+
+  Future<void> disconnectSmpp() async {
+    await _smsService.disconnectSmpp();
+  }
+
+  Future<void> updateSmppConfig(SmppConfig config) async {
+    await _smsService.updateSmppConfig(config);
+  }
+
+  void disableSmpp() {
+    _smsService.disableSmpp();
+  }
+
+  Stream<SmppConnectionState> get smppConnectionStateStream => _smsService.smppConnectionStateStream;
+  Stream<String> get smppLogStream => _smsService.smppLogStream;
 
   Future<String?> sendUssdRequest(String ussdCode) async {
     try {

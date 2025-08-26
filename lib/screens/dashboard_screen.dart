@@ -405,6 +405,13 @@ class _DashboardScreenState extends State<DashboardScreen>
             ),
             _buildActionCard(
               context: context,
+              title: 'SMPP Settings',
+              icon: Icons.settings,
+              color: Colors.purple,
+              onTap: () => Navigator.pushNamed(context, '/smpp-settings'),
+            ),
+            _buildActionCard(
+              context: context,
               title: 'Statistics',
               icon: Icons.analytics,
               color: AppColors.technical,

@@ -11,6 +11,8 @@ import 'screens/language_selection_screen.dart';
 import 'screens/info_screen.dart';
 import 'screens/sms_screen.dart';
 import 'screens/ussd_screen.dart';
+import 'screens/smpp_settings_screen.dart';
+import 'screens/smpp_logs_screen.dart';
 import 'screens/analytics_screen.dart';
 import 'screens/lines_screen.dart';
 import 'screens/sims_screen.dart';
@@ -109,6 +111,8 @@ class MyApp extends StatelessWidget {
               '/info': (context) => const InfoScreen(),
               '/sms': (context) => const SmsScreen(),
               '/ussd': (context) => const UssdScreen(),
+        '/smpp-settings': (context) => const SmppSettingsScreen(),
+        '/smpp-logs': (context) => const SmppLogsScreen(),
               '/analytics': (context) => const AnalyticsScreen(),
               '/lines': (context) => const LinesScreen(),
               '/sims': (context) => const SimsScreen(),
