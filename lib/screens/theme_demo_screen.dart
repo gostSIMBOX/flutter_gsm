@@ -409,7 +409,7 @@ class ThemeDemoScreen extends StatelessWidget {
           decoration: const InputDecoration(
             labelText: 'Server Address',
             hintText: 'Enter server address',
-            prefixIcon: Icon(Icons.server),
+            prefixIcon: Icon(Icons.computer),
           ),
         ),
         const SizedBox(height: AppDimensions.paddingM),

@@ -10,6 +10,8 @@ import '../widgets/active_call_card.dart';
 import '../widgets/sip_status_card.dart';
 import '../widgets/status_indicator.dart';
 import '../services/theme_service.dart';
+import '../models/sip_connection.dart';
+import '../theme/app_colors.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -73,12 +75,15 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
+      backgroundColor: colorScheme.background,
       body: SafeArea(
         child: Column(
           children: [
-            _buildAppBar(),
+            _buildAppBar(context),
             Expanded(
               child: RefreshIndicator(
                 onRefresh: () async {
@@ -95,17 +100,17 @@ class _DashboardScreenState extends State<DashboardScreen>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildQuickStats(),
+                          _buildQuickStats(context),
                           const SizedBox(height: 24),
-                          _buildActiveCalls(),
+                          _buildActiveCalls(context),
                           const SizedBox(height: 24),
-                          _buildLinesSection(),
+                          _buildLinesSection(context),
                           const SizedBox(height: 24),
-                          _buildQuickActions(),
+                          _buildQuickActions(context),
                           const SizedBox(height: 24),
-                          _buildThemeIndicators(),
+                          _buildThemeIndicators(context),
                           const SizedBox(height: 24),
-                          _buildRecentActivity(),
+                          _buildRecentActivity(context),
                         ],
                       ),
                     ),
@@ -119,14 +124,17 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildAppBar() {
+  Widget _buildAppBar(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: colorScheme.surface,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.1),
+            color: colorScheme.shadow.withOpacity(0.1),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -134,10 +142,17 @@ class _DashboardScreenState extends State<DashboardScreen>
       ),
       child: Row(
         children: [
-          const Icon(
-            Icons.phone_android,
-            color: Colors.white,
-            size: 32,
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.phone_android,
+              color: AppColors.primary,
+              size: 24,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -146,9 +161,9 @@ class _DashboardScreenState extends State<DashboardScreen>
               children: [
                 Text(
                   'GSM-SIP Gateway',
-                  style: TextStyles.headline.copyWith(
-                    color: Colors.white,
-                    fontSize: 20,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 Consumer<GatewayProvider>(
@@ -156,9 +171,9 @@ class _DashboardScreenState extends State<DashboardScreen>
                     final status = provider.status;
                     return Text(
                       _getStatusText(status.state),
-                      style: TextStyles.body.copyWith(
+                      style: theme.textTheme.bodyMedium?.copyWith(
                         color: _getStatusColor(status.state),
-                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
                       ),
                     );
                   },
@@ -167,36 +182,36 @@ class _DashboardScreenState extends State<DashboardScreen>
             ),
           ),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
+            icon: Icon(Icons.more_vert, color: colorScheme.onSurface),
             onSelected: (value) => _handleMenuAction(value),
             itemBuilder: (context) => [
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'settings',
                 child: Row(
                   children: [
-                    Icon(Icons.settings),
-                    SizedBox(width: 8),
-                    Text('Settings'),
+                    Icon(Icons.settings, color: colorScheme.onSurfaceVariant),
+                    const SizedBox(width: 8),
+                    Text('Settings', style: TextStyle(color: colorScheme.onSurface)),
                   ],
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'logs',
                 child: Row(
                   children: [
-                    Icon(Icons.list_alt),
-                    SizedBox(width: 8),
-                    Text('Logs'),
+                    Icon(Icons.list_alt, color: colorScheme.onSurfaceVariant),
+                    const SizedBox(width: 8),
+                    Text('Logs', style: TextStyle(color: colorScheme.onSurface)),
                   ],
                 ),
               ),
-              const PopupMenuItem(
+              PopupMenuItem(
                 value: 'info',
                 child: Row(
                   children: [
-                    Icon(Icons.info),
-                    SizedBox(width: 8),
-                    Text('Info'),
+                    Icon(Icons.info, color: colorScheme.onSurfaceVariant),
+                    const SizedBox(width: 8),
+                    Text('Info', style: TextStyle(color: colorScheme.onSurface)),
                   ],
                 ),
               ),
@@ -207,7 +222,9 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildQuickStats() {
+  Widget _buildQuickStats(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Consumer<DashboardProvider>(
       builder: (context, dashboardProvider, child) {
         return GridView.count(
@@ -222,28 +239,28 @@ class _DashboardScreenState extends State<DashboardScreen>
               title: 'Total Calls',
               value: '0',
               icon: Icons.call,
-              color: Colors.blue,
+              color: AppColors.primary,
               onTap: () => Navigator.pushNamed(context, '/analytics'),
             ),
             StatsCard(
               title: 'SMS Messages',
               value: '0',
               icon: Icons.sms,
-              color: Colors.green,
+              color: AppColors.accent,
               onTap: () => Navigator.pushNamed(context, '/sms'),
             ),
             StatsCard(
               title: 'Active Lines',
               value: dashboardProvider.activeLinesCount.toString(),
               icon: Icons.phone,
-              color: Colors.orange,
+              color: AppColors.technical,
               onTap: () => Navigator.pushNamed(context, '/lines'),
             ),
             StatsCard(
               title: 'Uptime',
               value: '0h',
               icon: Icons.timer,
-              color: Colors.purple,
+              color: AppColors.warning,
               onTap: () => Navigator.pushNamed(context, '/info'),
             ),
           ],
@@ -252,7 +269,10 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildActiveCalls() {
+  Widget _buildActiveCalls(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Consumer<DashboardProvider>(
       builder: (context, dashboardProvider, child) {
         if (dashboardProvider.activeCalls.isEmpty) {
@@ -264,9 +284,9 @@ class _DashboardScreenState extends State<DashboardScreen>
           children: [
             Text(
               'Active Call',
-              style: TextStyles.headline.copyWith(
-                color: Colors.white,
-                fontSize: 18,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 12),
@@ -277,7 +297,10 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildLinesSection() {
+  Widget _buildLinesSection(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Consumer<DashboardProvider>(
       builder: (context, dashboardProvider, child) {
         return Column(
@@ -285,9 +308,9 @@ class _DashboardScreenState extends State<DashboardScreen>
           children: [
             Text(
               'Connection Status',
-              style: TextStyles.headline.copyWith(
-                color: Colors.white,
-                fontSize: 18,
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(height: 12),
@@ -295,7 +318,24 @@ class _DashboardScreenState extends State<DashboardScreen>
               children: [
                 Expanded(
                   child: SipStatusCard(
-                    connection: dashboardProvider.sipConnection,
+                    connection: dashboardProvider.sipConnection ?? SipConnection(
+                      status: 'disconnected',
+                      server: '',
+                      port: 5060,
+                      transport: 'UDP',
+                      lastRegistration: DateTime.now(),
+                      registrationExpiry: DateTime.now(),
+                      jitter: 0.0,
+                      latency: 0.0,
+                      bandwidthIn: 0.0,
+                      bandwidthOut: 0.0,
+                      packetLoss: 0.0,
+                      mos: 0.0,
+                      supportedCodecs: [],
+                      activeCodecs: [],
+                      username: '',
+                      isRegistered: false,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -304,7 +344,7 @@ class _DashboardScreenState extends State<DashboardScreen>
                     title: 'GSM Network',
                     status: 'Connected',
                     icon: Icons.signal_cellular_alt,
-                    color: Colors.green,
+                    color: AppColors.success,
                   ),
                 ),
               ],
@@ -315,15 +355,18 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildQuickActions() {
+  Widget _buildQuickActions(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'Quick Actions',
-          style: TextStyles.headline.copyWith(
-            color: Colors.white,
-            fontSize: 18,
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: 12),
@@ -336,27 +379,31 @@ class _DashboardScreenState extends State<DashboardScreen>
           childAspectRatio: 1.8,
           children: [
             _buildActionCard(
+              context: context,
               title: 'Make Call',
               icon: Icons.call,
-              color: Colors.green,
+              color: AppColors.accent,
               onTap: () => Navigator.pushNamed(context, '/calls'),
             ),
             _buildActionCard(
+              context: context,
               title: 'Send SMS',
               icon: Icons.sms,
-              color: Colors.blue,
+              color: AppColors.primary,
               onTap: () => Navigator.pushNamed(context, '/sms'),
             ),
             _buildActionCard(
+              context: context,
               title: 'Statistics',
               icon: Icons.analytics,
-              color: Colors.orange,
+              color: AppColors.technical,
               onTap: () => Navigator.pushNamed(context, '/analytics'),
             ),
             _buildActionCard(
+              context: context,
               title: 'Settings',
               icon: Icons.settings,
-              color: Colors.purple,
+              color: AppColors.warning,
               onTap: () => Navigator.pushNamed(context, '/settings'),
             ),
           ],
@@ -366,13 +413,21 @@ class _DashboardScreenState extends State<DashboardScreen>
   }
 
   Widget _buildActionCard({
+    required BuildContext context,
     required String title,
     required IconData icon,
     required Color color,
     required VoidCallback onTap,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Card(
-      color: const Color(0xFF1A1A1A),
+      color: colorScheme.surface,
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -381,17 +436,24 @@ class _DashboardScreenState extends State<DashboardScreen>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                color: color,
-                size: 32,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: 24,
+                ),
               ),
               const SizedBox(height: 8),
               Text(
                 title,
-                style: TextStyles.body.copyWith(
-                  color: Colors.white,
-                  fontSize: 14,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w500,
                 ),
                 textAlign: TextAlign.center,
               ),
@@ -402,7 +464,10 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  Widget _buildRecentActivity() {
+  Widget _buildRecentActivity(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Consumer<DashboardProvider>(
       builder: (context, dashboardProvider, child) {
         if (dashboardProvider.activeCalls.isEmpty) {
@@ -417,37 +482,45 @@ class _DashboardScreenState extends State<DashboardScreen>
               children: [
                 Text(
                   'Recent Calls',
-                  style: TextStyles.headline.copyWith(
-                    color: Colors.white,
-                    fontSize: 18,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: colorScheme.onSurface,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pushNamed(context, '/calls'),
                   child: Text(
                     'View All',
-                    style: TextStyles.body.copyWith(
-                      color: Colors.blue,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
-            ...dashboardProvider.activeCalls.take(3).map((call) => _buildRecentCallItem(call)),
+            ...dashboardProvider.activeCalls.take(3).map((call) => _buildRecentCallItem(context, call)),
           ],
         );
       },
     );
   }
 
-  Widget _buildRecentCallItem(dynamic call) {
+  Widget _buildRecentCallItem(BuildContext context, dynamic call) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
-      color: const Color(0xFF1A1A1A),
+      color: colorScheme.surface,
+      elevation: 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+      ),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: call.direction == 'incoming' ? Colors.green : Colors.blue,
+          backgroundColor: call.direction == 'incoming' ? AppColors.accent : AppColors.primary,
           child: Icon(
             call.direction == 'incoming' ? Icons.call_received : Icons.call_made,
             color: Colors.white,
@@ -456,21 +529,20 @@ class _DashboardScreenState extends State<DashboardScreen>
         ),
         title: Text(
           call.fromNumber ?? 'Unknown',
-          style: TextStyles.body.copyWith(
-            color: Colors.white,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: colorScheme.onSurface,
             fontWeight: FontWeight.w500,
           ),
         ),
         subtitle: Text(
           _formatDateTime(call.startTime),
-          style: TextStyles.body.copyWith(
-            color: Colors.grey,
-            fontSize: 12,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
           ),
         ),
         trailing: Icon(
           Icons.arrow_forward_ios,
-          color: Colors.grey,
+          color: colorScheme.onSurfaceVariant,
           size: 16,
         ),
         onTap: () => Navigator.pushNamed(context, '/calls'),
@@ -478,82 +550,18 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
-  String _getStatusText(dynamic state) {
-    switch (state) {
-      case 'stopped':
-        return 'Stopped';
-      case 'starting':
-        return 'Starting...';
-      case 'running':
-        return 'Running';
-      case 'registered':
-        return 'Registered';
-      case 'callInProgress':
-        return 'Call in Progress';
-      case 'error':
-        return 'Error';
-      default:
-        return 'Unknown';
-    }
-  }
-
-  Color _getStatusColor(dynamic state) {
-    switch (state) {
-      case 'stopped':
-        return Colors.red;
-      case 'starting':
-        return Colors.orange;
-      case 'running':
-        return Colors.blue;
-      case 'registered':
-        return Colors.green;
-      case 'callInProgress':
-        return Colors.purple;
-      case 'error':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  String _formatDateTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
+  Widget _buildThemeIndicators(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
     
-    if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
-    } else {
-      return 'Just now';
-    }
-  }
-
-  void _handleMenuAction(String action) {
-    switch (action) {
-      case 'settings':
-        Navigator.pushNamed(context, '/settings');
-        break;
-      case 'logs':
-        Navigator.pushNamed(context, '/logs');
-        break;
-      case 'info':
-        Navigator.pushNamed(context, '/info');
-        break;
-    }
-  }
-
-  Widget _buildThemeIndicators() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'System Status',
-          style: TextStyles.headline.copyWith(
-            color: Colors.white,
-            fontSize: 18,
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: colorScheme.onSurface,
+            fontWeight: FontWeight.w600,
           ),
         ),
         const SizedBox(height: 16),
@@ -590,5 +598,72 @@ class _DashboardScreenState extends State<DashboardScreen>
         ),
       ],
     );
+  }
+
+  String _getStatusText(dynamic state) {
+    switch (state) {
+      case 'stopped':
+        return 'Stopped';
+      case 'starting':
+        return 'Starting...';
+      case 'running':
+        return 'Running';
+      case 'registered':
+        return 'Registered';
+      case 'callInProgress':
+        return 'Call in Progress';
+      case 'error':
+        return 'Error';
+      default:
+        return 'Unknown';
+    }
+  }
+
+  Color _getStatusColor(dynamic state) {
+    switch (state) {
+      case 'stopped':
+        return AppColors.error;
+      case 'starting':
+        return AppColors.warning;
+      case 'running':
+        return AppColors.primary;
+      case 'registered':
+        return AppColors.success;
+      case 'callInProgress':
+        return AppColors.technical;
+      case 'error':
+        return AppColors.error;
+      default:
+        return AppColors.info;
+    }
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+    
+    if (difference.inDays > 0) {
+      return '${difference.inDays}d ago';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours}h ago';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes}m ago';
+    } else {
+      return 'Just now';
+    }
+  }
+
+  void _handleMenuAction(String action) {
+    switch (action) {
+      case 'settings':
+        Navigator.pushNamed(context, '/settings');
+        break;
+      case 'logs':
+        Navigator.pushNamed(context, '/logs');
+        break;
+      case 'info':
+        Navigator.pushNamed(context, '/info');
+        break;
+    }
   }
 } 

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../utils/text_styles.dart';
+import '../theme/app_colors.dart';
 
 class StatsCard extends StatelessWidget {
   final String title;
@@ -19,8 +20,15 @@ class StatsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Card(
-      color: const Color(0xFF1A1A1A),
+      color: colorScheme.surface,
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -29,25 +37,33 @@ class StatsCard extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                icon,
-                color: color,
-                size: 32,
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  icon,
+                  color: color,
+                  size: 24,
+                ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 12),
               Text(
                 value,
-                style: TextStyles.title.copyWith(
+                style: theme.textTheme.titleLarge?.copyWith(
                   color: color,
-                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
                 ),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 4),
               Text(
                 title,
-                style: TextStyles.caption.copyWith(
-                  color: Colors.grey,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
                 ),
                 textAlign: TextAlign.center,
               ),

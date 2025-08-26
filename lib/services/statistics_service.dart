@@ -29,11 +29,11 @@ class StatisticsService {
   }
 
   void addSms(SmsMessage sms) {
-    final number = sms.number;
+    final number = sms.address;
     _smsCounts[number] = (_smsCounts[number] ?? 0) + 1;
     _smsHistory.add({
       'number': number,
-      'message': sms.message,
+      'message': sms.body,
       'timestamp': sms.timestamp.toIso8601String(),
       'type': sms.type.name,
     });

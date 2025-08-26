@@ -36,4 +36,31 @@ class TextStyles {
     fontWeight: FontWeight.w600,
     color: Colors.white,
   );
+}
+
+class AppTextStyles {
+  static TextStyle poppins({
+    double? fontSize,
+    FontWeight? fontWeight,
+    Color? color,
+  }) {
+    return TextStyle(
+      fontFamily: 'Poppins',
+      fontSize: fontSize ?? 14,
+      fontWeight: fontWeight ?? FontWeight.normal,
+      color: color ?? Colors.white,
+    );
+  }
+
+  static TextStyle poppinsBold({
+    double? fontSize,
+    Color? color,
+  }) {
+    return TextStyle(
+      fontFamily: 'Poppins',
+      fontSize: fontSize ?? 14,
+      fontWeight: FontWeight.bold,
+      color: color ?? Colors.white,
+    );
+  }
 } 

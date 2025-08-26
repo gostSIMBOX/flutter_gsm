@@ -275,7 +275,7 @@ class CallStatusIndicator extends StatelessWidget {
         return Icons.call_missed;
       case 'idle':
       case 'waiting':
-        return Icons.call_waiting;
+        return Icons.phone_in_talk;
       default:
         return Icons.phone;
     }

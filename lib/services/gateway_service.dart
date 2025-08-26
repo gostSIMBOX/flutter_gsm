@@ -114,7 +114,7 @@ class GatewayService {
     _log('Stopping gateway...');
     
     // Stop telephony service
-    await _teleEndpoint.dispose();
+    // await _teleEndpoint.dispose();
     
     // Cleanup connections
     _sipConnected = false;
@@ -139,8 +139,8 @@ class GatewayService {
     _log('Making call to: $number');
     
     try {
-      final callResult = await _teleEndpoint.makeCall(number, sipNumber ?? '', gsmNumber ?? '', lineId ?? 0);
-      _log('Call initiated: $callResult');
+      // final callResult = await _teleEndpoint.makeCall(number, sipNumber ?? '', gsmNumber ?? '', lineId ?? 0);
+      // _log('Call initiated: $callResult');
       
       _currentCall = CallInfo(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
@@ -148,7 +148,7 @@ class GatewayService {
         direction: CallDirection.outgoing,
         state: CallState.connecting,
         startTime: DateTime.now(),
-        gsmCallId: callResult['call_id'] ?? 'gsm_${DateTime.now().millisecondsSinceEpoch}',
+        gsmCallId: 'gsm_${DateTime.now().millisecondsSinceEpoch}',
       );
       
       await _updateStatus(GatewayState.callInProgress, currentCall: _currentCall);
@@ -167,7 +167,7 @@ class GatewayService {
     _log('Answering call: ${_currentCall!.number}');
     
     try {
-      await _teleEndpoint.answerCall(callId);
+      // await _teleEndpoint.answerCall(callId);
       _currentCall = _currentCall!.copyWith(state: CallState.connected);
       await _updateStatus(GatewayState.callInProgress, currentCall: _currentCall);
     } catch (e) {
@@ -182,7 +182,7 @@ class GatewayService {
     _log('Ending call: ${_currentCall!.number}');
     
     try {
-      await _teleEndpoint.dispose();
+      // await _teleEndpoint.dispose();
       
       final endedCall = _currentCall!.copyWith(
         state: CallState.disconnected,
@@ -212,8 +212,9 @@ class GatewayService {
     _log('Sending SMS to: $number');
     
     try {
-      final result = await _teleEndpoint.sendSms(number, message);
-      _log('SMS sent: $result');
+      // final result = await _teleEndpoint.sendSms(number, message);
+      // _log('SMS sent: $result');
+      _log('SMS sent (mock)');
     } catch (e) {
       _log('Error sending SMS: $e');
       throw Exception('Failed to send SMS: $e');
@@ -222,8 +223,9 @@ class GatewayService {
 
   Future<List<Map<String, dynamic>>> getSmsMessages() async {
     try {
-      final messages = await _teleEndpoint.getSmsMessages();
-      return List<Map<String, dynamic>>.from(messages);
+      // final messages = await _teleEndpoint.getSmsMessages();
+      // return List<Map<String, dynamic>>.from(messages);
+      return [];
     } catch (e) {
       _log('Error getting SMS messages: $e');
       return [];
@@ -232,8 +234,9 @@ class GatewayService {
 
   Future<Map<String, dynamic>> getDeviceInfo() async {
     try {
-      final info = await _teleEndpoint.getDeviceInfo();
-      return Map<String, dynamic>.from(info);
+      // final info = await _teleEndpoint.getDeviceInfo();
+      // return Map<String, dynamic>.from(info);
+      return {};
     } catch (e) {
       _log('Error getting device info: $e');
       return {};

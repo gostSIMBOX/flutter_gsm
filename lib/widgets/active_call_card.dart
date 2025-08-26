@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../utils/text_styles.dart';
 import '../models/active_call.dart';
+import '../theme/app_colors.dart';
 
 class ActiveCallCard extends StatelessWidget {
   final ActiveCall call;
@@ -12,8 +13,15 @@ class ActiveCallCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Card(
-      color: const Color(0xFF1A1A1A),
+      color: colorScheme.surface,
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -38,15 +46,15 @@ class ActiveCallCard extends StatelessWidget {
                     children: [
                       Text(
                         call.fromNumber ?? 'Unknown',
-                        style: TextStyles.title.copyWith(
-                          color: Colors.white,
-                          fontSize: 18,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: colorScheme.onSurface,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                       Text(
                         _getCallStatusText(call.status),
-                        style: TextStyles.caption.copyWith(
-                          color: Colors.grey,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
                         ),
                       ),
                     ],
@@ -55,13 +63,17 @@ class ActiveCallCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: Colors.orange.withValues(alpha: 0.5),
+                    color: AppColors.warning.withOpacity(0.2),
                     borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: AppColors.warning.withOpacity(0.3),
+                      width: 1,
+                    ),
                   ),
                   child: Text(
                     _formatDuration(call.duration),
-                    style: TextStyles.caption.copyWith(
-                      color: Colors.orange,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.warning,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -73,28 +85,31 @@ class ActiveCallCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: _buildCallInfo(
+                    context: context,
                     title: 'Line ID',
                     value: call.lineId,
                     icon: Icons.phone,
-                    color: Colors.blue,
+                    color: AppColors.primary,
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: _buildCallInfo(
+                    context: context,
                     title: 'SIP MOS',
                     value: call.sipMos.toStringAsFixed(1),
                     icon: Icons.assessment,
-                    color: Colors.green,
+                    color: AppColors.success,
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: _buildCallInfo(
+                    context: context,
                     title: 'GSM MOS',
                     value: call.gsmMos.toStringAsFixed(1),
                     icon: Icons.signal_cellular_alt,
-                    color: Colors.orange,
+                    color: AppColors.warning,
                   ),
                 ),
               ],
@@ -104,34 +119,37 @@ class ActiveCallCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: _buildCallInfo(
+                    context: context,
                     title: 'SIP Jitter',
                     value: '${call.sipJitter.toStringAsFixed(1)}ms',
                     icon: Icons.trending_up,
-                    color: Colors.purple,
+                    color: AppColors.technical,
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: _buildCallInfo(
+                    context: context,
                     title: 'GSM Jitter',
                     value: '${call.gsmJitter.toStringAsFixed(1)}ms',
                     icon: Icons.trending_down,
-                    color: Colors.teal,
+                    color: AppColors.accent,
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: _buildCallInfo(
+                    context: context,
                     title: 'Latency',
                     value: '${call.sipLatency.toStringAsFixed(1)}ms',
                     icon: Icons.speed,
-                    color: Colors.red,
+                    color: AppColors.error,
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            _buildCallControls(),
+            _buildCallControls(context),
           ],
         ),
       ),
@@ -139,18 +157,22 @@ class ActiveCallCard extends StatelessWidget {
   }
 
   Widget _buildCallInfo({
+    required BuildContext context,
     required String title,
     required String value,
     required IconData icon,
     required Color color,
   }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.2),
+        color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: color.withValues(alpha: 0.3),
+          color: color.withOpacity(0.3),
           width: 1,
         ),
       ),
@@ -167,8 +189,8 @@ class ActiveCallCard extends StatelessWidget {
               const SizedBox(width: 4),
               Text(
                 title,
-                style: TextStyles.caption.copyWith(
-                  color: Colors.grey,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
                   fontSize: 10,
                 ),
               ),
@@ -177,10 +199,9 @@ class ActiveCallCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             value,
-            style: TextStyles.body.copyWith(
+            style: theme.textTheme.bodySmall?.copyWith(
               color: color,
               fontWeight: FontWeight.w600,
-              fontSize: 12,
             ),
           ),
         ],
@@ -188,14 +209,17 @@ class ActiveCallCard extends StatelessWidget {
     );
   }
 
-  Widget _buildCallControls() {
+  Widget _buildCallControls(BuildContext context) {
+    final theme = Theme.of(context);
+    
     return Row(
       children: [
         Expanded(
           child: _buildControlButton(
+            context: context,
             title: 'End Call',
             icon: Icons.call_end,
-            color: Colors.red,
+            color: AppColors.error,
             onPressed: () {
               // TODO: Implement end call
             },
@@ -204,9 +228,10 @@ class ActiveCallCard extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: _buildControlButton(
+            context: context,
             title: 'Hold',
             icon: Icons.pause,
-            color: Colors.orange,
+            color: AppColors.warning,
             onPressed: () {
               // TODO: Implement hold call
             },
@@ -215,9 +240,10 @@ class ActiveCallCard extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: _buildControlButton(
+            context: context,
             title: 'Mute',
             icon: Icons.mic_off,
-            color: Colors.grey,
+            color: theme.colorScheme.onSurfaceVariant,
             onPressed: () {
               // TODO: Implement mute
             },
@@ -226,9 +252,10 @@ class ActiveCallCard extends StatelessWidget {
         const SizedBox(width: 12),
         Expanded(
           child: _buildControlButton(
+            context: context,
             title: 'Speaker',
             icon: Icons.volume_up,
-            color: Colors.blue,
+            color: AppColors.primary,
             onPressed: () {
               // TODO: Implement speaker toggle
             },
@@ -239,21 +266,24 @@ class ActiveCallCard extends StatelessWidget {
   }
 
   Widget _buildControlButton({
+    required BuildContext context,
     required String title,
     required IconData icon,
     required Color color,
     required VoidCallback onPressed,
   }) {
+    final theme = Theme.of(context);
+    
     return ElevatedButton(
       onPressed: onPressed,
       style: ElevatedButton.styleFrom(
-        backgroundColor: color.withValues(alpha: 0.1),
+        backgroundColor: color.withOpacity(0.1),
         foregroundColor: color,
         padding: const EdgeInsets.symmetric(vertical: 8),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
           side: BorderSide(
-            color: color.withValues(alpha: 0.3),
+            color: color.withOpacity(0.3),
             width: 1,
           ),
         ),
@@ -264,7 +294,7 @@ class ActiveCallCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             title,
-            style: TextStyles.caption.copyWith(
+            style: theme.textTheme.bodySmall?.copyWith(
               color: color,
               fontSize: 10,
             ),
@@ -277,11 +307,11 @@ class ActiveCallCard extends StatelessWidget {
   Color _getCallDirectionColor(String direction) {
     switch (direction) {
       case 'incoming':
-        return Colors.green;
+        return AppColors.success;
       case 'outgoing':
-        return Colors.blue;
+        return AppColors.primary;
       default:
-        return Colors.grey;
+        return AppColors.info;
     }
   }
 
