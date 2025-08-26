@@ -114,7 +114,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
                 const SizedBox(height: 24),
                 Text(
-                  AppLocalizations.of(context)?.appTitle ?? 'GSM-SIP Gateway',
+                  AppLocalizations.of(context)?.appTitle ?? 'GOSTsimbox Gateway',
                   style: AppTextStyles.poppins(
                     fontSize: 28,
                     fontWeight: FontWeight.bold,

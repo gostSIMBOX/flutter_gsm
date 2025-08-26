@@ -64,7 +64,7 @@ class MyApp extends StatelessWidget {
       child: Consumer2<LanguageProvider, ThemeService>(
         builder: (context, languageProvider, themeService, child) {
           return MaterialApp(
-            title: 'GSM-SIP Gateway',
+            title: 'GOSTsimbox Gateway',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,

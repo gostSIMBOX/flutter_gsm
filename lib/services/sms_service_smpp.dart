@@ -291,6 +291,28 @@ class SmsServiceSmpp {
     }
   }
 
+  Future<bool> testConnection() async {
+    if (!_useSmpp || _smppConfig == null) {
+      return false;
+    }
+    
+    try {
+      // Try to connect temporarily
+      final wasConnected = _smppService.isConnected;
+      if (!wasConnected) {
+        final success = await _smppService.connect();
+        if (success) {
+          await _smppService.disconnect();
+        }
+        return success;
+      }
+      return true;
+    } catch (e) {
+      print('SMPP connection test failed: $e');
+      return false;
+    }
+  }
+
   Stream<SmppConnectionState> get smppConnectionStateStream => _smppService.connectionStateStream;
   Stream<String> get smppLogStream => _smppService.logStream;
 

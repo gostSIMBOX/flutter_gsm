@@ -135,7 +135,7 @@ class _InfoScreenState extends State<InfoScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'GSM-SIP Gateway',
+                      'GOSTsimbox Gateway',
                       style: AppTextStyles.poppinsBold(
                         fontSize: 20,
                         color: Colors.white,

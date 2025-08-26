@@ -49,40 +49,125 @@ class _SmppLogsScreenState extends State<SmppLogsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF0A0A0A),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF1A1A1A),
-        elevation: 0,
+      body: CustomScrollView(
+        slivers: [
+          _buildSliverAppBar(),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  _buildSearchBar(),
+                  const SizedBox(height: 16),
+                  _buildLogLevelFilter(),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+          ),
+          SliverPadding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            sliver: _buildLogsList(),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSliverAppBar() {
+    return SliverAppBar(
+      expandedHeight: 120,
+      floating: false,
+      pinned: true,
+      backgroundColor: const Color(0xFF1A1A1A),
+      elevation: 0,
+      flexibleSpace: FlexibleSpaceBar(
         title: Text(
           'SMPP Logs',
           style: AppTextStyles.poppins(
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
             color: Colors.white,
+            fontSize: 20,
           ),
         ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+        background: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFF1A1A1A),
+                const Color(0xFF2A2A2A),
+                const Color(0xFF1A1A1A),
+              ],
+            ),
+          ),
+          child: Stack(
+            children: [
+              Positioned(
+                top: -50,
+                right: -50,
+                child: Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.blue.withOpacity(0.1),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: -30,
+                left: -30,
+                child: Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.purple.withOpacity(0.1),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: _loadLogs,
-          ),
-          IconButton(
-            icon: const Icon(Icons.clear, color: Colors.white),
-            onPressed: _clearLogs,
-          ),
-        ],
       ),
-      body: Column(
-        children: [
-          _buildSearchBar(),
-          _buildLogLevelFilter(),
-          Expanded(
-            child: _buildLogsList(),
+      leading: IconButton(
+        icon: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.black.withOpacity(0.3),
+            borderRadius: BorderRadius.circular(8),
           ),
-        ],
+          child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+        ),
+        onPressed: () => Navigator.pop(context),
       ),
+      actions: [
+        IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.refresh, color: Colors.white, size: 20),
+          ),
+          onPressed: _loadLogs,
+        ),
+        IconButton(
+          icon: Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.clear, color: Colors.white, size: 20),
+          ),
+          onPressed: _clearLogs,
+        ),
+        const SizedBox(width: 8),
+      ],
     );
   }
 
@@ -179,96 +264,141 @@ class _SmppLogsScreenState extends State<SmppLogsScreen> {
 
   Widget _buildLogsList() {
     if (_filteredLogs.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.info_outline,
-              size: 64,
-              color: Colors.grey[600],
+      return SliverToBoxAdapter(
+        child: SizedBox(
+          height: 400,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.info_outline,
+                    size: 48,
+                    color: Colors.grey[600],
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'No logs found',
+                  style: AppTextStyles.poppins(
+                    color: Colors.grey[600],
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Try adjusting your search or log level filter',
+                  style: AppTextStyles.poppins(
+                    color: Colors.grey[500],
+                    fontSize: 14,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            Text(
-              'No logs found',
-              style: AppTextStyles.poppins(
-                color: Colors.grey[600],
-                fontSize: 18,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Try adjusting your search or log level filter',
-              style: AppTextStyles.poppins(
-                color: Colors.grey[500],
-                fontSize: 14,
-              ),
-            ),
-          ],
+          ),
         ),
       );
     }
 
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.all(16),
+    return SliverList.builder(
       itemCount: _filteredLogs.length,
       itemBuilder: (context, index) {
         final log = _filteredLogs[index];
         final logLevel = _extractLogLevel(log);
         
         return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(12),
+          margin: const EdgeInsets.only(bottom: 12),
           decoration: BoxDecoration(
             color: const Color(0xFF1A1A1A),
-            borderRadius: BorderRadius.circular(8),
+            borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: _getLogLevelColor(logLevel).withOpacity(0.3),
               width: 1,
             ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      color: _getLogLevelColor(logLevel),
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    logLevel.name.toUpperCase(),
-                    style: AppTextStyles.poppins(
-                      color: _getLogLevelColor(logLevel),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    _extractTimestamp(log),
-                    style: AppTextStyles.poppins(
-                      color: Colors.grey[500],
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _extractMessage(log),
-                style: AppTextStyles.poppins(
-                  color: Colors.white,
-                  fontSize: 14,
-                ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
               ),
             ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: _getLogLevelColor(logLevel),
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: _getLogLevelColor(logLevel).withOpacity(0.3),
+                            blurRadius: 4,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _getLogLevelColor(logLevel).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: _getLogLevelColor(logLevel).withOpacity(0.3),
+                        ),
+                      ),
+                      child: Text(
+                        logLevel.name.toUpperCase(),
+                        style: AppTextStyles.poppins(
+                          color: _getLogLevelColor(logLevel),
+                          fontWeight: FontWeight.w600,
+                          fontSize: 10,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        _extractTimestamp(log),
+                        style: AppTextStyles.poppins(
+                          color: Colors.grey[400],
+                          fontSize: 11,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  _extractMessage(log),
+                  style: AppTextStyles.poppins(
+                    color: Colors.white,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
