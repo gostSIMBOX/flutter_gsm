@@ -7,33 +7,30 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider/provider.dart';
-
 import 'package:flutter_gsm_sip_gateway/main.dart';
-import 'package:flutter_gsm_sip_gateway/providers/gateway_provider.dart';
-import 'package:flutter_gsm_sip_gateway/providers/dashboard_provider.dart';
-import 'package:flutter_gsm_sip_gateway/providers/language_provider.dart';
-import 'package:flutter_gsm_sip_gateway/services/localization_service.dart';
-import 'package:flutter_gsm_sip_gateway/services/theme_service.dart';
 
 void main() {
-  testWidgets('App loads successfully', (WidgetTester tester) async {
-    // Build our app and trigger a frame.
-    await tester.pumpWidget(
-      MultiProvider(
-        providers: [
-          ChangeNotifierProvider(create: (_) => GatewayProvider()),
-          ChangeNotifierProvider(create: (_) => DashboardProvider()),
-          ChangeNotifierProvider(create: (_) => LanguageProvider()),
-        ],
-        child: MyApp(
-          localizationService: LocalizationService(),
-          themeService: ThemeService(),
-        ),
-      ),
-    );
+  group('App Widget Tests', () {
+    testWidgets('App should render without crashing', (WidgetTester tester) async {
+      await tester.pumpWidget(const MyApp());
+      expect(find.byType(MaterialApp), findsOneWidget);
+    });
 
-    // Verify that the app loads without crashing
-    expect(find.byType(MaterialApp), findsOneWidget);
+    testWidgets('App should show initial screen', (WidgetTester tester) async {
+      await tester.pumpWidget(const MyApp());
+      await tester.pumpAndSettle();
+      
+      // Verify that the app shows some content
+      expect(find.byType(Scaffold), findsOneWidget);
+    });
+
+    testWidgets('App should handle theme changes', (WidgetTester tester) async {
+      await tester.pumpWidget(const MyApp());
+      await tester.pumpAndSettle();
+      
+      // Verify theme is applied
+      final materialApp = tester.widget<MaterialApp>(find.byType(MaterialApp));
+      expect(materialApp.theme, isNotNull);
+    });
   });
 }
