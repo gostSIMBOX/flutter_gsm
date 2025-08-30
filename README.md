@@ -1,6 +1,6 @@
-# GOSTsimbox Gateway
+# GOSTsimbox Android Gateway
 
-A modern Flutter application that provides a bidirectional bridge between GSM telephony + SMS using SIP and SMPP. This application replicates the functionality of the React Native GOSTsimbox Gateway with an improved user interface and enhanced user experience.
+A modern Flutter application that provides a bidirectional bridge between GSM telephony + SMS using SIP and SMPP. 
 
 ## Features
 
