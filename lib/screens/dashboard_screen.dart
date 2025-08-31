@@ -9,6 +9,7 @@ import '../widgets/stats_card.dart';
 import '../widgets/active_call_card.dart';
 import '../widgets/sip_status_card.dart';
 import '../widgets/status_indicator.dart';
+import '../widgets/connection_monitor_widget.dart';
 import '../services/theme_service.dart';
 import '../models/sip_connection.dart';
 import '../theme/app_colors.dart';
@@ -101,6 +102,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _buildQuickStats(context),
+                          const SizedBox(height: 24),
+                          _buildConnectionMonitoring(context),
                           const SizedBox(height: 24),
                           _buildActiveCalls(context),
                           const SizedBox(height: 24),
@@ -268,6 +271,21 @@ class _DashboardScreenState extends State<DashboardScreen>
               onTap: () => Navigator.pushNamed(context, '/info'),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  Widget _buildConnectionMonitoring(BuildContext context) {
+    return Consumer<GatewayProvider>(
+      builder: (context, provider, child) {
+        final config = provider.config;
+        return ConnectionMonitorWidget(
+          sipServer: config?.sipServer ?? '192.168.88.254',
+          sipPort: config?.sipPort ?? 5060,
+          smppServer: config?.smppServer ?? '192.168.88.254',
+          smppPort: config?.smppPort ?? 2775,
+          showDetailedStats: true,
         );
       },
     );
