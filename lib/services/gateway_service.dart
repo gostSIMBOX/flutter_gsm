@@ -1,365 +1,531 @@
 import 'dart:async';
-import 'dart:io';
-import 'package:device_info_plus/device_info_plus.dart';
+import 'dart:convert';
 import 'package:logger/logger.dart';
-import 'package:flutter_tele/flutter_tele.dart';
-import '../models/gateway_config.dart';
-import '../models/gateway_status.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
+import 'sip_service.dart';
+import 'sms_service.dart';
+import 'telephony_service.dart';
+
+/// Gateway configuration
+class GatewayConfig {
+  final SipAccount sipAccount;
+  final SmppConfig? smppConfig;
+  final bool autoAnswer;
+  final bool enableLogging;
+  final bool routeSipToGsm;
+  final bool routeGsmToSip;
+  final bool routeSmsToSmpp;
+  final bool routeSmppToSms;
+  final int maxConcurrentCalls;
+
+  const GatewayConfig({
+    required this.sipAccount,
+    this.smppConfig,
+    this.autoAnswer = false,
+    this.enableLogging = true,
+    this.routeSipToGsm = true,
+    this.routeGsmToSip = true,
+    this.routeSmsToSmpp = false,
+    this.routeSmppToSms = false,
+    this.maxConcurrentCalls = 5,
+  });
+
+  Map<String, dynamic> toJson() => {
+    'sipAccount': sipAccount.toJson(),
+    'smppConfig': smppConfig?.toJson(),
+    'autoAnswer': autoAnswer,
+    'enableLogging': enableLogging,
+    'routeSipToGsm': routeSipToGsm,
+    'routeGsmToSip': routeGsmToSip,
+    'routeSmsToSmpp': routeSmsToSmpp,
+    'routeSmppToSms': routeSmppToSms,
+    'maxConcurrentCalls': maxConcurrentCalls,
+  };
+
+  factory GatewayConfig.fromJson(Map<String, dynamic> json) => GatewayConfig(
+    sipAccount: SipAccount.fromJson(json['sipAccount']),
+    smppConfig: json['smppConfig'] != null 
+        ? SmppConfig.fromJson(json['smppConfig']) 
+        : null,
+    autoAnswer: json['autoAnswer'] ?? false,
+    enableLogging: json['enableLogging'] ?? true,
+    routeSipToGsm: json['routeSipToGsm'] ?? true,
+    routeGsmToSip: json['routeGsmToSip'] ?? true,
+    routeSmsToSmpp: json['routeSmsToSmpp'] ?? false,
+    routeSmppToSms: json['routeSmppToSms'] ?? false,
+    maxConcurrentCalls: json['maxConcurrentCalls'] ?? 5,
+  );
+}
+
+/// Gateway status information
+class GatewayStatus {
+  final bool isRunning;
+  final SipConnectionState sipState;
+  final SmppConnectionState smppState;
+  final TelephonyPermissionStatus telephonyPermissions;
+  final int activeCalls;
+  final int totalCallsHandled;
+  final int totalMessagesHandled;
+  final DateTime? startTime;
+  final Duration? uptime;
+
+  const GatewayStatus({
+    required this.isRunning,
+    required this.sipState,
+    required this.smppState,
+    required this.telephonyPermissions,
+    required this.activeCalls,
+    required this.totalCallsHandled,
+    required this.totalMessagesHandled,
+    this.startTime,
+    this.uptime,
+  });
+}
+
+/// Call routing information
+class CallRouting {
+  final String id;
+  final String sipCallId;
+  final String? telephonyCallId;
+  final String number;
+  final CallRoutingDirection direction;
+  final CallRoutingState state;
+  final DateTime startTime;
+
+  const CallRouting({
+    required this.id,
+    required this.sipCallId,
+    this.telephonyCallId,
+    required this.number,
+    required this.direction,
+    required this.state,
+    required this.startTime,
+  });
+}
+
+enum CallRoutingDirection { sipToGsm, gsmToSip }
+enum CallRoutingState { connecting, active, ended, failed }
+
+/// Main Gateway Service that coordinates SIP, SMS, and Telephony services
 class GatewayService {
   static final GatewayService _instance = GatewayService._internal();
   factory GatewayService() => _instance;
   GatewayService._internal();
 
   final Logger _logger = Logger();
-  final DeviceInfoPlugin _deviceInfo = DeviceInfoPlugin();
-  final TeleEndpoint _teleEndpoint = TeleEndpoint();
   
+  // Service instances
+  final SipService _sipService = SipService();
+  final SmsService _smsService = SmsService();
+  final TelephonyService _telephonyService = TelephonyService();
+  
+  // Configuration and state
   GatewayConfig? _config;
-  GatewayStatus _status = GatewayStatus(
-    state: GatewayState.stopped,
-    isConnected: false,
-    isRegistered: false,
-    lastUpdate: DateTime.now(),
-  );
-
+  bool _isRunning = false;
+  DateTime? _startTime;
+  int _totalCallsHandled = 0;
+  int _totalMessagesHandled = 0;
+  
+  // Call routing
+  final Map<String, CallRouting> _activeRoutings = {};
+  int _routingCounter = 0;
+  
+  // Stream controllers
   final StreamController<GatewayStatus> _statusController = 
       StreamController<GatewayStatus>.broadcast();
+  final StreamController<CallRouting> _routingController = 
+      StreamController<CallRouting>.broadcast();
   final StreamController<String> _logController = 
       StreamController<String>.broadcast();
 
+  // Getters
+  bool get isRunning => _isRunning;
+  GatewayConfig? get config => _config;
+  List<CallRouting> get activeRoutings => _activeRoutings.values.toList();
+
+  // Streams
   Stream<GatewayStatus> get statusStream => _statusController.stream;
+  Stream<CallRouting> get routingStream => _routingController.stream;
   Stream<String> get logStream => _logController.stream;
-  GatewayStatus get currentStatus => _status;
 
-  // Real connection states
-  bool _sipConnected = false;
-  bool _sipRegistered = false;
-  bool _gsmConnected = false;
-  CallInfo? _currentCall;
-  StreamSubscription? _callEventSubscription;
-  StreamSubscription? _teleEventSubscription;
-
-  Future<void> initialize(GatewayConfig config) async {
-    _config = config;
-    _log('Initializing gateway with config: ${config.sipUsername}@${config.sipServer}');
-    
-    await _updateStatus(GatewayState.starting);
-    
+  /// Initialize the gateway with configuration
+  Future<bool> initialize(GatewayConfig config) async {
     try {
-      // Request Android permissions
-      final hasPermissions = await _teleEndpoint.hasPermissions();
-      if (!hasPermissions) {
-        final granted = await _teleEndpoint.requestPermissions();
-        if (!granted) {
-          throw Exception('Phone permissions required for gateway operation');
+      _config = config;
+      _log('Initializing Gateway service...');
+      
+      // Initialize telephony service first
+      final telephonyInitialized = await _telephonyService.initialize();
+      if (!telephonyInitialized) {
+        _log('Failed to initialize telephony service');
+        return false;
+      }
+      
+      // Initialize SIP service
+      final sipInitialized = await _sipService.initialize(config.sipAccount);
+      if (!sipInitialized) {
+        _log('Failed to initialize SIP service');
+        return false;
+      }
+      
+      // Initialize SMPP if configured
+      if (config.smppConfig != null) {
+        final smppInitialized = await _smsService.initializeSmpp(config.smppConfig!);
+        if (!smppInitialized) {
+          _log('Warning: Failed to initialize SMPP service');
         }
       }
       
-      // Get device info for configuration
-      final deviceId = await _getDeviceId();
-      _log('Device ID: $deviceId');
+      // Set up event listeners
+      _setupEventListeners();
       
-      // Setup telephony event listeners
-      await _setupTelephonyListeners();
+      // Save configuration
+      await _saveConfiguration();
       
-      // Initialize SIP client
-      await _initializeSip();
-      
-      await _updateStatus(GatewayState.running);
-      _log('Gateway initialized successfully');
+      _log('Gateway service initialized successfully');
+      return true;
     } catch (e) {
-      _log('Error initializing gateway: $e');
-      await _updateStatus(GatewayState.error, errorMessage: e.toString());
+      _log('Failed to initialize Gateway service: $e');
+      return false;
     }
   }
 
-  Future<void> start() async {
+  /// Start the gateway service
+  Future<bool> start() async {
     if (_config == null) {
-      throw Exception('Gateway not configured');
+      _log('Gateway not configured');
+      return false;
     }
-    
-    _log('Starting gateway...');
-    await _updateStatus(GatewayState.starting);
-    
+
     try {
-      // Start telephony service
-      final teleConfig = {
-        'sip_server': _config!.sipServer,
-        'sip_username': _config!.sipUsername,
-        'sip_password': _config!.sipPassword,
-        'sip_port': _config!.sipPort,
-        'auto_answer': _config!.autoAnswer,
-        'call_timeout': _config!.callTimeout,
-      };
+      _log('Starting Gateway service...');
       
-      final result = await _teleEndpoint.start(teleConfig);
-      _log('Telephony service started: $result');
-      
-      // Register with SIP server
-      await _registerSip();
-      
-      // Connect to GSM network
-      await _connectGsm();
-      
-      await _updateStatus(GatewayState.registered);
-      _log('Gateway started successfully');
-    } catch (e) {
-      _log('Error starting gateway: $e');
-      await _updateStatus(GatewayState.error, errorMessage: e.toString());
-    }
-  }
-
-  Future<void> stop() async {
-    _log('Stopping gateway...');
-    
-    // Stop telephony service
-    // await _teleEndpoint.dispose();
-    
-    // Cleanup connections
-    _sipConnected = false;
-    _sipRegistered = false;
-    _gsmConnected = false;
-    _currentCall = null;
-    
-    // Dispose event subscriptions
-    await _callEventSubscription?.cancel();
-    await _teleEventSubscription?.cancel();
-    
-    await _updateStatus(GatewayState.stopped);
-    _log('Gateway stopped');
-  }
-
-  Future<void> makeCall(String number, String? sipNumber, String? gsmNumber, int? lineId) async {
-    if (_currentCall != null) {
-      _log('Call already in progress, cannot make new call');
-      return;
-    }
-
-    _log('Making call to: $number');
-    
-    try {
-      // final callResult = await _teleEndpoint.makeCall(number, sipNumber ?? '', gsmNumber ?? '', lineId ?? 0);
-      // _log('Call initiated: $callResult');
-      
-      _currentCall = CallInfo(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        number: number,
-        direction: CallDirection.outgoing,
-        state: CallState.connecting,
-        startTime: DateTime.now(),
-        gsmCallId: 'gsm_${DateTime.now().millisecondsSinceEpoch}',
-      );
-      
-      await _updateStatus(GatewayState.callInProgress, currentCall: _currentCall);
-    } catch (e) {
-      _log('Error making call: $e');
-      throw Exception('Failed to make call: $e');
-    }
-  }
-
-  Future<void> answerCall(String callId) async {
-    if (_currentCall == null) {
-      _log('No incoming call to answer');
-      return;
-    }
-
-    _log('Answering call: ${_currentCall!.number}');
-    
-    try {
-      // await _teleEndpoint.answerCall(callId);
-      _currentCall = _currentCall!.copyWith(state: CallState.connected);
-      await _updateStatus(GatewayState.callInProgress, currentCall: _currentCall);
-    } catch (e) {
-      _log('Error answering call: $e');
-      throw Exception('Failed to answer call: $e');
-    }
-  }
-
-  Future<void> endCall() async {
-    if (_currentCall == null) return;
-    
-    _log('Ending call: ${_currentCall!.number}');
-    
-    try {
-      // await _teleEndpoint.dispose();
-      
-      final endedCall = _currentCall!.copyWith(
-        state: CallState.disconnected,
-        endTime: DateTime.now(),
-      );
-      
-      // Add to recent calls
-      final recentCalls = List<CallInfo>.from(_status.recentCalls);
-      recentCalls.insert(0, endedCall);
-      if (recentCalls.length > 10) {
-        recentCalls.removeLast();
+      // Register SIP
+      final sipRegistered = await _sipService.register();
+      if (!sipRegistered) {
+        _log('Failed to register SIP');
+        return false;
       }
       
-      _currentCall = null;
+      // Connect SMPP if configured
+      if (_config!.smppConfig != null) {
+        final smppConnected = await _smsService.connectSmpp();
+        if (!smppConnected) {
+          _log('Warning: Failed to connect SMPP');
+        }
+      }
       
-      await _updateStatus(
-        _sipRegistered ? GatewayState.registered : GatewayState.running,
-        recentCalls: recentCalls,
-      );
+      _isRunning = true;
+      _startTime = DateTime.now();
+      _log('Gateway service started successfully');
+      _updateStatus();
+      
+      return true;
     } catch (e) {
-      _log('Error ending call: $e');
-      throw Exception('Failed to end call: $e');
+      _log('Failed to start Gateway service: $e');
+      return false;
     }
   }
 
-  Future<void> sendSms(String number, String message) async {
-    _log('Sending SMS to: $number');
-    
+  /// Stop the gateway service
+  Future<void> stop() async {
     try {
-      // final result = await _teleEndpoint.sendSms(number, message);
-      // _log('SMS sent: $result');
-      _log('SMS sent (mock)');
+      _log('Stopping Gateway service...');
+      
+      // End all active routings
+      for (final routing in _activeRoutings.values) {
+        await _endRouting(routing.id);
+      }
+      
+      // Unregister SIP
+      await _sipService.unregister();
+      
+      // Disconnect SMPP
+      await _smsService.disconnectSmpp();
+      
+      _isRunning = false;
+      _startTime = null;
+      _log('Gateway service stopped');
+      _updateStatus();
+    } catch (e) {
+      _log('Error stopping Gateway service: $e');
+    }
+  }
+
+  /// Make a call via SIP that will be routed to GSM
+  Future<String?> makeCallViaSip(String number) async {
+    if (!_isRunning || !_config!.routeSipToGsm) {
+      return null;
+    }
+
+    try {
+      _log('Making call via SIP to be routed to GSM: $number');
+      
+      // Make SIP call
+      final sipCallId = await _sipService.makeCall(number);
+      if (sipCallId == null) {
+        return null;
+      }
+      
+      // Create routing
+      final routingId = 'routing_${++_routingCounter}_${DateTime.now().millisecondsSinceEpoch}';
+      final routing = CallRouting(
+        id: routingId,
+        sipCallId: sipCallId,
+        number: number,
+        direction: CallRoutingDirection.sipToGsm,
+        state: CallRoutingState.connecting,
+        startTime: DateTime.now(),
+      );
+      
+      _activeRoutings[routingId] = routing;
+      _routingController.add(routing);
+      
+      // When SIP call becomes active, make GSM call
+      _sipService.callStateStream.listen((sipCall) {
+        if (sipCall.id == sipCallId && sipCall.state == SipCallState.active) {
+          _makeGsmCallForRouting(routingId, number);
+        }
+      });
+      
+      return routingId;
+    } catch (e) {
+      _log('Error making call via SIP: $e');
+      return null;
+    }
+  }
+
+  /// Handle incoming GSM call and route to SIP
+  Future<void> _handleIncomingGsmCall(TelephonyCall gsmCall) async {
+    if (!_config!.routeGsmToSip) {
+      return;
+    }
+
+    try {
+      _log('Routing incoming GSM call to SIP: ${gsmCall.number}');
+      
+      // Create SIP call to route the GSM call
+      final sipCallId = await _sipService.makeCall(gsmCall.number);
+      if (sipCallId == null) {
+        return;
+      }
+      
+      final routingId = 'routing_${++_routingCounter}_${DateTime.now().millisecondsSinceEpoch}';
+      final routing = CallRouting(
+        id: routingId,
+        sipCallId: sipCallId,
+        telephonyCallId: gsmCall.id,
+        number: gsmCall.number,
+        direction: CallRoutingDirection.gsmToSip,
+        state: CallRoutingState.connecting,
+        startTime: DateTime.now(),
+      );
+      
+      _activeRoutings[routingId] = routing;
+      _routingController.add(routing);
+      
+      // Auto-answer GSM call if configured
+      if (_config!.autoAnswer) {
+        await _telephonyService.answerCall();
+      }
+      
+      _totalCallsHandled++;
+    } catch (e) {
+      _log('Error routing GSM call to SIP: $e');
+    }
+  }
+
+  /// Make GSM call for SIP routing
+  Future<void> _makeGsmCallForRouting(String routingId, String number) async {
+    try {
+      final telephonyCallId = await _telephonyService.makeCall(number);
+      if (telephonyCallId == null) {
+        await _endRouting(routingId);
+        return;
+      }
+      
+      final routing = _activeRoutings[routingId];
+      if (routing != null) {
+        final updatedRouting = CallRouting(
+          id: routing.id,
+          sipCallId: routing.sipCallId,
+          telephonyCallId: telephonyCallId,
+          number: routing.number,
+          direction: routing.direction,
+          state: CallRoutingState.active,
+          startTime: routing.startTime,
+        );
+        
+        _activeRoutings[routingId] = updatedRouting;
+        _routingController.add(updatedRouting);
+      }
+      
+      _totalCallsHandled++;
+    } catch (e) {
+      _log('Error making GSM call for routing: $e');
+      await _endRouting(routingId);
+    }
+  }
+
+  /// End a call routing
+  Future<void> _endRouting(String routingId) async {
+    final routing = _activeRoutings[routingId];
+    if (routing == null) return;
+
+    try {
+      // End SIP call
+      await _sipService.endCall(routing.sipCallId);
+      
+      // End GSM call if exists
+      if (routing.telephonyCallId != null) {
+        await _telephonyService.endCall();
+      }
+      
+      final endedRouting = CallRouting(
+        id: routing.id,
+        sipCallId: routing.sipCallId,
+        telephonyCallId: routing.telephonyCallId,
+        number: routing.number,
+        direction: routing.direction,
+        state: CallRoutingState.ended,
+        startTime: routing.startTime,
+      );
+      
+      _activeRoutings.remove(routingId);
+      _routingController.add(endedRouting);
+      
+    } catch (e) {
+      _log('Error ending routing: $e');
+    }
+  }
+
+  /// Send SMS via appropriate service
+  Future<String?> sendSms(String recipient, String content, {bool useSmpp = false}) async {
+    try {
+      if (useSmpp && _config?.smppConfig != null) {
+        return await _smsService.sendSmsViaSmpp(recipient, content);
+      } else {
+        return await _smsService.sendSmsLocal(recipient, content);
+      }
     } catch (e) {
       _log('Error sending SMS: $e');
-      throw Exception('Failed to send SMS: $e');
+      return null;
     }
   }
 
-  Future<List<Map<String, dynamic>>> getSmsMessages() async {
-    try {
-      // final messages = await _teleEndpoint.getSmsMessages();
-      // return List<Map<String, dynamic>>.from(messages);
-      return [];
-    } catch (e) {
-      _log('Error getting SMS messages: $e');
-      return [];
-    }
-  }
-
-  Future<Map<String, dynamic>> getDeviceInfo() async {
-    try {
-      // final info = await _teleEndpoint.getDeviceInfo();
-      // return Map<String, dynamic>.from(info);
-      return {};
-    } catch (e) {
-      _log('Error getting device info: $e');
-      return {};
-    }
-  }
-
-  Future<void> _setupTelephonyListeners() async {
-    // Listen for call events
-    _callEventSubscription = _teleEndpoint.on('call_state_changed').listen((event) {
-      _log('Call state changed: $event');
-      _handleCallEvent(event);
-    });
-
-    // Listen for incoming calls
-    _teleEventSubscription = _teleEndpoint.on('incoming_call').listen((event) {
-      _log('Incoming call: $event');
-      _handleIncomingCall(event);
-    });
-  }
-
-  void _handleCallEvent(Map<String, dynamic> event) {
-    final callState = event['state'] as String?;
-    final callId = event['call_id'] as String?;
+  /// Get gateway status
+  GatewayStatus getStatus() {
+    final telephonyPermissions = TelephonyPermissionStatus.granted; // Simplified for now
     
-    if (_currentCall != null && callId == _currentCall!.gsmCallId) {
-      CallState newState;
-      switch (callState) {
-        case 'RINGING':
-          newState = CallState.ringing;
-          break;
-        case 'CONNECTED':
-          newState = CallState.connected;
-          break;
-        case 'DISCONNECTED':
-          newState = CallState.disconnected;
-          break;
-        default:
-          newState = CallState.connecting;
-      }
-      
-      _currentCall = _currentCall!.copyWith(state: newState);
-      _updateStatus(GatewayState.callInProgress, currentCall: _currentCall);
-    }
-  }
-
-  void _handleIncomingCall(Map<String, dynamic> event) {
-    final number = event['number'] as String?;
-    final callId = event['call_id'] as String?;
-    
-    if (number != null && callId != null) {
-      _currentCall = CallInfo(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        number: number,
-        direction: CallDirection.incoming,
-        state: CallState.ringing,
-        startTime: DateTime.now(),
-        gsmCallId: callId,
-      );
-      
-      _updateStatus(GatewayState.callInProgress, currentCall: _currentCall);
-    }
-  }
-
-  Future<String> _getDeviceId() async {
-    if (Platform.isAndroid) {
-      final androidInfo = await _deviceInfo.androidInfo;
-      return androidInfo.id;
-    }
-    return 'unknown';
-  }
-
-  Future<void> _initializeSip() async {
-    _log('Initializing SIP endpoint...');
-    // SIP initialization will be handled by the telephony service
-    await Future.delayed(Duration(seconds: 1));
-    _sipConnected = true;
-    _log('SIP endpoint initialized');
-  }
-
-  Future<void> _registerSip() async {
-    _log('Registering with SIP server...');
-    await Future.delayed(Duration(seconds: 2));
-    _sipRegistered = true;
-    _log('SIP registration successful');
-  }
-
-  Future<void> _connectGsm() async {
-    _log('Connecting to GSM network...');
-    await Future.delayed(Duration(seconds: 1));
-    _gsmConnected = true;
-    _log('GSM connection established');
-  }
-
-  Future<void> _updateStatus(
-    GatewayState state, {
-    String? errorMessage,
-    CallInfo? currentCall,
-    List<CallInfo>? recentCalls,
-  }) async {
-    _status = _status.copyWith(
-      state: state,
-      isConnected: _sipConnected || _gsmConnected,
-      isRegistered: _sipRegistered,
-      errorMessage: errorMessage,
-      currentCall: currentCall ?? _status.currentCall,
-      recentCalls: recentCalls ?? _status.recentCalls,
-      lastUpdate: DateTime.now(),
+    return GatewayStatus(
+      isRunning: _isRunning,
+      sipState: _sipService.connectionState,
+      smppState: _smsService.connectionState,
+      telephonyPermissions: telephonyPermissions,
+      activeCalls: _activeRoutings.length,
+      totalCallsHandled: _totalCallsHandled,
+      totalMessagesHandled: _totalMessagesHandled,
+      startTime: _startTime,
+      uptime: _startTime != null ? DateTime.now().difference(_startTime!) : null,
     );
+  }
+
+  /// Set up event listeners for all services
+  void _setupEventListeners() {
+    // SIP event listeners
+    _sipService.callStateStream.listen(_handleSipCallStateChange);
+    _sipService.logStream.listen(_handleServiceLog);
     
-    _statusController.add(_status);
+    // SMS event listeners
+    _smsService.messageStream.listen(_handleSmsMessage);
+    _smsService.logStream.listen(_handleServiceLog);
+    
+    // Telephony event listeners
+    _telephonyService.callStateStream.listen(_handleTelephonyCallStateChange);
+    _telephonyService.logStream.listen(_handleServiceLog);
+  }
+
+  /// Handle SIP call state changes
+  void _handleSipCallStateChange(SipCall call) {
+    _log('SIP call state changed: ${call.id} -> ${call.state.name}');
+    _updateStatus();
+  }
+
+  /// Handle telephony call state changes
+  void _handleTelephonyCallStateChange(TelephonyCall call) {
+    _log('Telephony call state changed: ${call.id} -> ${call.state.name}');
+    
+    if (call.direction == TelephonyCallDirection.incoming && 
+        call.state == TelephonyCallState.ringing) {
+      _handleIncomingGsmCall(call);
+    }
+    
+    _updateStatus();
+  }
+
+  /// Handle SMS messages
+  void _handleSmsMessage(SmsMessage message) {
+    _log('SMS message: ${message.type.name} ${message.id}');
+    _totalMessagesHandled++;
+    _updateStatus();
+  }
+
+  /// Handle service logs
+  void _handleServiceLog(String log) {
+    if (_config?.enableLogging == true) {
+      _logController.add(log);
+    }
+  }
+
+  /// Update gateway status
+  void _updateStatus() {
+    _statusController.add(getStatus());
+  }
+
+  /// Save configuration to persistent storage
+  Future<void> _saveConfiguration() async {
+    if (_config == null) return;
+    
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final configJson = jsonEncode(_config!.toJson());
+      await prefs.setString('gateway_config', configJson);
+    } catch (e) {
+      _log('Error saving configuration: $e');
+    }
+  }
+
+  /// Load configuration from persistent storage
+  Future<GatewayConfig?> loadConfiguration() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final configJson = prefs.getString('gateway_config');
+      if (configJson != null) {
+        final configMap = jsonDecode(configJson) as Map<String, dynamic>;
+        return GatewayConfig.fromJson(configMap);
+      }
+    } catch (e) {
+      _log('Error loading configuration: $e');
+    }
+    return null;
   }
 
   void _log(String message) {
     final timestamp = DateTime.now().toIso8601String();
-    final logMessage = '[$timestamp] $message';
+    final logMessage = '[$timestamp] Gateway: $message';
     _logger.i(logMessage);
     _logController.add(logMessage);
   }
 
+  /// Clean up resources
   void dispose() {
     _statusController.close();
+    _routingController.close();
     _logController.close();
-    _callEventSubscription?.cancel();
-    _teleEventSubscription?.cancel();
+    
+        _sipService.dispose();
+    _smsService.dispose();
+    _telephonyService.dispose();
   }
-} 
+}

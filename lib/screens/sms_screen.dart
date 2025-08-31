@@ -1,457 +1,457 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../utils/text_styles.dart';
-import '../models/sms_message.dart';
-import '../providers/gateway_provider.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
+import '../services/gateway_service.dart';
+import '../services/sms_service.dart';
 
 class SmsScreen extends StatefulWidget {
-  const SmsScreen({Key? key}) : super(key: key);
+  const SmsScreen({super.key});
 
   @override
   State<SmsScreen> createState() => _SmsScreenState();
 }
 
 class _SmsScreenState extends State<SmsScreen> {
-  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _recipientController = TextEditingController();
   final TextEditingController _messageController = TextEditingController();
-  bool _isLoading = false;
+  List<SmsMessage> _messages = [];
+  bool _useSmpp = false;
 
   @override
   void initState() {
     super.initState();
-    // Load messages when screen initializes
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _refreshMessages();
+    _setupListeners();
+    _loadMessages();
+  }
+
+  void _setupListeners() {
+    final smsService = context.read<SmsService>();
+    
+    smsService.messageStream.listen((message) {
+      setState(() {
+        final index = _messages.indexWhere((m) => m.id == message.id);
+        if (index >= 0) {
+          _messages[index] = message;
+        } else {
+          _messages.insert(0, message);
+        }
+      });
     });
+  }
+
+  void _loadMessages() {
+    final smsService = context.read<SmsService>();
+    setState(() {
+      _messages = smsService.messages;
+    });
+  }
+
+  @override
+  void dispose() {
+    _recipientController.dispose();
+    _messageController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0A0A0A),
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1A1A1A),
-        elevation: 0,
-        title: Text(
-          'SMS',
-          style: AppTextStyles.poppins(
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
+        title: const Text('SMS'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: _refreshMessages,
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadMessages,
           ),
-        ],
-      ),
-      body: Consumer<GatewayProvider>(
-        builder: (context, provider, child) {
-          final messages = provider.smsMessages;
-          
-          return Column(
-            children: [
-              _buildStatsCard(provider),
-              Expanded(
-                child: messages.isEmpty
-                    ? _buildEmptyState()
-                    : _buildMessagesList(messages),
+          PopupMenuButton(
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                child: const Text('Clear Messages'),
+                onTap: _clearMessages,
+              ),
+              PopupMenuItem(
+                child: const Text('Send Test SMS'),
+                onTap: _sendTestSms,
+              ),
+              PopupMenuItem(
+                child: const Text('Simulate Incoming'),
+                onTap: _simulateIncoming,
               ),
             ],
-          );
-        },
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showSendSmsDialog,
-        backgroundColor: Colors.blue[600] ?? Colors.blue,
-        child: const Icon(Icons.send, color: Colors.white),
-      ),
-    );
-  }
-
-  Widget _buildStatsCard(GatewayProvider provider) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: Colors.blue.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
+      body: Column(
         children: [
-          _buildStatItem(
-            'Total',
-            provider.smsMessages.length.toString(),
-            Icons.message,
-            Colors.blue,
-          ),
-          _buildStatItem(
-            'Inbox',
-            provider.smsMessages
-                .where((msg) => msg.type == SmsType.inbox)
-                .length
-                .toString(),
-            Icons.inbox,
-            Colors.green,
-          ),
-          _buildStatItem(
-            'Sent',
-            provider.smsMessages
-                .where((msg) => msg.type == SmsType.sent)
-                .length
-                .toString(),
-            Icons.send,
-            Colors.orange,
+          // Compose section
+          _buildComposeSection(),
+          
+          const Divider(),
+          
+          // Statistics
+          _buildStatistics(),
+          
+          const Divider(),
+          
+          // Messages list
+          Expanded(
+            child: _buildMessagesList(),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatItem(String label, String value, IconData icon, Color color) {
+  Widget _buildComposeSection() {
+    return Card(
+      margin: const EdgeInsets.all(16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Send SMS',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            
+            TextField(
+              controller: _recipientController,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(
+                labelText: 'Recipient',
+                hintText: '+1234567890',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.person),
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            TextField(
+              controller: _messageController,
+              maxLines: 3,
+              maxLength: 160,
+              decoration: const InputDecoration(
+                labelText: 'Message',
+                hintText: 'Type your message here...',
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.message),
+              ),
+            ),
+            const SizedBox(height: 12),
+            
+            Row(
+              children: [
+                Switch(
+                  value: _useSmpp,
+                  onChanged: (value) {
+                    setState(() {
+                      _useSmpp = value;
+                    });
+                  },
+                ),
+                const SizedBox(width: 8),
+                const Text('Use SMPP'),
+                const Spacer(),
+                ElevatedButton.icon(
+                  onPressed: _sendSms,
+                  icon: const Icon(Icons.send),
+                  label: const Text('Send'),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatistics() {
+    final smsService = context.read<SmsService>();
+    final stats = smsService.getMessageStats();
+    
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'SMS Statistics',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 12),
+            
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStatItem('Total', stats['total']?.toString() ?? '0'),
+                _buildStatItem('Sent', stats['sent']?.toString() ?? '0'),
+                _buildStatItem('Delivered', stats['delivered']?.toString() ?? '0'),
+                _buildStatItem('Failed', stats['failed']?.toString() ?? '0'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value) {
     return Column(
       children: [
-        Icon(icon, color: color, size: 24),
-        const SizedBox(height: 8),
         Text(
           value,
-          style: AppTextStyles.poppins(
-            fontSize: 18,
+          style: const TextStyle(
+            fontSize: 20,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Colors.blue,
           ),
         ),
         Text(
           label,
-          style: AppTextStyles.poppins(
+          style: const TextStyle(
             fontSize: 12,
-            color: Colors.grey[400],
+            color: Colors.grey,
           ),
         ),
       ],
     );
   }
 
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.message_outlined,
-            size: 64,
-            color: Colors.grey[600],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No SMS messages',
-            style: AppTextStyles.poppins(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: Colors.grey[400],
+  Widget _buildMessagesList() {
+    if (_messages.isEmpty) {
+      return const Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.sms_outlined, size: 64, color: Colors.grey),
+            SizedBox(height: 16),
+            Text(
+              'No messages',
+              style: TextStyle(fontSize: 18, color: Colors.grey),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Send your first message using the + button',
-            style: AppTextStyles.poppins(
-              fontSize: 14,
-              color: Colors.grey[600],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+          ],
+        ),
+      );
+    }
 
-  Widget _buildMessagesList(List<SmsMessage> messages) {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: messages.length,
+      padding: const EdgeInsets.all(16),
+      itemCount: _messages.length,
       itemBuilder: (context, index) {
-        final message = messages[index];
+        final message = _messages[index];
         return _buildMessageCard(message);
       },
     );
   }
 
   Widget _buildMessageCard(SmsMessage message) {
-    final isIncoming = message.type == SmsType.inbox;
-    final isRead = message.isRead;
+    final isIncoming = message.type == SmsMessageType.incoming;
     
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: isIncoming 
-              ? Colors.green.withOpacity(0.3)
-              : Colors.blue.withOpacity(0.3),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Icon(
-                    isIncoming ? Icons.call_received : Icons.call_made,
-                    color: isIncoming ? Colors.green : Colors.blue,
-                    size: 16,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    message.address,
-                    style: AppTextStyles.poppins(
-                      fontWeight: FontWeight.w600,
-                      color: isRead ? Colors.grey[400] : Colors.white,
-                    ),
-                  ),
-                ],
-              ),
-              Text(
-                _formatTimestamp(message.timestamp),
-                style: AppTextStyles.poppins(
-                  fontSize: 12,
-                  color: Colors.grey[600],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            message.body,
-            style: AppTextStyles.poppins(
-              color: isRead ? Colors.grey[300] : Colors.white,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _getStatusColor(message.status).withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  message.status.name.toUpperCase(),
-                  style: AppTextStyles.poppins(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w500,
-                    color: _getStatusColor(message.status),
-                  ),
-                ),
-              ),
-              if (isIncoming && !isRead)
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: Colors.blue,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Color _getStatusColor(SmsStatus status) {
-    switch (status) {
-      case SmsStatus.sent:
-        return Colors.green;
-      case SmsStatus.delivered:
-        return Colors.blue;
-      case SmsStatus.failed:
-        return Colors.red;
-      case SmsStatus.pending:
-        return Colors.orange;
-    }
-  }
-
-  String _formatTimestamp(DateTime timestamp) {
-    final now = DateTime.now();
-    final difference = now.difference(timestamp);
-
-    if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
-    } else {
-      return 'Just now';
-    }
-  }
-
-  void _showSendSmsDialog() {
-    _phoneController.clear();
-    _messageController.clear();
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF1A1A1A),
-        title: Text(
-          'Send SMS',
-          style: AppTextStyles.poppins(
-            fontWeight: FontWeight.w600,
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: _getMessageStatusColor(message.status),
+          child: Icon(
+            isIncoming ? Icons.call_received : Icons.call_made,
             color: Colors.white,
           ),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
+        title: Row(
           children: [
-            TextField(
-              controller: _phoneController,
-              style: AppTextStyles.poppins(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: 'Phone Number',
-                labelStyle: AppTextStyles.poppins(color: Colors.grey[400]),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey[600]!),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue),
-                  borderRadius: BorderRadius.circular(8),
-                ),
+            Expanded(
+              child: Text(
+                isIncoming ? message.sender : message.recipient,
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
-              keyboardType: TextInputType.phone,
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: _messageController,
-              style: AppTextStyles.poppins(color: Colors.white),
-              decoration: InputDecoration(
-                labelText: 'Message',
-                labelStyle: AppTextStyles.poppins(color: Colors.grey[400]),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.grey[600]!),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: BorderSide(color: Colors.blue),
-                  borderRadius: BorderRadius.circular(8),
-                ),
+            Chip(
+              label: Text(
+                message.status.name.toUpperCase(),
+                style: const TextStyle(fontSize: 10),
               ),
-              maxLines: 3,
+              backgroundColor: _getMessageStatusColor(message.status).withOpacity(0.2),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(
-              'Cancel',
-              style: AppTextStyles.poppins(color: Colors.grey[400]),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 4),
+            Text(
+              message.content,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
             ),
-          ),
-          ElevatedButton(
-            onPressed: _isLoading ? null : _sendSms,
-            child: _isLoading
-                ? const SizedBox(
-                    width: 16,
-                    height: 16,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : Text(
-                    'Send',
-                    style: AppTextStyles.poppins(color: Colors.white),
-                  ),
-          ),
-        ],
+            const SizedBox(height: 4),
+            Text(
+              _formatDateTime(message.timestamp),
+              style: const TextStyle(fontSize: 12, color: Colors.grey),
+            ),
+          ],
+        ),
+        trailing: PopupMenuButton(
+          itemBuilder: (context) => [
+            PopupMenuItem(
+              child: const Text('Copy'),
+              onTap: () => _copyMessage(message.content),
+            ),
+            PopupMenuItem(
+              child: const Text('Reply'),
+              onTap: () => _replyToMessage(message),
+            ),
+            PopupMenuItem(
+              child: const Text('Delete'),
+              onTap: () => _deleteMessage(message.id),
+            ),
+          ],
+        ),
+        onTap: () => _showMessageDetails(message),
       ),
     );
   }
 
+  // Action methods
   Future<void> _sendSms() async {
-    if (_phoneController.text.isEmpty || _messageController.text.isEmpty) {
+    final recipient = _recipientController.text.trim();
+    final content = _messageController.text.trim();
+    
+    if (recipient.isEmpty || content.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Please fill in all fields'),
+        const SnackBar(
+          content: Text('Please enter recipient and message'),
           backgroundColor: Colors.red,
         ),
       );
       return;
     }
 
+    final gatewayService = context.read<GatewayService>();
+    final messageId = await gatewayService.sendSms(recipient, content, useSmpp: _useSmpp);
+    
+    if (messageId != null) {
+      _recipientController.clear();
+      _messageController.clear();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('SMS sent')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to send SMS'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  Future<void> _sendTestSms() async {
+    _recipientController.text = '+1234567890';
+    _messageController.text = 'Test message from GOSTsimbox Gateway';
+    await _sendSms();
+  }
+
+  Future<void> _simulateIncoming() async {
+    final smsService = context.read<SmsService>();
+    smsService.simulateIncomingSms('+0987654321', 'Incoming test message');
+  }
+
+  void _clearMessages() {
+    final smsService = context.read<SmsService>();
+    smsService.clearMessages();
     setState(() {
-      _isLoading = true;
+      _messages.clear();
     });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Messages cleared')),
+    );
+  }
 
-    try {
-      final provider = Provider.of<GatewayProvider>(context, listen: false);
-      final success = await provider.sendSms(
-        _phoneController.text,
-        _messageController.text,
-      );
+  void _copyMessage(String content) {
+    // TODO: Implement clipboard copy
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Message copied to clipboard')),
+    );
+  }
 
-      if (success) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('SMS sent successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Failed to send SMS'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
+  void _replyToMessage(SmsMessage message) {
+    final sender = message.type == SmsMessageType.incoming 
+        ? message.sender 
+        : message.recipient;
+    _recipientController.text = sender;
+    // Focus on message field
+    FocusScope.of(context).requestFocus(FocusNode());
+  }
+
+  void _deleteMessage(String messageId) {
+    final smsService = context.read<SmsService>();
+    final deleted = smsService.deleteMessage(messageId);
+    
+    if (deleted) {
       setState(() {
-        _isLoading = false;
+        _messages.removeWhere((m) => m.id == messageId);
       });
-    }
-  }
-
-  Future<void> _refreshMessages() async {
-    try {
-      final provider = Provider.of<GatewayProvider>(context, listen: false);
-      await provider.refreshSmsMessages();
-    } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error refreshing messages: $e'),
-          backgroundColor: Colors.red,
-        ),
+        const SnackBar(content: Text('Message deleted')),
       );
     }
   }
-} 
+
+  void _showMessageDetails(SmsMessage message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          message.type == SmsMessageType.incoming 
+              ? 'From: ${message.sender}' 
+              : 'To: ${message.recipient}',
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Message:', style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            Text(message.content),
+            const SizedBox(height: 16),
+            Text('Status: ${message.status.name}'),
+            Text('Time: ${_formatDateTime(message.timestamp)}'),
+            Text('ID: ${message.id}'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Helper methods
+  Color _getMessageStatusColor(SmsMessageStatus status) {
+    switch (status) {
+      case SmsMessageStatus.pending:
+        return Colors.orange;
+      case SmsMessageStatus.sent:
+        return Colors.blue;
+      case SmsMessageStatus.delivered:
+        return Colors.green;
+      case SmsMessageStatus.failed:
+        return Colors.red;
+      case SmsMessageStatus.received:
+        return Colors.purple;
+    }
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    return '${dateTime.day}/${dateTime.month}/${dateTime.year} '
+           '${dateTime.hour.toString().padLeft(2, '0')}:'
+           '${dateTime.minute.toString().padLeft(2, '0')}';
+  }
+}

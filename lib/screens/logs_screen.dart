@@ -1,331 +1,513 @@
 import 'package:flutter/material.dart';
-import '../utils/text_styles.dart';
 import 'package:provider/provider.dart';
-import '../providers/gateway_provider.dart';
+
+import '../services/gateway_service.dart';
+import '../services/sip_service.dart';
+import '../services/sms_service.dart';
+import '../services/telephony_service.dart';
 
 class LogsScreen extends StatefulWidget {
-  const LogsScreen({Key? key}) : super(key: key);
+  const LogsScreen({super.key});
 
   @override
   State<LogsScreen> createState() => _LogsScreenState();
 }
 
 class _LogsScreenState extends State<LogsScreen> {
+  final List<LogEntry> _logs = [];
   final TextEditingController _searchController = TextEditingController();
-  List<String> _filteredLogs = [];
-  bool _isLoading = false;
+  String _searchQuery = '';
+  LogLevel _selectedLevel = LogLevel.all;
+  bool _autoScroll = true;
+  final ScrollController _scrollController = ScrollController();
 
   @override
   void initState() {
     super.initState();
-    _loadLogs();
+    _setupLogListeners();
   }
 
-  Future<void> _loadLogs() async {
+  void _setupLogListeners() {
+    final gatewayService = context.read<GatewayService>();
+    final sipService = context.read<SipService>();
+    final smsService = context.read<SmsService>();
+    final telephonyService = context.read<TelephonyService>();
+
+    gatewayService.logStream.listen((log) => _addLog(log, LogLevel.info, 'Gateway'));
+    sipService.logStream.listen((log) => _addLog(log, LogLevel.info, 'SIP'));
+    smsService.logStream.listen((log) => _addLog(log, LogLevel.info, 'SMS'));
+    telephonyService.logStream.listen((log) => _addLog(log, LogLevel.info, 'Telephony'));
+  }
+
+  void _addLog(String message, LogLevel level, String source) {
     setState(() {
-      _isLoading = true;
+      _logs.insert(0, LogEntry(
+        timestamp: DateTime.now(),
+        level: level,
+        source: source,
+        message: message,
+      ));
+      
+      // Keep only last 1000 logs
+      if (_logs.length > 1000) {
+        _logs.removeRange(1000, _logs.length);
+      }
     });
 
-    try {
-      final provider = Provider.of<GatewayProvider>(context, listen: false);
-      final storedLogs = await provider.loadStoredLogs();
-      final currentLogs = provider.logs;
-      
-      // Combine stored and current logs
-      final allLogs = [...storedLogs, ...currentLogs];
-      _filteredLogs = allLogs;
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error loading logs: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  void _filterLogs(String query) {
-    if (query.isEmpty) {
-      setState(() {
-        _filteredLogs = Provider.of<GatewayProvider>(context, listen: false).logs;
-      });
-    } else {
-      setState(() {
-        _filteredLogs = Provider.of<GatewayProvider>(context, listen: false)
-            .logs
-            .where((log) => log.toLowerCase().contains(query.toLowerCase()))
-            .toList();
-      });
-    }
-  }
-
-  Future<void> _clearLogs() async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        backgroundColor: const Color(0xFF2A2A2A),
-        title: Text(
-          'Clear Logs',
-          style: AppTextStyles.poppins(
-            color: Colors.white,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        content: Text(
-          'Are you sure you want to clear all logs? This action cannot be undone.',
-          style: AppTextStyles.poppins(
-            color: Colors.grey[300],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(
-              'Cancel',
-              style: AppTextStyles.poppins(
-                color: Colors.grey[400],
-              ),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red[600],
-              foregroundColor: Colors.white,
-            ),
-            child: Text(
-              'Clear',
-              style: AppTextStyles.poppins(),
-            ),
-          ),
-        ],
-      ),
-    );
-
-    if (confirmed == true) {
-      try {
-        final provider = Provider.of<GatewayProvider>(context, listen: false);
-        await provider.clearLogs();
-        setState(() {
-          _filteredLogs.clear();
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Logs cleared successfully'),
-            backgroundColor: Colors.green,
-          ),
+    // Auto scroll to top if enabled
+    if (_autoScroll && _scrollController.hasClients) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _scrollController.animateTo(
+          0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
         );
-      } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error clearing logs: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+      });
     }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF1A1A1A),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF2A2A2A),
-        elevation: 0,
-        title: Text(
-          'Gateway Logs',
-          style: AppTextStyles.poppins(
-            fontWeight: FontWeight.w600,
-            color: Colors.white,
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh, color: Colors.white),
-            onPressed: _loadLogs,
-          ),
-          IconButton(
-            icon: const Icon(Icons.clear_all, color: Colors.white),
-            onPressed: _clearLogs,
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          // Search Bar
-          Container(
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              onChanged: _filterLogs,
-              style: AppTextStyles.poppins(
-                fontSize: 16,
-                color: Colors.white,
-              ),
-              decoration: InputDecoration(
-                hintText: 'Search logs...',
-                hintStyle: AppTextStyles.poppins(
-                  color: Colors.grey[400],
-                ),
-                prefixIcon: const Icon(
-                  Icons.search,
-                  color: Colors.grey,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey[600]!),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.grey[600]!),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(color: Colors.blue[400]!),
-                ),
-                filled: true,
-                fillColor: const Color(0xFF2A2A2A),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-              ),
-            ),
-          ),
-
-          // Logs List
-          Expanded(
-            child: _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-                    ),
-                  )
-                : _filteredLogs.isEmpty
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.description_outlined,
-                              size: 64,
-                              color: Colors.grey[400],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No logs available',
-                              style: AppTextStyles.poppins(
-                                fontSize: 18,
-                                color: Colors.grey[400],
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Gateway logs will appear here',
-                              style: AppTextStyles.poppins(
-                                fontSize: 14,
-                                color: Colors.grey[500],
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : ListView.builder(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        itemCount: _filteredLogs.length,
-                        itemBuilder: (context, index) {
-                          final log = _filteredLogs[index];
-                          return _buildLogEntry(log);
-                        },
-                      ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLogEntry(String log) {
-    // Parse timestamp and message
-    final parts = log.split('] ');
-    final timestamp = parts.isNotEmpty ? parts[0].replaceAll('[', '') : '';
-    final message = parts.length > 1 ? parts[1] : log;
-    
-    // Determine log level and color
-    Color logColor = Colors.white;
-    IconData logIcon = Icons.info;
-    
-    if (message.toLowerCase().contains('error')) {
-      logColor = Colors.red[400]!;
-      logIcon = Icons.error;
-    } else if (message.toLowerCase().contains('warning')) {
-      logColor = Colors.orange[400]!;
-      logIcon = Icons.warning;
-    } else if (message.toLowerCase().contains('success') || 
-               message.toLowerCase().contains('registered') ||
-               message.toLowerCase().contains('connected')) {
-      logColor = Colors.green[400]!;
-      logIcon = Icons.check_circle;
-    }
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFF2A2A2A),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: Colors.grey[600]!,
-          width: 1,
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            logIcon,
-            color: logColor,
-            size: 16,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  timestamp,
-                  style: AppTextStyles.poppins(
-                    fontSize: 12,
-                    color: Colors.grey[500],
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  message,
-                  style: AppTextStyles.poppins(
-                    fontSize: 13,
-                    color: logColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
-} 
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Logs'),
+        actions: [
+          IconButton(
+            icon: Icon(_autoScroll ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_down_outlined),
+            onPressed: () {
+              setState(() {
+                _autoScroll = !_autoScroll;
+              });
+            },
+            tooltip: 'Auto scroll',
+          ),
+          IconButton(
+            icon: const Icon(Icons.clear_all),
+            onPressed: _clearLogs,
+            tooltip: 'Clear logs',
+          ),
+          PopupMenuButton<LogLevel>(
+            icon: const Icon(Icons.filter_list),
+            initialValue: _selectedLevel,
+            onSelected: (level) {
+              setState(() {
+                _selectedLevel = level;
+              });
+            },
+            itemBuilder: (context) => LogLevel.values.map((level) {
+              return PopupMenuItem(
+                value: level,
+                child: Row(
+                  children: [
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: _getLevelColor(level),
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(level.name.toUpperCase()),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Search bar
+          Container(
+            padding: const EdgeInsets.all(16),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search logs...',
+                prefixIcon: const Icon(Icons.search),
+                border: const OutlineInputBorder(),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _searchController.clear();
+                          setState(() {
+                            _searchQuery = '';
+                          });
+                        },
+                      )
+                    : null,
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value.toLowerCase();
+                });
+              },
+            ),
+          ),
+          
+          // Stats bar
+          _buildStatsBar(),
+          
+          // Logs list
+          Expanded(
+            child: _buildLogsList(),
+          ),
+        ],
+      ),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton.small(
+            heroTag: 'top',
+            onPressed: _scrollToTop,
+            child: const Icon(Icons.keyboard_arrow_up),
+          ),
+          const SizedBox(height: 8),
+          FloatingActionButton.small(
+            heroTag: 'bottom',
+            onPressed: _scrollToBottom,
+            child: const Icon(Icons.keyboard_arrow_down),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsBar() {
+    final filteredLogs = _getFilteredLogs();
+    final totalLogs = _logs.length;
+    final filteredCount = filteredLogs.length;
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: Theme.of(context).colorScheme.surfaceVariant,
+      child: Row(
+        children: [
+          Text(
+            'Showing $filteredCount of $totalLogs logs',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+          const Spacer(),
+          if (_selectedLevel != LogLevel.all)
+            Chip(
+              label: Text(
+                _selectedLevel.name.toUpperCase(),
+                style: const TextStyle(fontSize: 10),
+              ),
+              backgroundColor: _getLevelColor(_selectedLevel).withOpacity(0.2),
+              deleteIcon: const Icon(Icons.close, size: 16),
+              onDeleted: () {
+                setState(() {
+                  _selectedLevel = LogLevel.all;
+                });
+              },
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLogsList() {
+    final filteredLogs = _getFilteredLogs();
+    
+    if (filteredLogs.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.list_alt_outlined,
+              size: 64,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _logs.isEmpty ? 'No logs available' : 'No logs match your filter',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey.shade600,
+              ),
+            ),
+            if (_logs.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () {
+                  setState(() {
+                    _selectedLevel = LogLevel.all;
+                    _searchQuery = '';
+                    _searchController.clear();
+                  });
+                },
+                child: const Text('Clear filters'),
+              ),
+            ],
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      controller: _scrollController,
+      padding: const EdgeInsets.all(8),
+      itemCount: filteredLogs.length,
+      itemBuilder: (context, index) {
+        final log = filteredLogs[index];
+        return _buildLogCard(log);
+      },
+    );
+  }
+
+  Widget _buildLogCard(LogEntry log) {
+    final levelColor = _getLevelColor(log.level);
+    
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      elevation: 1,
+      child: InkWell(
+        onTap: () => _showLogDetails(log),
+        child: Container(
+          decoration: BoxDecoration(
+            border: Border(
+              left: BorderSide(
+                color: levelColor,
+                width: 4,
+              ),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: levelColor.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        log.level.name.toUpperCase(),
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: levelColor,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        log.source,
+                        style: const TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      _formatTime(log.timestamp),
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  log.message,
+                  style: const TextStyle(fontSize: 13),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _showLogDetails(LogEntry log) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Container(
+              width: 12,
+              height: 12,
+              decoration: BoxDecoration(
+                color: _getLevelColor(log.level),
+                shape: BoxShape.circle,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Text('${log.source} Log'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Time: ${_formatDateTime(log.timestamp)}'),
+              Text('Level: ${log.level.name.toUpperCase()}'),
+              const SizedBox(height: 16),
+              const Text('Message:', style: TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 8),
+              SelectableText(log.message),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              // TODO: Implement copy to clipboard
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Log copied to clipboard')),
+              );
+            },
+            child: const Text('Copy'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<LogEntry> _getFilteredLogs() {
+    return _logs.where((log) {
+      // Filter by level
+      if (_selectedLevel != LogLevel.all && log.level != _selectedLevel) {
+        return false;
+      }
+      
+      // Filter by search query
+      if (_searchQuery.isNotEmpty) {
+        final searchText = '${log.source} ${log.message}'.toLowerCase();
+        if (!searchText.contains(_searchQuery)) {
+          return false;
+        }
+      }
+      
+      return true;
+    }).toList();
+  }
+
+  void _clearLogs() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear Logs'),
+        content: const Text('Are you sure you want to clear all logs?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _logs.clear();
+              });
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Logs cleared')),
+              );
+            },
+            child: const Text('Clear'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _scrollToTop() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    }
+  }
+
+  Color _getLevelColor(LogLevel level) {
+    switch (level) {
+      case LogLevel.debug:
+        return Colors.grey;
+      case LogLevel.info:
+        return Colors.blue;
+      case LogLevel.warning:
+        return Colors.orange;
+      case LogLevel.error:
+        return Colors.red;
+      case LogLevel.all:
+        return Colors.purple;
+    }
+  }
+
+  String _formatTime(DateTime dateTime) {
+    return '${dateTime.hour.toString().padLeft(2, '0')}:'
+           '${dateTime.minute.toString().padLeft(2, '0')}:'
+           '${dateTime.second.toString().padLeft(2, '0')}';
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    return '${dateTime.day}/${dateTime.month}/${dateTime.year} ${_formatTime(dateTime)}';
+  }
+}
+
+class LogEntry {
+  final DateTime timestamp;
+  final LogLevel level;
+  final String source;
+  final String message;
+
+  LogEntry({
+    required this.timestamp,
+    required this.level,
+    required this.source,
+    required this.message,
+  });
+}
+
+enum LogLevel {
+  all,
+  debug,
+  info,
+  warning,
+  error,
+}

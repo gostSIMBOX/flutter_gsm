@@ -1,19 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../utils/text_styles.dart';
-import '../providers/dashboard_provider.dart';
-import '../providers/gateway_provider.dart';
-import '../widgets/status_card.dart';
-import '../widgets/line_card.dart';
-import '../widgets/stats_card.dart';
-import '../widgets/active_call_card.dart';
-import '../widgets/sip_status_card.dart';
-import '../widgets/status_indicator.dart';
-import '../widgets/connection_monitor_widget.dart';
-import '../services/theme_service.dart';
-import '../models/sip_connection.dart';
-import '../theme/app_colors.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
+import '../services/gateway_service.dart';
+import '../services/sip_service.dart';
+import '../services/sms_service.dart';
+import '../services/telephony_service.dart';
+import 'settings_screen.dart';
+import 'call_screen.dart';
+import 'sms_screen.dart';
+import 'logs_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -22,684 +17,568 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _DashboardScreenState extends State<DashboardScreen>
-    with TickerProviderStateMixin {
-  late AnimationController _fadeController;
-  late AnimationController _slideController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
+class _DashboardScreenState extends State<DashboardScreen> {
+  GatewayStatus? _gatewayStatus;
+  String? _phoneNumber;
+  String? _networkOperator;
+  int? _signalStrength;
 
   @override
   void initState() {
     super.initState();
-    _fadeController = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _slideController = AnimationController(
-      duration: const Duration(milliseconds: 600),
-      vsync: this,
-    );
-
-    _fadeAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _fadeController,
-      curve: Curves.easeInOut,
-    ));
-
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.3),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _slideController,
-      curve: Curves.easeOutCubic,
-    ));
-
-    _fadeController.forward();
-    _slideController.forward();
-
-    // Initialize dashboard data
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final dashboardProvider = Provider.of<DashboardProvider>(context, listen: false);
-      dashboardProvider.initialize();
-    });
+    _initializeServices();
   }
 
-  @override
-  void dispose() {
-    _fadeController.dispose();
-    _slideController.dispose();
-    super.dispose();
+  Future<void> _initializeServices() async {
+    final gatewayService = context.read<GatewayService>();
+    final telephonyService = context.read<TelephonyService>();
+    
+    // Listen to gateway status changes
+    gatewayService.statusStream.listen((status) {
+      if (mounted) {
+        setState(() {
+          _gatewayStatus = status;
+        });
+      }
+    });
+    
+    // Get device info
+    _phoneNumber = await telephonyService.getPhoneNumber();
+    _networkOperator = await telephonyService.getNetworkOperatorName();
+    _signalStrength = await telephonyService.getSignalStrength();
+    
+    if (mounted) {
+      setState(() {});
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    
     return Scaffold(
-      backgroundColor: colorScheme.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildAppBar(context),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: () async {
-                  final dashboardProvider = Provider.of<DashboardProvider>(context, listen: false);
-                  await dashboardProvider.refresh();
-                },
-                child: SingleChildScrollView(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.all(16),
-                  child: FadeTransition(
-                    opacity: _fadeAnimation,
-                    child: SlideTransition(
-                      position: _slideAnimation,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildQuickStats(context),
-                          const SizedBox(height: 24),
-                          _buildConnectionMonitoring(context),
-                          const SizedBox(height: 24),
-                          _buildActiveCalls(context),
-                          const SizedBox(height: 24),
-                          _buildLinesSection(context),
-                          const SizedBox(height: 24),
-                          _buildQuickActions(context),
-                          const SizedBox(height: 24),
-                          _buildThemeIndicators(context),
-                          const SizedBox(height: 24),
-                          _buildRecentActivity(context),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAppBar(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.shadow.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+      appBar: AppBar(
+        title: const Text('GOSTsimbox Gateway'),
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const SettingsScreen()),
+              );
+            },
           ),
         ],
       ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Icons.phone_android,
-              color: AppColors.primary,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'GOSTsimbox Gateway',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                Consumer<GatewayProvider>(
-                  builder: (context, provider, child) {
-                    final status = provider.status;
-                    return Text(
-                      _getStatusText(status.state),
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: _getStatusColor(status.state),
-                        fontWeight: FontWeight.w500,
-                      ),
-                    );
-                  },
-                ),
-              ],
-            ),
-          ),
-          PopupMenuButton<String>(
-            icon: Icon(Icons.more_vert, color: colorScheme.onSurface),
-            onSelected: (value) => _handleMenuAction(value),
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'settings',
-                child: Row(
-                  children: [
-                    Icon(Icons.settings, color: colorScheme.onSurfaceVariant),
-                    const SizedBox(width: 8),
-                    Text('Settings', style: TextStyle(color: colorScheme.onSurface)),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'logs',
-                child: Row(
-                  children: [
-                    Icon(Icons.list_alt, color: colorScheme.onSurfaceVariant),
-                    const SizedBox(width: 8),
-                    Text('Logs', style: TextStyle(color: colorScheme.onSurface)),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'info',
-                child: Row(
-                  children: [
-                    Icon(Icons.info, color: colorScheme.onSurfaceVariant),
-                    const SizedBox(width: 8),
-                    Text('Info', style: TextStyle(color: colorScheme.onSurface)),
-                  ],
-                ),
-              ),
+      body: RefreshIndicator(
+        onRefresh: _refreshData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Status Overview
+              _buildStatusOverview(),
+              const SizedBox(height: 16),
+              
+              // Service Status Cards
+              _buildServiceStatusCards(),
+              const SizedBox(height: 16),
+              
+              // Device Information
+              _buildDeviceInfo(),
+              const SizedBox(height: 16),
+              
+              // Quick Actions
+              _buildQuickActions(),
+              const SizedBox(height: 16),
+              
+              // Statistics
+              _buildStatistics(),
             ],
           ),
-        ],
+        ),
       ),
+      floatingActionButton: _buildFloatingActionButton(),
     );
   }
 
-  Widget _buildQuickStats(BuildContext context) {
-    final theme = Theme.of(context);
+  Widget _buildStatusOverview() {
+    final isRunning = _gatewayStatus?.isRunning ?? false;
+    final uptime = _gatewayStatus?.uptime;
     
-    return Consumer<DashboardProvider>(
-      builder: (context, dashboardProvider, child) {
-        return GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 1.5,
+    return Card(
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(12),
+          gradient: LinearGradient(
+            colors: isRunning
+                ? [Colors.green.shade400, Colors.green.shade600]
+                : [Colors.grey.shade400, Colors.grey.shade600],
+          ),
+        ),
+        child: Column(
           children: [
-            StatsCard(
-              title: 'Total Calls',
-              value: '0',
-              icon: Icons.call,
-              color: AppColors.primary,
-              onTap: () => Navigator.pushNamed(context, '/analytics'),
-            ),
-            Consumer<GatewayProvider>(
-              builder: (context, gatewayProvider, child) {
-                return StatsCard(
-                  title: 'SMS Messages',
-                  value: gatewayProvider.smsMessages.length.toString(),
-                  icon: Icons.sms,
-                  color: AppColors.accent,
-                  onTap: () => Navigator.pushNamed(context, '/sms'),
-                );
-              },
-            ),
-            StatsCard(
-              title: 'Active Lines',
-              value: dashboardProvider.activeLinesCount.toString(),
-              icon: Icons.phone,
-              color: AppColors.technical,
-              onTap: () => Navigator.pushNamed(context, '/lines'),
-            ),
-            StatsCard(
-              title: 'Uptime',
-              value: '0h',
-              icon: Icons.timer,
-              color: AppColors.warning,
-              onTap: () => Navigator.pushNamed(context, '/info'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildConnectionMonitoring(BuildContext context) {
-    return Consumer<GatewayProvider>(
-      builder: (context, provider, child) {
-        final config = provider.config;
-        return ConnectionMonitorWidget(
-          sipServer: config?.sipServer ?? '192.168.88.254',
-          sipPort: config?.sipPort ?? 5060,
-          smppServer: config?.smppServer ?? '192.168.88.254',
-          smppPort: config?.smppPort ?? 2775,
-          showDetailedStats: true,
-        );
-      },
-    );
-  }
-
-  Widget _buildActiveCalls(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    
-    return Consumer<DashboardProvider>(
-      builder: (context, dashboardProvider, child) {
-        if (dashboardProvider.activeCalls.isEmpty) {
-          return const SizedBox.shrink();
-        }
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Active Call',
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: colorScheme.onSurface,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 12),
-            ActiveCallCard(call: dashboardProvider.activeCalls.first),
-          ],
-        );
-      },
-    );
-  }
-
-  Widget _buildLinesSection(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    
-    return Consumer<DashboardProvider>(
-      builder: (context, dashboardProvider, child) {
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Connection Status',
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: colorScheme.onSurface,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const SizedBox(height: 12),
             Row(
               children: [
-                Expanded(
-                  child: SipStatusCard(
-                    connection: dashboardProvider.sipConnection ?? SipConnection(
-                      status: 'disconnected',
-                      server: '',
-                      port: 5060,
-                      transport: 'UDP',
-                      lastRegistration: DateTime.now(),
-                      registrationExpiry: DateTime.now(),
-                      jitter: 0.0,
-                      latency: 0.0,
-                      bandwidthIn: 0.0,
-                      bandwidthOut: 0.0,
-                      packetLoss: 0.0,
-                      mos: 0.0,
-                      supportedCodecs: [],
-                      activeCodecs: [],
-                      username: '',
-                      isRegistered: false,
-                    ),
-                  ),
+                Icon(
+                  isRunning ? Icons.router : Icons.router_outlined,
+                  size: 32,
+                  color: Colors.white,
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: StatusCard(
-                    title: 'GSM Network',
-                    status: 'Connected',
-                    icon: Icons.signal_cellular_alt,
-                    color: AppColors.success,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Gateway Status',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                      ),
+                      Text(
+                        isRunning ? 'Running' : 'Stopped',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
+                if (isRunning && uptime != null)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'Uptime',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withOpacity(0.9),
+                        ),
+                      ),
+                      Text(
+                        _formatDuration(uptime),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
               ],
             ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 
-  Widget _buildQuickActions(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+  Widget _buildServiceStatusCards() {
+    final sipState = _gatewayStatus?.sipState ?? SipConnectionState.disconnected;
+    final smppState = _gatewayStatus?.smppState ?? SmppConnectionState.disconnected;
+    final activeCalls = _gatewayStatus?.activeCalls ?? 0;
     
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
       children: [
-        Text(
-          'Quick Actions',
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: colorScheme.onSurface,
-            fontWeight: FontWeight.w600,
+        Expanded(
+          child: _buildStatusCard(
+            'SIP',
+            _sipStateToString(sipState),
+            _sipStateToColor(sipState),
+            Icons.phone_in_talk,
           ),
         ),
-        const SizedBox(height: 12),
-        GridView.count(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          crossAxisCount: 2,
-          crossAxisSpacing: 16,
-          mainAxisSpacing: 16,
-          childAspectRatio: 1.8,
-          children: [
-            _buildActionCard(
-              context: context,
-              title: 'Make Call',
-              icon: Icons.call,
-              color: AppColors.accent,
-              onTap: () => Navigator.pushNamed(context, '/calls'),
-            ),
-            _buildActionCard(
-              context: context,
-              title: 'Send SMS',
-              icon: Icons.sms,
-              color: AppColors.primary,
-              onTap: () => Navigator.pushNamed(context, '/sms'),
-            ),
-            _buildActionCard(
-              context: context,
-              title: 'USSD',
-              icon: Icons.phone_android,
-              color: AppColors.accent,
-              onTap: () => Navigator.pushNamed(context, '/ussd'),
-            ),
-            _buildActionCard(
-              context: context,
-              title: 'SMPP Settings',
-              icon: Icons.settings,
-              color: Colors.purple,
-              onTap: () => Navigator.pushNamed(context, '/smpp-settings'),
-            ),
-            _buildActionCard(
-              context: context,
-              title: 'Statistics',
-              icon: Icons.analytics,
-              color: AppColors.technical,
-              onTap: () => Navigator.pushNamed(context, '/analytics'),
-            ),
-            _buildActionCard(
-              context: context,
-              title: 'Settings',
-              icon: Icons.settings,
-              color: AppColors.warning,
-              onTap: () => Navigator.pushNamed(context, '/settings'),
-            ),
-          ],
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildStatusCard(
+            'SMS',
+            _smppStateToString(smppState),
+            _smppStateToColor(smppState),
+            Icons.sms,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _buildStatusCard(
+            'Calls',
+            activeCalls.toString(),
+            activeCalls > 0 ? Colors.blue : Colors.grey,
+            Icons.call,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildActionCard({
-    required BuildContext context,
-    required String title,
-    required IconData icon,
-    required Color color,
-    required VoidCallback onTap,
-  }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    
+  Widget _buildStatusCard(String title, String value, Color color, IconData icon) {
     return Card(
-      color: colorScheme.surface,
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  icon,
-                  color: color,
-                  size: 24,
-                ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Icon(icon, size: 28, color: color),
+            const SizedBox(height: 8),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              value,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: color,
               ),
-              const SizedBox(height: 8),
-              Text(
-                title,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurface,
-                  fontWeight: FontWeight.w500,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildRecentActivity(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    
-    return Consumer<DashboardProvider>(
-      builder: (context, dashboardProvider, child) {
-        if (dashboardProvider.activeCalls.isEmpty) {
-          return const SizedBox.shrink();
-        }
-
-        return Column(
+  Widget _buildDeviceInfo() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const Text(
+              'Device Information',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            
+            if (_phoneNumber != null)
+              _buildInfoRow('Phone Number', _phoneNumber!),
+            if (_networkOperator != null)
+              _buildInfoRow('Network Operator', _networkOperator!),
+            if (_signalStrength != null)
+              _buildInfoRow('Signal Strength', '$_signalStrength dBm'),
+            
+            _buildInfoRow('Gateway Version', '3.0.0'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(color: Colors.grey),
+          ),
+          Text(
+            value,
+            style: const TextStyle(fontWeight: FontWeight.w500),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickActions() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Quick Actions',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            
             Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                Text(
-                  'Recent Calls',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.w600,
-                  ),
+                _buildActionButton(
+                  'Make Call',
+                  Icons.call,
+                  () => _navigateToCallScreen(),
                 ),
-                TextButton(
-                  onPressed: () => Navigator.pushNamed(context, '/calls'),
-                  child: Text(
-                    'View All',
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: AppColors.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
+                _buildActionButton(
+                  'Send SMS',
+                  Icons.sms,
+                  () => _navigateToSmsScreen(),
+                ),
+                _buildActionButton(
+                  'USSD',
+                  Icons.dialpad,
+                  () => _showUssdDialog(),
+                ),
+                _buildActionButton(
+                  'Logs',
+                  Icons.list_alt,
+                  () => _navigateToLogsScreen(),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            ...dashboardProvider.activeCalls.take(3).map((call) => _buildRecentCallItem(context, call)),
           ],
-        );
-      },
-    );
-  }
-
-  Widget _buildRecentCallItem(BuildContext context, dynamic call) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      color: colorScheme.surface,
-      elevation: 1,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: call.direction == 'incoming' ? AppColors.accent : AppColors.primary,
-          child: Icon(
-            call.direction == 'incoming' ? Icons.call_received : Icons.call_made,
-            color: Colors.white,
-            size: 20,
-          ),
         ),
-        title: Text(
-          call.fromNumber ?? 'Unknown',
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: colorScheme.onSurface,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        subtitle: Text(
-          _formatDateTime(call.startTime),
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
-        ),
-        trailing: Icon(
-          Icons.arrow_forward_ios,
-          color: colorScheme.onSurfaceVariant,
-          size: 16,
-        ),
-        onTap: () => Navigator.pushNamed(context, '/calls'),
       ),
     );
   }
 
-  Widget _buildThemeIndicators(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    
+  Widget _buildActionButton(String label, IconData icon, VoidCallback onPressed) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'System Status',
-          style: theme.textTheme.titleMedium?.copyWith(
-            color: colorScheme.onSurface,
-            fontWeight: FontWeight.w600,
+        ElevatedButton(
+          onPressed: onPressed,
+          style: ElevatedButton.styleFrom(
+            shape: const CircleBorder(),
+            padding: const EdgeInsets.all(16),
           ),
+          child: Icon(icon, size: 24),
         ),
-        const SizedBox(height: 16),
-        Consumer<GatewayProvider>(
-          builder: (context, provider, child) {
-            final status = provider.status;
-            return Column(
-              children: [
-                // Connection Status Indicator
-                StatusIndicator(
-                  status: _getStatusText(status.state),
-                  subtitle: 'Gateway connection status',
-                  onTap: () {
-                    // Navigate to detailed status screen
-                  },
-                ),
-                const SizedBox(height: 12),
-                // Signal Level Indicator (simulated)
-                SignalIndicator(
-                  signalLevel: 75, // Simulated signal level
-                  subtitle: 'GSM signal strength',
-                ),
-                const SizedBox(height: 12),
-                // Call Status Indicator (if there's an active call)
-                if (status.state == 'callInProgress')
-                  CallStatusIndicator(
-                    callStatus: 'Active',
-                    phoneNumber: '+1234567890',
-                    duration: '2:30',
-                  ),
-              ],
-            );
-          },
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12),
+          textAlign: TextAlign.center,
         ),
       ],
     );
   }
 
-  String _getStatusText(dynamic state) {
-    switch (state) {
-      case 'stopped':
-        return 'Stopped';
-      case 'starting':
-        return 'Starting...';
-      case 'running':
-        return 'Running';
-      case 'registered':
-        return 'Registered';
-      case 'callInProgress':
-        return 'Call in Progress';
-      case 'error':
-        return 'Error';
-      default:
-        return 'Unknown';
-    }
-  }
-
-  Color _getStatusColor(dynamic state) {
-    switch (state) {
-      case 'stopped':
-        return AppColors.error;
-      case 'starting':
-        return AppColors.warning;
-      case 'running':
-        return AppColors.primary;
-      case 'registered':
-        return AppColors.success;
-      case 'callInProgress':
-        return AppColors.technical;
-      case 'error':
-        return AppColors.error;
-      default:
-        return AppColors.info;
-    }
-  }
-
-  String _formatDateTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
+  Widget _buildStatistics() {
+    final totalCalls = _gatewayStatus?.totalCallsHandled ?? 0;
+    final totalMessages = _gatewayStatus?.totalMessagesHandled ?? 0;
     
-    if (difference.inDays > 0) {
-      return '${difference.inDays}d ago';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours}h ago';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes}m ago';
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Statistics',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildStatItem('Total Calls', totalCalls.toString()),
+                _buildStatItem('Total Messages', totalMessages.toString()),
+                _buildStatItem('Success Rate', '98.5%'),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatItem(String label, String value) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.blue,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            color: Colors.grey,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFloatingActionButton() {
+    final isRunning = _gatewayStatus?.isRunning ?? false;
+    
+    return FloatingActionButton.extended(
+      onPressed: _toggleGateway,
+      icon: Icon(isRunning ? Icons.stop : Icons.play_arrow),
+      label: Text(isRunning ? 'Stop' : 'Start'),
+      backgroundColor: isRunning ? Colors.red : Colors.green,
+    );
+  }
+
+  // Navigation methods
+  void _navigateToCallScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const CallScreen()),
+    );
+  }
+
+  void _navigateToSmsScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const SmsScreen()),
+    );
+  }
+
+  void _navigateToLogsScreen() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const LogsScreen()),
+    );
+  }
+
+  void _showUssdDialog() {
+    final controller = TextEditingController();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Send USSD'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: 'USSD Code',
+            hintText: '*123#',
+            border: OutlineInputBorder(),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _sendUssd(controller.text);
+            },
+            child: const Text('Send'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Action methods
+  Future<void> _toggleGateway() async {
+    final gatewayService = context.read<GatewayService>();
+    
+    if (_gatewayStatus?.isRunning == true) {
+      await gatewayService.stop();
     } else {
-      return 'Just now';
+      await gatewayService.start();
     }
   }
 
-  void _handleMenuAction(String action) {
-    switch (action) {
-      case 'settings':
-        Navigator.pushNamed(context, '/settings');
-        break;
-      case 'logs':
-        Navigator.pushNamed(context, '/logs');
-        break;
-      case 'info':
-        Navigator.pushNamed(context, '/info');
-        break;
+  Future<void> _sendUssd(String ussdCode) async {
+    final telephonyService = context.read<TelephonyService>();
+    
+    try {
+      final response = await telephonyService.sendUssd(ussdCode);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response ?? 'USSD sent successfully'),
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('USSD failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
-} 
+
+  Future<void> _refreshData() async {
+    final telephonyService = context.read<TelephonyService>();
+    
+    _phoneNumber = await telephonyService.getPhoneNumber();
+    _networkOperator = await telephonyService.getNetworkOperatorName();
+    _signalStrength = await telephonyService.getSignalStrength();
+    
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  // Helper methods
+  String _formatDuration(Duration duration) {
+    String twoDigits(int n) => n.toString().padLeft(2, '0');
+    final hours = twoDigits(duration.inHours);
+    final minutes = twoDigits(duration.inMinutes.remainder(60));
+    final seconds = twoDigits(duration.inSeconds.remainder(60));
+    return '$hours:$minutes:$seconds';
+  }
+
+  String _sipStateToString(SipConnectionState state) {
+    switch (state) {
+      case SipConnectionState.connected:
+        return 'Connected';
+      case SipConnectionState.connecting:
+        return 'Connecting';
+      case SipConnectionState.disconnected:
+        return 'Disconnected';
+      case SipConnectionState.error:
+        return 'Error';
+    }
+  }
+
+  Color _sipStateToColor(SipConnectionState state) {
+    switch (state) {
+      case SipConnectionState.connected:
+        return Colors.green;
+      case SipConnectionState.connecting:
+        return Colors.orange;
+      case SipConnectionState.disconnected:
+        return Colors.grey;
+      case SipConnectionState.error:
+        return Colors.red;
+    }
+  }
+
+  String _smppStateToString(SmppConnectionState state) {
+    switch (state) {
+      case SmppConnectionState.bound:
+        return 'Connected';
+      case SmppConnectionState.connecting:
+        return 'Connecting';
+      case SmppConnectionState.disconnected:
+        return 'Disconnected';
+      case SmppConnectionState.error:
+        return 'Error';
+    }
+  }
+
+  Color _smppStateToColor(SmppConnectionState state) {
+    switch (state) {
+      case SmppConnectionState.bound:
+        return Colors.green;
+      case SmppConnectionState.connecting:
+        return Colors.orange;
+      case SmppConnectionState.disconnected:
+        return Colors.grey;
+      case SmppConnectionState.error:
+        return Colors.red;
+    }
+  }
+}
