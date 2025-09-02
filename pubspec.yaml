@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 2.0.6+106
+version: 3.0.0+300
 
 environment:
   sdk: ^3.8.1
@@ -51,11 +51,17 @@ dependencies:
   # Permissions
   permission_handler: ^11.3.1
   
+  # Security
+  crypto: ^3.0.3
+  
   # Logging
   logger: ^2.0.2+1
   
   # HTTP client for API calls
   http: ^1.2.1
+  
+  # Network connectivity
+  connectivity_plus: ^5.0.2
   
   # Background tasks
   workmanager: ^0.8.0
@@ -65,13 +71,28 @@ dependencies:
     sdk: flutter
   intl: ^0.20.2
 
-  # Telephony integration
-  flutter_tele:
-    path: ../gost_simbox_tele
+  # Telephony integration - removed due to React Native dependencies
+  # flutter_tele:
+  #   path: ../legacy/gost_simbox_tele
   
-  # SMS and USSD functionality
-  flutter_smsussd:
-    path: ../../libs/libsFlutter/flutter_smsussd
+  # SIP functionality - removed due to React Native dependencies  
+  # flutter_sip2:
+  #   path: ../legacy/gost_simbox_sip2
+
+  # Dependency Injection
+  get_it: ^7.6.7
+  
+  # Equatable for value equality
+  equatable: ^2.0.5
+  
+  # Result type for error handling
+  dartz: ^0.10.1
+  
+  # Async utilities
+  async: ^2.11.0
+  
+  # Charts for analytics
+  fl_chart: ^0.68.0
 
 dev_dependencies:
   flutter_test:
@@ -83,6 +104,10 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+  
+  # Testing
+  mockito: ^5.4.4
+  build_runner: ^2.4.7
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
