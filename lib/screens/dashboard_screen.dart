@@ -5,6 +5,7 @@ import '../services/gateway_service.dart';
 import '../services/sip_service.dart';
 import '../services/sms_service.dart';
 import '../services/telephony_service.dart';
+import '../utils/funny_messages.dart';
 import 'settings_screen.dart';
 import 'call_screen.dart';
 import 'sms_screen.dart';
@@ -88,7 +89,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('GOSTsimbox Gateway'),
+        title: const Text('GOSTsimbox Gateway 🚀'),
         centerTitle: true,
         actions: [
           IconButton(
@@ -483,24 +484,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   String _getFunnyMotivationalMessage(int calls, int messages) {
-    final messages = [
-      'Отличная работа! Шлюз работает как швейцарские часы! 🇨🇭',
-      'Много звонков - много друзей! 📞👥',
-      'Сообщения летят быстрее света! ⚡💬',
-      'Вы - мастер телекоммуникаций! 🎯',
-      'Шлюз в отличной форме! 💪',
-      'Связь налажена на все 100%! 🎉',
-      'Работаете как настоящий профессионал! 🏆',
-      'Шлюз доволен своей работой! 😊',
-    ];
-    
     if (calls == 0 && messages == 0) {
       return 'Пока тихо, но мы готовы к бою! ⚔️';
     } else if (calls > 100 || messages > 100) {
       return 'Вау! Вы настоящий мастер связи! 🚀';
     } else {
-      final random = DateTime.now().millisecondsSinceEpoch % messages.length;
-      return messages[random];
+      return FunnyMessages.getMotivationalMessage();
     }
   }
 

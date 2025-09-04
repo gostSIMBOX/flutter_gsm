@@ -4,6 +4,8 @@ import 'package:provider/provider.dart';
 import '../services/gateway_service.dart';
 import '../services/sip_service.dart';
 import '../services/sms_service.dart';
+import '../utils/funny_messages.dart';
+import '../utils/easter_eggs.dart';
 import 'dashboard_screen.dart';
 
 class SetupScreen extends StatefulWidget {
@@ -62,7 +64,7 @@ class _SetupScreenState extends State<SetupScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Gateway Setup'),
+        title: const Text('Настройка шлюза ⚙️'),
         automaticallyImplyLeading: false,
       ),
       body: Column(
@@ -200,6 +202,16 @@ class _SetupScreenState extends State<SetupScreen> {
                 if (value == null || value.isEmpty) {
                   return 'Username is required';
                 }
+                
+                // Проверяем на пасхалки
+                final easterEggResponse = EasterEggs.checkSecretCommand(value);
+                if (easterEggResponse != null) {
+                  // Показываем пасхалку, но не блокируем валидацию
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    _showEasterEggDialog(easterEggResponse);
+                  });
+                }
+                
                 return null;
               },
             ),
@@ -389,6 +401,31 @@ class _SetupScreenState extends State<SetupScreen> {
             'Configure gateway behavior and routing options.',
             style: TextStyle(color: Colors.grey),
           ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.green.shade50,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: Colors.green.shade200),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.settings, color: Colors.green.shade600, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    '⚙️ Здесь настраиваем магию шлюза! Выберите, что должно работать 🪄',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.green.shade700,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 24),
           
           Card(
@@ -396,7 +433,7 @@ class _SetupScreenState extends State<SetupScreen> {
               children: [
                 SwitchListTile(
                   title: const Text('Auto Answer Calls'),
-                  subtitle: const Text('Automatically answer incoming calls'),
+                  subtitle: const Text('Автоматически отвечать на входящие звонки 🤖'),
                   value: _autoAnswer,
                   onChanged: (value) {
                     setState(() {
@@ -406,7 +443,7 @@ class _SetupScreenState extends State<SetupScreen> {
                 ),
                 SwitchListTile(
                   title: const Text('Enable Logging'),
-                  subtitle: const Text('Log gateway activities'),
+                  subtitle: const Text('Записывать все действия шлюза 📝'),
                   value: _enableLogging,
                   onChanged: (value) {
                     setState(() {
@@ -424,11 +461,11 @@ class _SetupScreenState extends State<SetupScreen> {
               children: [
                 const ListTile(
                   title: Text('Call Routing'),
-                  subtitle: Text('Configure call routing behavior'),
+                  subtitle: Text('Настройка маршрутизации звонков 🛣️'),
                 ),
                 SwitchListTile(
                   title: const Text('Route SIP to GSM'),
-                  subtitle: const Text('Forward SIP calls to GSM network'),
+                  subtitle: const Text('Перенаправлять SIP звонки на GSM 📞➡️📱'),
                   value: _routeSipToGsm,
                   onChanged: (value) {
                     setState(() {
@@ -438,7 +475,7 @@ class _SetupScreenState extends State<SetupScreen> {
                 ),
                 SwitchListTile(
                   title: const Text('Route GSM to SIP'),
-                  subtitle: const Text('Forward GSM calls to SIP network'),
+                  subtitle: const Text('Перенаправлять GSM звонки на SIP 📱➡️📞'),
                   value: _routeGsmToSip,
                   onChanged: (value) {
                     setState(() {
@@ -547,14 +584,12 @@ class _SetupScreenState extends State<SetupScreen> {
       final success = await gatewayService.initialize(config);
       
       if (success && mounted) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const DashboardScreen()),
-        );
+        _showSuccessDialog();
       } else {
-        _showErrorDialog('Failed to initialize gateway. Please check your configuration.');
+        _showErrorDialog('${FunnyMessages.getSetupError()}\n\nПроверьте настройки и попробуйте снова.');
       }
     } catch (e) {
-      _showErrorDialog('Setup failed: $e');
+      _showErrorDialog('${FunnyMessages.getSetupError()}\n\nОшибка: $e');
     } finally {
       if (mounted) {
         setState(() {
@@ -564,16 +599,108 @@ class _SetupScreenState extends State<SetupScreen> {
     }
   }
 
+  void _showSuccessDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.green, size: 28),
+            const SizedBox(width: 8),
+            const Text('Успех!'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              FunnyMessages.getSuccessMessage(),
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Шлюз готов к работе! 🚀',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(builder: (context) => const DashboardScreen()),
+              );
+            },
+            child: const Text('Поехали! 🎉'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEasterEggDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.auto_awesome, color: Colors.amber, size: 28),
+            const SizedBox(width: 8),
+            const Text('Пасхалка! 🥚'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              message,
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              EasterEggs.getMotivationalQuote(),
+              style: TextStyle(
+                fontSize: 12,
+                fontStyle: FontStyle.italic,
+                color: Colors.grey.shade600,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.amber,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Круто! 🎉'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showErrorDialog(String message) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Setup Error'),
+        title: Row(
+          children: [
+            Icon(Icons.error, color: Colors.red, size: 28),
+            const SizedBox(width: 8),
+            const Text('Ой-ой!'),
+          ],
+        ),
         content: Text(message),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('OK'),
+            child: const Text('Понятно 😅'),
           ),
         ],
       ),

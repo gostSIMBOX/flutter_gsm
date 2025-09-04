@@ -148,6 +148,7 @@ class DependencyInjection {
       () => AnalyticsService(
         getIt<ApiService>(),
         getIt<StorageService>(),
+        getIt<AnalyticsUseCases>(),
         getIt<Logger>(),
       ),
     );

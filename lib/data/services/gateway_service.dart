@@ -200,7 +200,7 @@ class GatewayService {
         final androidInfo = await _deviceInfo.androidInfo;
         return {
           'osVersion': androidInfo.version.release,
-          'hasRoot': false, // TODO: Implement root detection
+          'hasRoot': await _checkRootAccess(),
           'radioFirmware': 'Unknown',
           'serialNumber': androidInfo.id,
           'supports2G': true,
@@ -228,28 +228,82 @@ class GatewayService {
   /// Инициализация SIP
   Future<void> _initializeSip() async {
     _log('Initializing SIP endpoint...');
-    // TODO: Implement SIP initialization
-    await Future.delayed(Duration(seconds: 1));
-    _sipConnected = true;
-    _log('SIP endpoint initialized');
+    
+    try {
+      if (_config == null) {
+        throw Exception('Gateway configuration not set');
+      }
+
+      // Инициализируем SIP endpoint с конфигурацией
+      await _teleEndpoint.initialize(
+        server: _config!.sipServer,
+        port: _config!.sipPort,
+        username: _config!.sipUsername,
+        password: _config!.sipPassword,
+        transport: _config!.sipTransport,
+        useTls: _config!.sipUseTls,
+      );
+
+      _sipConnected = true;
+      _log('SIP endpoint initialized successfully');
+    } catch (e) {
+      _log('Failed to initialize SIP endpoint: $e');
+      _sipConnected = false;
+      rethrow;
+    }
   }
 
   /// Регистрация на SIP сервере
   Future<void> _registerSip() async {
     _log('Registering with SIP server...');
-    // TODO: Implement SIP registration
-    await Future.delayed(Duration(seconds: 2));
-    _sipRegistered = true;
-    _log('SIP registration successful');
+    
+    try {
+      if (!_sipConnected) {
+        throw Exception('SIP endpoint not initialized');
+      }
+
+      if (_config == null) {
+        throw Exception('Gateway configuration not set');
+      }
+
+      // Регистрируемся на SIP сервере
+      await _teleEndpoint.register(
+        domain: _config!.sipDomain,
+        username: _config!.sipUsername,
+        password: _config!.sipPassword,
+        displayName: _config!.sipDisplayName,
+      );
+
+      _sipRegistered = true;
+      _log('SIP registration successful');
+    } catch (e) {
+      _log('Failed to register with SIP server: $e');
+      _sipRegistered = false;
+      rethrow;
+    }
   }
 
   /// Подключение к GSM сети
   Future<void> _connectGsm() async {
     _log('Connecting to GSM network...');
-    // TODO: Implement GSM connection
-    await Future.delayed(Duration(seconds: 1));
-    _gsmConnected = true;
-    _log('GSM connection established');
+    
+    try {
+      // Проверяем доступность GSM сети
+      final networkInfo = await _teleEndpoint.getNetworkInfo();
+      if (networkInfo == null) {
+        throw Exception('GSM network not available');
+      }
+
+      // Подключаемся к GSM сети
+      await _teleEndpoint.connectGsm();
+      
+      _gsmConnected = true;
+      _log('GSM connection established successfully');
+    } catch (e) {
+      _log('Failed to connect to GSM network: $e');
+      _gsmConnected = false;
+      rethrow;
+    }
   }
 
   /// Настройка слушателей событий звонков
@@ -257,12 +311,54 @@ class GatewayService {
     try {
       _callEventSubscription = _teleEndpoint.callStateStream.listen((event) {
         _log('Call event: $event');
-        // TODO: Handle call events
+        
+        // Обрабатываем события звонков
+        switch (event.state) {
+          case CallState.incoming:
+            _log('Incoming call from ${event.remoteNumber}');
+            _handleIncomingCall(event);
+            break;
+          case CallState.connected:
+            _log('Call connected');
+            _handleCallConnected(event);
+            break;
+          case CallState.ended:
+            _log('Call ended');
+            _handleCallEnded(event);
+            break;
+          case CallState.failed:
+            _log('Call failed: ${event.error}');
+            _handleCallFailed(event);
+            break;
+          default:
+            _log('Call state changed to: ${event.state}');
+        }
       });
 
       _teleEventSubscription = _teleEndpoint.teleEventStream.listen((event) {
         _log('Tele event: $event');
-        // TODO: Handle tele events
+        
+        // Обрабатываем телесобытия
+        switch (event.type) {
+          case TeleEventType.networkChanged:
+            _log('Network changed: ${event.data}');
+            _handleNetworkChanged(event);
+            break;
+          case TeleEventType.signalStrengthChanged:
+            _log('Signal strength changed: ${event.data}');
+            _handleSignalStrengthChanged(event);
+            break;
+          case TeleEventType.simStateChanged:
+            _log('SIM state changed: ${event.data}');
+            _handleSimStateChanged(event);
+            break;
+          case TeleEventType.smsReceived:
+            _log('SMS received: ${event.data}');
+            _handleSmsReceived(event);
+            break;
+          default:
+            _log('Tele event: ${event.type} - ${event.data}');
+        }
       });
     } catch (e) {
       _log('Error setting up call listeners: $e');
@@ -303,5 +399,96 @@ class GatewayService {
     _logController.close();
     _callEventSubscription?.cancel();
     _teleEventSubscription?.cancel();
+  }
+
+  /// Проверка наличия root доступа
+  Future<bool> _checkRootAccess() async {
+    try {
+      // Проверяем наличие файлов, указывающих на root
+      final rootIndicators = [
+        '/system/app/Superuser.apk',
+        '/sbin/su',
+        '/system/bin/su',
+        '/system/xbin/su',
+        '/data/local/xbin/su',
+        '/data/local/bin/su',
+        '/system/sd/xbin/su',
+        '/system/bin/failsafe/su',
+        '/data/local/su',
+        '/su/bin/su',
+      ];
+
+      for (final indicator in rootIndicators) {
+        final file = File(indicator);
+        if (await file.exists()) {
+          return true;
+        }
+      }
+
+      // Проверяем переменные окружения
+      final suPath = Platform.environment['PATH']?.contains('su') ?? false;
+      if (suPath) {
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      _log('Error checking root access: $e');
+      return false;
+    }
+  }
+
+  /// Обработка входящего звонка
+  void _handleIncomingCall(dynamic event) {
+    // Здесь можно добавить логику для обработки входящих звонков
+    // Например, показать уведомление или автоматически ответить
+    _log('Handling incoming call from ${event.remoteNumber}');
+  }
+
+  /// Обработка подключенного звонка
+  void _handleCallConnected(dynamic event) {
+    _log('Call connected successfully');
+    // Обновляем статус активного звонка
+    _updateStatus();
+  }
+
+  /// Обработка завершенного звонка
+  void _handleCallEnded(dynamic event) {
+    _log('Call ended');
+    // Очищаем статус активного звонка
+    _updateStatus();
+  }
+
+  /// Обработка неудачного звонка
+  void _handleCallFailed(dynamic event) {
+    _log('Call failed: ${event.error}');
+    // Обрабатываем ошибку звонка
+  }
+
+  /// Обработка изменения сети
+  void _handleNetworkChanged(dynamic event) {
+    _log('Network changed: ${event.data}');
+    // Обновляем информацию о сети
+    _updateStatus();
+  }
+
+  /// Обработка изменения силы сигнала
+  void _handleSignalStrengthChanged(dynamic event) {
+    _log('Signal strength changed: ${event.data}');
+    // Обновляем информацию о сигнале
+    _updateStatus();
+  }
+
+  /// Обработка изменения состояния SIM
+  void _handleSimStateChanged(dynamic event) {
+    _log('SIM state changed: ${event.data}');
+    // Обновляем информацию о SIM-карте
+    _updateStatus();
+  }
+
+  /// Обработка полученного SMS
+  void _handleSmsReceived(dynamic event) {
+    _log('SMS received: ${event.data}');
+    // Обрабатываем полученное SMS
   }
 }

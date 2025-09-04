@@ -457,7 +457,7 @@ class _BaseStationsScreenState extends State<BaseStationsScreen> {
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          // TODO: Show detailed metrics
+                          _showDetailedMetrics(station);
                         },
                         icon: const Icon(Icons.analytics, size: 16),
                         label: Text(
@@ -474,7 +474,7 @@ class _BaseStationsScreenState extends State<BaseStationsScreen> {
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          // TODO: Show connected lines
+                          _showConnectedLines(station);
                         },
                         icon: const Icon(Icons.phone, size: 16),
                         label: Text(
@@ -556,6 +556,69 @@ class _BaseStationsScreenState extends State<BaseStationsScreen> {
                 color: Colors.white,
                 fontWeight: FontWeight.w600,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Показать детальные метрики базовой станции
+  void _showDetailedMetrics(dynamic station) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Detailed Metrics - ${station.name ?? 'Base Station'}'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _buildMetricRow('Signal Strength', '${station.signalStrength ?? 'N/A'} dBm'),
+              _buildMetricRow('Cell ID', '${station.cellId ?? 'N/A'}'),
+              _buildMetricRow('LAC', '${station.lac ?? 'N/A'}'),
+              _buildMetricRow('MCC', '${station.mcc ?? 'N/A'}'),
+              _buildMetricRow('MNC', '${station.mnc ?? 'N/A'}'),
+              _buildMetricRow('Technology', '${station.technology ?? 'N/A'}'),
+              _buildMetricRow('Frequency', '${station.frequency ?? 'N/A'} MHz'),
+              _buildMetricRow('Bandwidth', '${station.bandwidth ?? 'N/A'} MHz'),
+              _buildMetricRow('RSRP', '${station.rsrp ?? 'N/A'} dBm'),
+              _buildMetricRow('RSRQ', '${station.rsrq ?? 'N/A'} dB'),
+              _buildMetricRow('SINR', '${station.sinr ?? 'N/A'} dB'),
+              _buildMetricRow('Last Updated', '${station.lastUpdated ?? 'N/A'}'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Построить строку метрики
+  Widget _buildMetricRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: AppTextStyles.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          Text(
+            value,
+            style: AppTextStyles.poppins(
+              fontSize: 14,
+              color: Colors.blue[600],
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],

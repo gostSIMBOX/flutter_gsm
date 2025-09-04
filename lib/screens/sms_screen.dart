@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../services/gateway_service.dart';
 import '../services/sms_service.dart';
+import '../services/clipboard_service.dart';
 
 class SmsScreen extends StatefulWidget {
   const SmsScreen({super.key});
@@ -371,11 +372,22 @@ class _SmsScreenState extends State<SmsScreen> {
     );
   }
 
-  void _copyMessage(String content) {
-    // TODO: Implement clipboard copy
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Message copied to clipboard')),
-    );
+  void _copyMessage(String content) async {
+    try {
+      final clipboardService = ClipboardService();
+      await clipboardService.copyToClipboard(content);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Message copied to clipboard')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to copy: $e')),
+        );
+      }
+    }
   }
 
   void _replyToMessage(SmsMessage message) {

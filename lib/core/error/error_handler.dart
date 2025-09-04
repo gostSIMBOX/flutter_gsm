@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../domain/usecases/analytics_usecases.dart';
+import '../di/dependency_injection.dart';
 
 /// Глобальный обработчик ошибок
 class ErrorHandler {
   static final Logger _logger = Logger();
   static const String _errorLogKey = 'error_logs';
   static const int _maxErrorLogs = 100;
+  static BuildContext? _globalContext;
 
   /// Обработка ошибок приложения
   static void handleError(dynamic error, StackTrace? stackTrace) {
@@ -81,8 +84,25 @@ class ErrorHandler {
 
   /// Отправка ошибки в аналитику
   static void _sendErrorToAnalytics(dynamic error, StackTrace? stackTrace) {
-    // TODO: Реализовать отправку в аналитику
-    _logger.d('Sending error to analytics: ${error.toString()}');
+    try {
+      _logger.d('Sending error to analytics: ${error.toString()}');
+      
+      // Получаем экземпляр AnalyticsUseCases через DI
+      final analyticsUseCases = _getAnalyticsUseCases();
+      if (analyticsUseCases != null) {
+        // Отправляем данные об ошибке в аналитику
+        analyticsUseCases.sendAnalytics({
+          'event': 'error_occurred',
+          'error_type': error.runtimeType.toString(),
+          'error_message': error.toString(),
+          'stack_trace': stackTrace?.toString(),
+          'timestamp': DateTime.now().toIso8601String(),
+          'app_version': '3.0.0',
+        });
+      }
+    } catch (e) {
+      _logger.e('Failed to send error to analytics', error: e);
+    }
   }
 
   /// Показ пользовательской ошибки
@@ -151,8 +171,17 @@ class ErrorHandler {
 
   /// Получение глобального контекста
   static BuildContext? _getGlobalContext() {
-    // TODO: Реализовать получение глобального контекста
-    return null;
+    return _globalContext;
+  }
+
+  /// Установка глобального контекста
+  static void setGlobalContext(BuildContext context) {
+    _globalContext = context;
+  }
+
+  /// Очистка глобального контекста
+  static void clearGlobalContext() {
+    _globalContext = null;
   }
 
   /// Получение логов ошибок
@@ -271,5 +300,17 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
       });
       ErrorHandler.handleError(details.exception, details.stack);
     };
+  }
+
+  /// Получение экземпляра AnalyticsUseCases
+  static AnalyticsUseCases? _getAnalyticsUseCases() {
+    try {
+      if (DependencyInjection.isRegistered<AnalyticsUseCases>()) {
+        return DependencyInjection.get<AnalyticsUseCases>();
+      }
+    } catch (e) {
+      _logger.w('AnalyticsUseCases not available: $e');
+    }
+    return null;
   }
 }

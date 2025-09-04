@@ -5,6 +5,8 @@ import '../services/gateway_service.dart';
 import '../services/sip_service.dart';
 import '../services/sms_service.dart';
 import '../services/telephony_service.dart';
+import '../services/clipboard_service.dart';
+import '../utils/funny_messages.dart';
 
 class LogsScreen extends StatefulWidget {
   const LogsScreen({super.key});
@@ -40,12 +42,20 @@ class _LogsScreenState extends State<LogsScreen> {
   }
 
   void _addLog(String message, LogLevel level, String source) {
+    // Добавляем забавные сообщения в зависимости от уровня лога
+    String funnyMessage = message;
+    if (level == LogLevel.error) {
+      funnyMessage = '${FunnyMessages.getConnectionError()}\n$message';
+    } else if (level == LogLevel.success) {
+      funnyMessage = '${FunnyMessages.getSuccessMessage()}\n$message';
+    }
+    
     setState(() {
       _logs.insert(0, LogEntry(
         timestamp: DateTime.now(),
         level: level,
         source: source,
-        message: message,
+        message: funnyMessage,
       ));
       
       // Keep only last 1000 logs
@@ -77,7 +87,7 @@ class _LogsScreenState extends State<LogsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Logs'),
+        title: const Text('Логи 📝'),
         actions: [
           IconButton(
             icon: Icon(_autoScroll ? Icons.keyboard_arrow_down : Icons.keyboard_arrow_down_outlined),
@@ -86,12 +96,12 @@ class _LogsScreenState extends State<LogsScreen> {
                 _autoScroll = !_autoScroll;
               });
             },
-            tooltip: 'Auto scroll',
+            tooltip: 'Автопрокрутка (следим за логами 👀)',
           ),
           IconButton(
             icon: const Icon(Icons.clear_all),
             onPressed: _clearLogs,
-            tooltip: 'Clear logs',
+            tooltip: 'Очистить логи (убрать мусор 🗑️)',
           ),
           PopupMenuButton<LogLevel>(
             icon: const Icon(Icons.filter_list),
@@ -231,7 +241,9 @@ class _LogsScreenState extends State<LogsScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              _logs.isEmpty ? 'No logs available' : 'No logs match your filter',
+              _logs.isEmpty 
+                ? 'Пока тихо... Логи спят 😴' 
+                : 'Ничего не найдено... Логи играют в прятки 🙈',
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey.shade600,
@@ -379,12 +391,27 @@ class _LogsScreenState extends State<LogsScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () {
-              // TODO: Implement copy to clipboard
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Log copied to clipboard')),
-              );
+            onPressed: () async {
+              try {
+                final clipboardService = ClipboardService();
+                final logText = 'Time: ${_formatDateTime(log.timestamp)}\n'
+                    'Level: ${log.level.name.toUpperCase()}\n'
+                    'Message: ${log.message}';
+                await clipboardService.copyToClipboard(logText);
+                Navigator.pop(context);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Log copied to clipboard')),
+                  );
+                }
+              } catch (e) {
+                Navigator.pop(context);
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to copy: $e')),
+                  );
+                }
+              }
             },
             child: const Text('Copy'),
           ),

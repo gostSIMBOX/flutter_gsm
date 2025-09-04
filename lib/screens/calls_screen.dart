@@ -335,7 +335,7 @@ class _CallsScreenState extends State<CallsScreen> {
           ElevatedButton(
             onPressed: () {
               Navigator.pop(context);
-              // TODO: Implement call functionality
+              _makeCallToNumber(number);
             },
             child: const Text('Call'),
           ),
@@ -344,18 +344,82 @@ class _CallsScreenState extends State<CallsScreen> {
     );
   }
 
-  void _makeCallToNumber(String number) {
-    // TODO: Implement call functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Calling $number...')),
-    );
+  void _makeCallToNumber(String number) async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+
+      final gatewayProvider = Provider.of<GatewayProvider>(context, listen: false);
+      
+      // Инициируем звонок через GatewayProvider
+      final success = await gatewayProvider.makeCall(number);
+      
+      if (success && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Calling $number...')),
+        );
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Failed to make call')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
-  void _sendSmsToNumber(String number) {
-    // TODO: Implement SMS functionality
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Opening SMS to $number...')),
-    );
+  void _sendSmsToNumber(String number) async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+
+      final gatewayProvider = Provider.of<GatewayProvider>(context, listen: false);
+      
+      // Открываем экран SMS с предзаполненным номером
+      await Navigator.pushNamed(
+        context,
+        '/sms',
+        arguments: {'recipient': number},
+      );
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Opening SMS to $number...')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   void _showCallInfo(ActiveCall call) {

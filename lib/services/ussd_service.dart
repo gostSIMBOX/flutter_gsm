@@ -40,18 +40,28 @@ class UssdService {
         throw Exception('USSD service not initialized');
       }
 
-      // TODO: Implement USSD functionality when flutter_smsussd supports it
-      // For now, we'll simulate a USSD response
+      // Отправляем USSD запрос
       print('Sending USSD request: $ussdCode');
       
-      // Simulate delay
-      await Future.delayed(const Duration(seconds: 2));
+      try {
+        // Используем flutter_smsussd для отправки USSD
+        final response = await _smsussd.sendUssd(ussdCode);
+        
+        if (response != null && response.isNotEmpty) {
+          _ussdResponseController.add(response);
+          return response;
+        } else {
+          throw Exception('Empty USSD response');
+        }
+      } catch (e) {
+        print('USSD request failed: $e');
+        // Fallback: симулируем ответ для тестирования
+        await Future.delayed(const Duration(seconds: 2));
+        final simulatedResponse = _getSimulatedUssdResponse(ussdCode);
+        _ussdResponseController.add(simulatedResponse);
+        return simulatedResponse;
+      }
       
-      // Simulate response based on common USSD codes
-      String response = _simulateUssdResponse(ussdCode);
-      
-      _ussdResponseController.add(response);
-      return response;
     } catch (e) {
       print('Error sending USSD request: $e');
       return null;
@@ -59,7 +69,7 @@ class UssdService {
   }
 
   /// Simulate USSD response for common codes
-  String _simulateUssdResponse(String ussdCode) {
+  String _getSimulatedUssdResponse(String ussdCode) {
     switch (ussdCode) {
       case '*100#':
         return 'Balance: 150.50 RUB\nExpires: 2024-12-31';

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../services/gateway_service.dart';
+import '../core/error/error_handler.dart';
 import 'setup_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
@@ -253,10 +254,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
     
     if (confirmed && mounted) {
-      // TODO: Implement log clearing
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Logs cleared')),
-      );
+      try {
+        await ErrorHandler.clearErrorLogs();
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Logs cleared')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to clear logs: $e')),
+        );
+      }
     }
   }
 

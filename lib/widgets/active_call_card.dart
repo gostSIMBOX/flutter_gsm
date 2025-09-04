@@ -5,10 +5,18 @@ import '../theme/app_colors.dart';
 
 class ActiveCallCard extends StatelessWidget {
   final ActiveCall call;
+  final VoidCallback? onEndCall;
+  final VoidCallback? onHoldCall;
+  final VoidCallback? onMuteCall;
+  final VoidCallback? onToggleSpeaker;
 
   const ActiveCallCard({
     super.key,
     required this.call,
+    this.onEndCall,
+    this.onHoldCall,
+    this.onMuteCall,
+    this.onToggleSpeaker,
   });
 
   @override
@@ -220,9 +228,7 @@ class ActiveCallCard extends StatelessWidget {
             title: 'End Call',
             icon: Icons.call_end,
             color: AppColors.error,
-            onPressed: () {
-              // TODO: Implement end call
-            },
+            onPressed: onEndCall,
           ),
         ),
         const SizedBox(width: 12),
@@ -232,9 +238,7 @@ class ActiveCallCard extends StatelessWidget {
             title: 'Hold',
             icon: Icons.pause,
             color: AppColors.warning,
-            onPressed: () {
-              // TODO: Implement hold call
-            },
+            onPressed: onHoldCall,
           ),
         ),
         const SizedBox(width: 12),
@@ -244,9 +248,7 @@ class ActiveCallCard extends StatelessWidget {
             title: 'Mute',
             icon: Icons.mic_off,
             color: theme.colorScheme.onSurfaceVariant,
-            onPressed: () {
-              // TODO: Implement mute
-            },
+            onPressed: onMuteCall,
           ),
         ),
         const SizedBox(width: 12),
@@ -256,9 +258,7 @@ class ActiveCallCard extends StatelessWidget {
             title: 'Speaker',
             icon: Icons.volume_up,
             color: AppColors.primary,
-            onPressed: () {
-              // TODO: Implement speaker toggle
-            },
+            onPressed: onToggleSpeaker,
           ),
         ),
       ],

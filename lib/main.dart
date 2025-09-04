@@ -10,6 +10,7 @@ import 'services/telephony_service.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/setup_screen.dart';
+import 'utils/funny_messages.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -89,23 +90,6 @@ class SetupCheckScreen extends StatefulWidget {
 
 class _SetupCheckScreenState extends State<SetupCheckScreen> {
   String _loadingMessage = 'Инициализация...';
-  final List<String> _funnyMessages = [
-    'Загружаем магию...',
-    'Настраиваем телепорт...',
-    'Калибруем антенны...',
-    'Запускаем ракету...',
-    'Ищем потерянные звонки...',
-    'Завариваем кофе для сервера...',
-    'Учим голубей передавать SMS...',
-    'Синхронизируем с космосом...',
-    'Проверяем, не забыли ли мы что-то...',
-    'Загружаем инструкцию по эксплуатации...',
-    'Ищем кнопку "Включить всё"...',
-    'Проверяем, работает ли интернет...',
-    'Настраиваем связь с инопланетянами...',
-    'Загружаем эмодзи для логов...',
-    'Проверяем, не сломался ли роутер...',
-  ];
 
   @override
   void initState() {
@@ -115,13 +99,11 @@ class _SetupCheckScreenState extends State<SetupCheckScreen> {
   }
 
   void _startLoadingAnimation() {
-    int messageIndex = 0;
     Timer.periodic(const Duration(milliseconds: 800), (timer) {
       if (mounted) {
         setState(() {
-          _loadingMessage = _funnyMessages[messageIndex % _funnyMessages.length];
+          _loadingMessage = FunnyMessages.getLoadingMessage();
         });
-        messageIndex++;
       } else {
         timer.cancel();
       }
