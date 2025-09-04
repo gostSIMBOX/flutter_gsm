@@ -625,4 +625,116 @@ class _BaseStationsScreenState extends State<BaseStationsScreen> {
       ),
     );
   }
+
+  /// Показать подключенные линии
+  void _showConnectedLines(dynamic station) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Connected Lines - ${station.name ?? 'Base Station'}'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Active Connections:',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildLineItem('SIP Line 1', 'Connected', Colors.green),
+              _buildLineItem('SIP Line 2', 'Connected', Colors.green),
+              _buildLineItem('GSM Line 1', 'Connected', Colors.green),
+              _buildLineItem('GSM Line 2', 'Disconnected', Colors.red),
+              _buildLineItem('VoIP Line', 'Connected', Colors.green),
+              const SizedBox(height: 12),
+              const Text(
+                'Connection Details:',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              _buildConnectionDetail('Total Lines', '5'),
+              _buildConnectionDetail('Active Lines', '4'),
+              _buildConnectionDetail('Failed Lines', '1'),
+              _buildConnectionDetail('Last Update', DateTime.now().toString().substring(0, 19)),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Построить элемент линии
+  Widget _buildLineItem(String name, String status, Color statusColor) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            name,
+            style: AppTextStyles.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+            decoration: BoxDecoration(
+              color: statusColor.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: statusColor),
+            ),
+            child: Text(
+              status,
+              style: AppTextStyles.poppins(
+                fontSize: 12,
+                color: statusColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Построить деталь подключения
+  Widget _buildConnectionDetail(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            label,
+            style: AppTextStyles.poppins(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          Text(
+            value,
+            style: AppTextStyles.poppins(
+              fontSize: 14,
+              color: Colors.blue[600],
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 } 
