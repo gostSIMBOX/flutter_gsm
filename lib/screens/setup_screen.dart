@@ -160,15 +160,41 @@ class _SetupScreenState extends State<SetupScreen> {
               'Configure your SIP account settings to connect to the VoIP server.',
               style: TextStyle(color: Colors.grey),
             ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.lightbulb, color: Colors.amber.shade600, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      '💡 Совет: Если не знаете настройки, спросите у системного администратора или у кота 🐱',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.blue.shade700,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
             const SizedBox(height: 24),
             
             TextFormField(
               controller: _sipUsernameController,
               decoration: const InputDecoration(
                 labelText: 'Username',
-                hintText: 'Enter SIP username',
+                hintText: 'Введите имя пользователя (не "admin" 😄)',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.person),
+                helperText: '💡 Обычно это ваш номер телефона или логин',
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -183,9 +209,10 @@ class _SetupScreenState extends State<SetupScreen> {
               controller: _sipPasswordController,
               decoration: const InputDecoration(
                 labelText: 'Password',
-                hintText: 'Enter SIP password',
+                hintText: 'Введите пароль (не "123456" 😅)',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.lock),
+                helperText: '🔒 Пароль должен быть сложнее "password"',
               ),
               obscureText: true,
               validator: (value) {
@@ -201,9 +228,10 @@ class _SetupScreenState extends State<SetupScreen> {
               controller: _sipDomainController,
               decoration: const InputDecoration(
                 labelText: 'Domain/Server',
-                hintText: 'sip.example.com',
+                hintText: 'sip.example.com (или IP адрес)',
                 border: OutlineInputBorder(),
                 prefixIcon: Icon(Icons.dns),
+                helperText: '🌐 Адрес сервера, куда будем подключаться',
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -87,10 +88,44 @@ class SetupCheckScreen extends StatefulWidget {
 }
 
 class _SetupCheckScreenState extends State<SetupCheckScreen> {
+  String _loadingMessage = 'Инициализация...';
+  final List<String> _funnyMessages = [
+    'Загружаем магию...',
+    'Настраиваем телепорт...',
+    'Калибруем антенны...',
+    'Запускаем ракету...',
+    'Ищем потерянные звонки...',
+    'Завариваем кофе для сервера...',
+    'Учим голубей передавать SMS...',
+    'Синхронизируем с космосом...',
+    'Проверяем, не забыли ли мы что-то...',
+    'Загружаем инструкцию по эксплуатации...',
+    'Ищем кнопку "Включить всё"...',
+    'Проверяем, работает ли интернет...',
+    'Настраиваем связь с инопланетянами...',
+    'Загружаем эмодзи для логов...',
+    'Проверяем, не сломался ли роутер...',
+  ];
+
   @override
   void initState() {
     super.initState();
+    _startLoadingAnimation();
     _checkSetup();
+  }
+
+  void _startLoadingAnimation() {
+    int messageIndex = 0;
+    Timer.periodic(const Duration(milliseconds: 800), (timer) {
+      if (mounted) {
+        setState(() {
+          _loadingMessage = _funnyMessages[messageIndex % _funnyMessages.length];
+        });
+        messageIndex++;
+      } else {
+        timer.cancel();
+      }
+    });
   }
 
   Future<void> _checkSetup() async {
@@ -156,6 +191,16 @@ class _SetupCheckScreenState extends State<SetupCheckScreen> {
               SizedBox(height: 40),
               CircularProgressIndicator(
                 valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+              SizedBox(height: 16),
+              Text(
+                _loadingMessage,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white70,
+                  fontStyle: FontStyle.italic,
+                ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),

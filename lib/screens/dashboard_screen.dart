@@ -22,6 +22,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
   String? _phoneNumber;
   String? _networkOperator;
   int? _signalStrength;
+  
+  // Забавные статусы
+  final Map<String, List<String>> _funnyStatuses = {
+    'connected': [
+      'Всё работает как часы! 🕐',
+      'Связь налажена, можно звонить! 📞',
+      'Готов к бою! ⚔️',
+      'Всё под контролем! 🎯',
+      'Работает как швейцарские часы! 🇨🇭',
+    ],
+    'connecting': [
+      'Подключаемся к матрице... 🔌',
+      'Ищем сигнал в космосе... 🛸',
+      'Настраиваем телепорт... ⚡',
+      'Калибруем антенны... 📡',
+      'Договариваемся с сервером... 🤝',
+    ],
+    'disconnected': [
+      'Связь потеряна в космосе... 🚀',
+      'Сервер ушёл на обед... 🍕',
+      'Интернет решил отдохнуть... 😴',
+      'Связь пропала в параллельной вселенной... 🌌',
+      'Сервер играет в прятки... 🙈',
+    ],
+    'error': [
+      'Что-то пошло не так... 🤔',
+      'Сервер в плохом настроении... 😤',
+      'Технические неполадки в космосе... 🛸',
+      'Кто-то забыл заплатить за интернет... 💸',
+      'Сервер ушёл в отпуск... 🏖️',
+    ],
+  };
 
   @override
   void initState() {
@@ -146,6 +178,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           fontSize: 24,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        isRunning 
+                          ? _getFunnyStatus('connected')
+                          : _getFunnyStatus('disconnected'),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withOpacity(0.8),
+                          fontStyle: FontStyle.italic,
                         ),
                       ),
                     ],
@@ -374,10 +417,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildStatItem('Total Calls', totalCalls.toString()),
-                _buildStatItem('Total Messages', totalMessages.toString()),
-                _buildStatItem('Success Rate', '98.5%'),
+                _buildStatItem('Звонков', totalCalls.toString(), '📞'),
+                _buildStatItem('Сообщений', totalMessages.toString(), '💬'),
+                _buildStatItem('Успешность', '98.5%', '🎯'),
               ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue.shade50,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue.shade200),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.emoji_emotions, color: Colors.blue.shade600, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      _getFunnyMotivationalMessage(totalCalls, totalMessages),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.blue.shade700,
+                        fontStyle: FontStyle.italic,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -385,13 +453,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildStatItem(String label, String value) {
+  Widget _buildStatItem(String label, String value, String emoji) {
     return Column(
       children: [
         Text(
+          emoji,
+          style: const TextStyle(fontSize: 24),
+        ),
+        const SizedBox(height: 4),
+        Text(
           value,
           style: const TextStyle(
-            fontSize: 24,
+            fontSize: 20,
             fontWeight: FontWeight.bold,
             color: Colors.blue,
           ),
@@ -407,6 +480,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ],
     );
+  }
+
+  String _getFunnyMotivationalMessage(int calls, int messages) {
+    final messages = [
+      'Отличная работа! Шлюз работает как швейцарские часы! 🇨🇭',
+      'Много звонков - много друзей! 📞👥',
+      'Сообщения летят быстрее света! ⚡💬',
+      'Вы - мастер телекоммуникаций! 🎯',
+      'Шлюз в отличной форме! 💪',
+      'Связь налажена на все 100%! 🎉',
+      'Работаете как настоящий профессионал! 🏆',
+      'Шлюз доволен своей работой! 😊',
+    ];
+    
+    if (calls == 0 && messages == 0) {
+      return 'Пока тихо, но мы готовы к бою! ⚔️';
+    } else if (calls > 100 || messages > 100) {
+      return 'Вау! Вы настоящий мастер связи! 🚀';
+    } else {
+      final random = DateTime.now().millisecondsSinceEpoch % messages.length;
+      return messages[random];
+    }
   }
 
   Widget _buildFloatingActionButton() {
@@ -528,6 +623,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final minutes = twoDigits(duration.inMinutes.remainder(60));
     final seconds = twoDigits(duration.inSeconds.remainder(60));
     return '$hours:$minutes:$seconds';
+  }
+
+  String _getFunnyStatus(String statusType) {
+    final statuses = _funnyStatuses[statusType] ?? ['Неизвестный статус'];
+    final random = DateTime.now().millisecondsSinceEpoch % statuses.length;
+    return statuses[random];
   }
 
   String _sipStateToString(SipConnectionState state) {
