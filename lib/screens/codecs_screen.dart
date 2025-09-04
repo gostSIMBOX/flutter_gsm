@@ -48,6 +48,159 @@ class _CodecsScreenState extends State<CodecsScreen> {
     _loadCodecs();
   }
 
+  void _setPreferredCodec(CodecInfo codec) {
+    setState(() {
+      // Сбрасываем активность всех кодеков
+      for (var c in codecs) {
+        c = CodecInfo(
+          name: c.name,
+          fullName: c.fullName,
+          description: c.description,
+          bitrate: c.bitrate,
+          sampleRate: c.sampleRate,
+          isClientSupported: c.isClientSupported,
+          isServerSupported: c.isServerSupported,
+          isActive: false,
+          priority: c.priority,
+          quality: c.quality,
+        );
+      }
+      
+      // Устанавливаем выбранный кодек как активный
+      final index = codecs.indexWhere((c) => c.name == codec.name);
+      if (index != -1) {
+        codecs[index] = CodecInfo(
+          name: codec.name,
+          fullName: codec.fullName,
+          description: codec.description,
+          bitrate: codec.bitrate,
+          sampleRate: codec.sampleRate,
+          isClientSupported: codec.isClientSupported,
+          isServerSupported: codec.isServerSupported,
+          isActive: true,
+          priority: '1', // Высший приоритет
+          quality: codec.quality,
+        );
+      }
+    });
+    
+    // Показываем уведомление
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${codec.name} установлен как предпочтительный кодек'),
+        backgroundColor: Colors.green,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _showCodecDetails(CodecInfo codec) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          backgroundColor: const Color(0xFF1A1A1A),
+          title: Row(
+            children: [
+              Icon(
+                Icons.audiotrack,
+                color: _getCompatibilityColor(codec),
+                size: 24,
+              ),
+              const SizedBox(width: 12),
+              Text(
+                codec.name,
+                style: AppTextStyles.poppins(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildDetailRow('Full Name', codec.fullName),
+                _buildDetailRow('Description', codec.description),
+                _buildDetailRow('Bitrate', codec.bitrate),
+                _buildDetailRow('Sample Rate', codec.sampleRate),
+                _buildDetailRow('Quality', codec.quality),
+                _buildDetailRow('Priority', codec.priority),
+                _buildDetailRow('Status', codec.isActive ? 'Active' : 'Inactive'),
+                _buildDetailRow('Client Support', codec.isClientSupported ? 'Yes' : 'No'),
+                _buildDetailRow('Server Support', codec.isServerSupported ? 'Yes' : 'No'),
+                _buildDetailRow('Compatibility', codec.isCompatible ? 'Compatible' : 'Not Compatible'),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: _getCompatibilityColor(codec).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: _getCompatibilityColor(codec).withOpacity(0.3),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        color: _getCompatibilityColor(codec),
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          codec.isCompatible 
+                            ? 'This codec is compatible and can be used for calls'
+                            : 'This codec is not compatible and cannot be used',
+                          style: AppTextStyles.poppins(
+                            fontSize: 12,
+                            color: _getCompatibilityColor(codec),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: Text(
+                'Close',
+                style: AppTextStyles.poppins(
+                  color: Colors.grey[400],
+                ),
+              ),
+            ),
+            if (codec.isCompatible)
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _setPreferredCodec(codec);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue[600] ?? Colors.blue,
+                ),
+                child: Text(
+                  'Set Preferred',
+                  style: AppTextStyles.poppins(
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
   void _loadCodecs() {
     setState(() {
       isLoading = true;
@@ -543,7 +696,7 @@ class _CodecsScreenState extends State<CodecsScreen> {
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: codec.isCompatible ? () {
-                          // TODO: Set as preferred codec
+                          _setPreferredCodec(codec);
                         } : null,
                         icon: const Icon(Icons.star, size: 16),
                         label: Text(
@@ -560,7 +713,7 @@ class _CodecsScreenState extends State<CodecsScreen> {
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: () {
-                          // TODO: Show codec details
+                          _showCodecDetails(codec);
                         },
                         icon: const Icon(Icons.info, size: 16),
                         label: Text(
