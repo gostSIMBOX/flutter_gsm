@@ -1,18 +1,24 @@
+
 import 'dart:math';
+import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class EasterEggs {
-  static const List<String> developerMessages = [
-    'Мозгач108 активирован! 🧠✨',
-    'Код написан с любовью и кофе ☕',
-    'Если видите это сообщение, вы настоящий хакер! 🕵️‍♂️',
-    'Разработчик был здесь 👨‍💻',
-    'Этот код работает на магии и кофе 🪄☕',
-    'GOSTsimbox - лучший шлюз в галактике! 🌌',
-    'Сделано с ❤️ в России',
-    'Код проверен котами 🐱',
-    'Если что-то сломается, вините кота 🐱',
-    'Этот шлюз может связаться даже с инопланетянами 👽',
-  ];
+  static List<String> getDeveloperMessages(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return [
+      l10n.developerMessage_1,
+      l10n.developerMessage_2,
+      l10n.developerMessage_3,
+      l10n.developerMessage_4,
+      l10n.developerMessage_5,
+      l10n.developerMessage_6,
+      l10n.developerMessage_7,
+      l10n.developerMessage_8,
+      l10n.developerMessage_9,
+      l10n.developerMessage_10,
+    ];
+  }
 
   static const List<String> secretCommands = [
     'Мозгач108',
@@ -26,50 +32,59 @@ class EasterEggs {
     'Кот',
   ];
 
-  static const Map<String, String> secretResponses = {
-    'Мозгач108': 'Активирован режим "Мозгач108"! 🧠✨ Все системы работают на максимальной мощности!',
-    'Мозгач': 'Мозгач обнаружен! 🧠 Активируем интеллектуальный режим!',
-    'Brain': 'Brain mode activated! 🧠 Switching to English mode!',
-    'Easter Egg': 'You found an Easter Egg! 🥚 Congratulations, developer!',
-    'Пасхалка': 'Пасхалка найдена! 🥚 Вы настоящий исследователь!',
-    'Секрет': 'Секретный режим активирован! 🤫',
-    'Магия': 'Магия активирована! 🪄 Шлюз теперь работает на волшебстве!',
-    'Кофе': 'Кофе загружен! ☕ Разработчик доволен!',
-    'Кот': 'Кот активирован! 🐱 Все системы проверены пушистым инспектором!',
-  };
-
-  static String getRandomDeveloperMessage() {
-    final random = Random();
-    return developerMessages[random.nextInt(developerMessages.length)];
+  static Map<String, String> getSecretResponses(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return {
+      'Мозгач108': l10n.secretResponse_mozgach108,
+      'Мозгач': l10n.secretResponse_mozgach,
+      'Brain': l10n.secretResponse_brain,
+      'Easter Egg': l10n.secretResponse_easterEgg,
+      'Пасхалка': l10n.secretResponse_paskhalka,
+      'Секрет': l10n.secretResponse_secret,
+      'Магия': l10n.secretResponse_magic,
+      'Кофе': l10n.secretResponse_coffee,
+      'Кот': l10n.secretResponse_cat,
+    };
   }
 
-  static String? checkSecretCommand(String input) {
+  static List<String> getMotivationalQuotes(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return [
+      l10n.motivationalQuote_1,
+      l10n.motivationalQuote_2,
+      l10n.motivationalQuote_3,
+      l10n.motivationalQuote_4,
+      l10n.motivationalQuote_5,
+      l10n.motivationalQuote_6,
+      l10n.motivationalQuote_7,
+    ];
+  }
+
+  static String getRandomDeveloperMessage(BuildContext context) {
+    final messages = getDeveloperMessages(context);
+    final random = Random();
+    return messages[random.nextInt(messages.length)];
+  }
+
+  static String? checkSecretCommand(BuildContext context, String input) {
     final normalizedInput = input.toLowerCase().trim();
-    
+    final responses = getSecretResponses(context);
+
     for (final command in secretCommands) {
       if (normalizedInput.contains(command.toLowerCase())) {
-        return secretResponses[command];
+        return responses[command];
       }
     }
-    
+
     return null;
   }
 
-  static bool isSecretCommand(String input) {
-    return checkSecretCommand(input) != null;
+  static bool isSecretCommand(BuildContext context, String input) {
+    return checkSecretCommand(context, input) != null;
   }
 
-  static String getMotivationalQuote() {
-    final quotes = [
-      'Код - это поэзия, написанная на языке логики 📝',
-      'Каждая ошибка - это возможность стать лучше 🚀',
-      'Программирование - это искусство решения проблем 🎨',
-      'Лучший код - это тот, который понятен даже котам 🐱',
-      'Технологии меняют мир, а мы меняем технологии 🌍',
-      'В коде есть красота, если уметь её видеть ✨',
-      'Каждая строка кода - это шаг к будущему 🔮',
-    ];
-    
+  static String getMotivationalQuote(BuildContext context) {
+    final quotes = getMotivationalQuotes(context);
     final random = Random();
     return quotes[random.nextInt(quotes.length)];
   }

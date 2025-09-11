@@ -1,81 +1,94 @@
+import 'dart:math';
+import 'package:flutter/material.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 class FunnyMessages {
-  static const List<String> connectionErrors = [
-    'Сервер ушёл на обед... 🍕',
-    'Интернет решил отдохнуть... 😴',
-    'Связь потеряна в космосе... 🚀',
-    'Сервер играет в прятки... 🙈',
-    'Кто-то забыл заплатить за интернет... 💸',
-    'Сервер ушёл в отпуск... 🏖️',
-    'Технические неполадки в космосе... 🛸',
-    'Сервер в плохом настроении... 😤',
-    'Связь пропала в параллельной вселенной... 🌌',
-    'Сервер медитирует... 🧘‍♂️',
-  ];
-
-  static const List<String> setupErrors = [
-    'Что-то пошло не так при настройке... 🤔',
-    'Настройки сбежали в лес... 🌲',
-    'Конфигурация решила стать независимой... 🏴',
-    'Файл настроек ушёл в отпуск... 🏖️',
-    'Настройки потерялись в космосе... 🚀',
-    'Конфигурация играет в прятки... 🙈',
-    'Настройки медитируют... 🧘‍♂️',
-    'Файл настроек ушёл на обед... 🍕',
-  ];
-
-  static const List<String> successMessages = [
-    'Отлично! Всё работает как часы! 🕐',
-    'Ура! Настройка завершена успешно! 🎉',
-    'Превосходно! Шлюз готов к работе! ⚡',
-    'Замечательно! Всё настроено идеально! ✨',
-    'Отлично! Готов к бою! ⚔️',
-    'Потрясающе! Всё под контролем! 🎯',
-    'Великолепно! Работает как швейцарские часы! 🇨🇭',
-    'Фантастика! Связь налажена! 📞',
-  ];
-
-  static const List<String> loadingMessages = [
-    'Загружаем магию...',
-    'Настраиваем телепорт...',
-    'Калибруем антенны...',
-    'Запускаем ракету...',
-    'Ищем потерянные звонки...',
-    'Завариваем кофе для сервера...',
-    'Учим голубей передавать SMS...',
-    'Синхронизируем с космосом...',
-    'Проверяем, не забыли ли мы что-то...',
-    'Загружаем инструкцию по эксплуатации...',
-    'Ищем кнопку "Включить всё"...',
-    'Проверяем, работает ли интернет...',
-    'Настраиваем связь с инопланетянами...',
-    'Загружаем эмодзи для логов...',
-    'Проверяем, не сломался ли роутер...',
-    'Калибруем космические антенны...',
-    'Настраиваем квантовую связь...',
-    'Загружаем инструкцию по сборке ракеты...',
-  ];
-
-  static const List<String> motivationalMessages = [
-    'Отличная работа! Шлюз работает как швейцарские часы! 🇨🇭',
-    'Много звонков - много друзей! 📞👥',
-    'Сообщения летят быстрее света! ⚡💬',
-    'Вы - мастер телекоммуникаций! 🎯',
-    'Шлюз в отличной форме! 💪',
-    'Связь налажена на все 100%! 🎉',
-    'Работаете как настоящий профессионал! 🏆',
-    'Шлюз доволен своей работой! 😊',
-    'Пока тихо, но мы готовы к бою! ⚔️',
-    'Вау! Вы настоящий мастер связи! 🚀',
-  ];
-
-  static String getRandomMessage(List<String> messages) {
-    final random = DateTime.now().millisecondsSinceEpoch % messages.length;
-    return messages[random];
+  static String getConnectionError(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final messages = [
+      l10n.connectionError_1,
+      l10n.connectionError_2,
+      l10n.connectionError_3,
+      l10n.connectionError_4,
+      l10n.connectionError_5,
+      l10n.connectionError_6,
+      l10n.connectionError_7,
+      l10n.connectionError_8,
+      l10n.connectionError_9,
+      l10n.connectionError_10,
+    ];
+    return messages[Random().nextInt(messages.length)];
   }
 
-  static String getConnectionError() => getRandomMessage(connectionErrors);
-  static String getSetupError() => getRandomMessage(setupErrors);
-  static String getSuccessMessage() => getRandomMessage(successMessages);
-  static String getLoadingMessage() => getRandomMessage(loadingMessages);
-  static String getMotivationalMessage() => getRandomMessage(motivationalMessages);
+  static String getSetupError(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final messages = [
+      l10n.setupError_1,
+      l10n.setupError_2,
+      l10n.setupError_3,
+      l10n.setupError_4,
+      l10n.setupError_5,
+      l10n.setupError_6,
+      l10n.setupError_7,
+      l10n.setupError_8,
+    ];
+    return messages[Random().nextInt(messages.length)];
+  }
+
+  static String getSuccessMessage(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final messages = [
+      l10n.successMessage_1,
+      l10n.successMessage_2,
+      l10n.successMessage_3,
+      l10n.successMessage_4,
+      l10n.successMessage_5,
+      l10n.successMessage_6,
+      l10n.successMessage_7,
+      l10n.successMessage_8,
+    ];
+    return messages[Random().nextInt(messages.length)];
+  }
+
+  static String getLoadingMessage(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final messages = [
+      l10n.loadingMessage_1,
+      l10n.loadingMessage_2,
+      l10n.loadingMessage_3,
+      l10n.loadingMessage_4,
+      l10n.loadingMessage_5,
+      l10n.loadingMessage_6,
+      l10n.loadingMessage_7,
+      l10n.loadingMessage_8,
+      l10n.loadingMessage_9,
+      l10n.loadingMessage_10,
+      l10n.loadingMessage_11,
+      l10n.loadingMessage_12,
+      l10n.loadingMessage_13,
+      l10n.loadingMessage_14,
+      l10n.loadingMessage_15,
+      l10n.loadingMessage_16,
+      l10n.loadingMessage_17,
+      l10n.loadingMessage_18,
+    ];
+    return messages[Random().nextInt(messages.length)];
+  }
+
+  static String getMotivationalMessage(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final messages = [
+      l10n.motivationalMessage_1,
+      l10n.motivationalMessage_2,
+      l10n.motivationalMessage_3,
+      l10n.motivationalMessage_4,
+      l10n.motivationalMessage_5,
+      l10n.motivationalMessage_6,
+      l10n.motivationalMessage_7,
+      l10n.motivationalMessage_8,
+      l10n.motivationalMessage_9,
+      l10n.motivationalMessage_10,
+    ];
+    return messages[Random().nextInt(messages.length)];
+  }
 }
