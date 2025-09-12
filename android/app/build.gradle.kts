@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -7,9 +9,9 @@ plugins {
 
 // Load keystore properties
 val keystorePropertiesFile = rootProject.file("key.properties")
-val keystoreProperties = java.util.Properties()
+val keystoreProperties = Properties()
 if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(java.io.FileInputStream(keystorePropertiesFile))
+    keystoreProperties.load(keystorePropertiesFile.inputStream())
 }
 
 android {
@@ -47,8 +49,14 @@ android {
     }
 
     buildTypes {
+        debug {
+            isMinifyEnabled = false
+            isDebuggable = true
+        }
         release {
-            signingConfig = signingConfigs.getByName("release")
+            if (keystorePropertiesFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }

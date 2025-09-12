@@ -939,6 +939,330 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Opening SMS to'**
   String get openingSmsTo;
+
+  /// No description provided for @connectionError_1.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection error.'**
+  String get connectionError_1;
+
+  /// No description provided for @connectionError_2.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection error.'**
+  String get connectionError_2;
+
+  /// No description provided for @connectionError_3.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection error.'**
+  String get connectionError_3;
+
+  /// No description provided for @connectionError_4.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection error.'**
+  String get connectionError_4;
+
+  /// No description provided for @connectionError_5.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection error.'**
+  String get connectionError_5;
+
+  /// No description provided for @connectionError_6.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection error.'**
+  String get connectionError_6;
+
+  /// No description provided for @connectionError_7.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection error.'**
+  String get connectionError_7;
+
+  /// No description provided for @connectionError_8.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection error.'**
+  String get connectionError_8;
+
+  /// No description provided for @connectionError_9.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection error.'**
+  String get connectionError_9;
+
+  /// No description provided for @connectionError_10.
+  ///
+  /// In en, this message translates to:
+  /// **'Connection error.'**
+  String get connectionError_10;
+
+  /// No description provided for @setupError_1.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup error.'**
+  String get setupError_1;
+
+  /// No description provided for @setupError_2.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup error.'**
+  String get setupError_2;
+
+  /// No description provided for @setupError_3.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup error.'**
+  String get setupError_3;
+
+  /// No description provided for @setupError_4.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup error.'**
+  String get setupError_4;
+
+  /// No description provided for @setupError_5.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup error.'**
+  String get setupError_5;
+
+  /// No description provided for @setupError_6.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup error.'**
+  String get setupError_6;
+
+  /// No description provided for @setupError_7.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup error.'**
+  String get setupError_7;
+
+  /// No description provided for @setupError_8.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup error.'**
+  String get setupError_8;
+
+  /// No description provided for @successMessage_1.
+  ///
+  /// In en, this message translates to:
+  /// **'Success!'**
+  String get successMessage_1;
+
+  /// No description provided for @successMessage_2.
+  ///
+  /// In en, this message translates to:
+  /// **'Success!'**
+  String get successMessage_2;
+
+  /// No description provided for @successMessage_3.
+  ///
+  /// In en, this message translates to:
+  /// **'Success!'**
+  String get successMessage_3;
+
+  /// No description provided for @successMessage_4.
+  ///
+  /// In en, this message translates to:
+  /// **'Success!'**
+  String get successMessage_4;
+
+  /// No description provided for @successMessage_5.
+  ///
+  /// In en, this message translates to:
+  /// **'Success!'**
+  String get successMessage_5;
+
+  /// No description provided for @successMessage_6.
+  ///
+  /// In en, this message translates to:
+  /// **'Success!'**
+  String get successMessage_6;
+
+  /// No description provided for @successMessage_7.
+  ///
+  /// In en, this message translates to:
+  /// **'Success!'**
+  String get successMessage_7;
+
+  /// No description provided for @successMessage_8.
+  ///
+  /// In en, this message translates to:
+  /// **'Success!'**
+  String get successMessage_8;
+
+  /// No description provided for @loadingMessage_1.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loadingMessage_1;
+
+  /// No description provided for @loadingMessage_2.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loadingMessage_2;
+
+  /// No description provided for @loadingMessage_3.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loadingMessage_3;
+
+  /// No description provided for @loadingMessage_4.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loadingMessage_4;
+
+  /// No description provided for @loadingMessage_5.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loadingMessage_5;
+
+  /// No description provided for @loadingMessage_6.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loadingMessage_6;
+
+  /// No description provided for @loadingMessage_7.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loadingMessage_7;
+
+  /// No description provided for @loadingMessage_8.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loadingMessage_8;
+
+  /// No description provided for @loadingMessage_9.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loadingMessage_9;
+
+  /// No description provided for @loadingMessage_10.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loadingMessage_10;
+
+  /// No description provided for @loadingMessage_11.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loadingMessage_11;
+
+  /// No description provided for @loadingMessage_12.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loadingMessage_12;
+
+  /// No description provided for @loadingMessage_13.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loadingMessage_13;
+
+  /// No description provided for @loadingMessage_14.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loadingMessage_14;
+
+  /// No description provided for @loadingMessage_15.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loadingMessage_15;
+
+  /// No description provided for @loadingMessage_16.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loadingMessage_16;
+
+  /// No description provided for @loadingMessage_17.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loadingMessage_17;
+
+  /// No description provided for @loadingMessage_18.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading...'**
+  String get loadingMessage_18;
+
+  /// No description provided for @motivationalMessage_1.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re doing great!'**
+  String get motivationalMessage_1;
+
+  /// No description provided for @motivationalMessage_2.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re doing great!'**
+  String get motivationalMessage_2;
+
+  /// No description provided for @motivationalMessage_3.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re doing great!'**
+  String get motivationalMessage_3;
+
+  /// No description provided for @motivationalMessage_4.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re doing great!'**
+  String get motivationalMessage_4;
+
+  /// No description provided for @motivationalMessage_5.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re doing great!'**
+  String get motivationalMessage_5;
+
+  /// No description provided for @motivationalMessage_6.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re doing great!'**
+  String get motivationalMessage_6;
+
+  /// No description provided for @motivationalMessage_7.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re doing great!'**
+  String get motivationalMessage_7;
+
+  /// No description provided for @motivationalMessage_8.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re doing great!'**
+  String get motivationalMessage_8;
+
+  /// No description provided for @motivationalMessage_9.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re doing great!'**
+  String get motivationalMessage_9;
+
+  /// No description provided for @motivationalMessage_10.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re doing great!'**
+  String get motivationalMessage_10;
 }
 
 class _AppLocalizationsDelegate

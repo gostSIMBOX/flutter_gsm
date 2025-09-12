@@ -413,4 +413,166 @@ class AppLocalizationsKm extends AppLocalizations {
 
   @override
   String get openingSmsTo => 'Opening SMS to';
+
+  @override
+  String get connectionError_1 => 'Connection error.';
+
+  @override
+  String get connectionError_2 => 'Connection error.';
+
+  @override
+  String get connectionError_3 => 'Connection error.';
+
+  @override
+  String get connectionError_4 => 'Connection error.';
+
+  @override
+  String get connectionError_5 => 'Connection error.';
+
+  @override
+  String get connectionError_6 => 'Connection error.';
+
+  @override
+  String get connectionError_7 => 'Connection error.';
+
+  @override
+  String get connectionError_8 => 'Connection error.';
+
+  @override
+  String get connectionError_9 => 'Connection error.';
+
+  @override
+  String get connectionError_10 => 'Connection error.';
+
+  @override
+  String get setupError_1 => 'Setup error.';
+
+  @override
+  String get setupError_2 => 'Setup error.';
+
+  @override
+  String get setupError_3 => 'Setup error.';
+
+  @override
+  String get setupError_4 => 'Setup error.';
+
+  @override
+  String get setupError_5 => 'Setup error.';
+
+  @override
+  String get setupError_6 => 'Setup error.';
+
+  @override
+  String get setupError_7 => 'Setup error.';
+
+  @override
+  String get setupError_8 => 'Setup error.';
+
+  @override
+  String get successMessage_1 => 'Success!';
+
+  @override
+  String get successMessage_2 => 'Success!';
+
+  @override
+  String get successMessage_3 => 'Success!';
+
+  @override
+  String get successMessage_4 => 'Success!';
+
+  @override
+  String get successMessage_5 => 'Success!';
+
+  @override
+  String get successMessage_6 => 'Success!';
+
+  @override
+  String get successMessage_7 => 'Success!';
+
+  @override
+  String get successMessage_8 => 'Success!';
+
+  @override
+  String get loadingMessage_1 => 'Loading...';
+
+  @override
+  String get loadingMessage_2 => 'Loading...';
+
+  @override
+  String get loadingMessage_3 => 'Loading...';
+
+  @override
+  String get loadingMessage_4 => 'Loading...';
+
+  @override
+  String get loadingMessage_5 => 'Loading...';
+
+  @override
+  String get loadingMessage_6 => 'Loading...';
+
+  @override
+  String get loadingMessage_7 => 'Loading...';
+
+  @override
+  String get loadingMessage_8 => 'Loading...';
+
+  @override
+  String get loadingMessage_9 => 'Loading...';
+
+  @override
+  String get loadingMessage_10 => 'Loading...';
+
+  @override
+  String get loadingMessage_11 => 'Loading...';
+
+  @override
+  String get loadingMessage_12 => 'Loading...';
+
+  @override
+  String get loadingMessage_13 => 'Loading...';
+
+  @override
+  String get loadingMessage_14 => 'Loading...';
+
+  @override
+  String get loadingMessage_15 => 'Loading...';
+
+  @override
+  String get loadingMessage_16 => 'Loading...';
+
+  @override
+  String get loadingMessage_17 => 'Loading...';
+
+  @override
+  String get loadingMessage_18 => 'Loading...';
+
+  @override
+  String get motivationalMessage_1 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_2 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_3 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_4 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_5 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_6 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_7 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_8 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_9 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_10 => 'You\'re doing great!';
 }

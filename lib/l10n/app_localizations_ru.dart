@@ -9,409 +9,569 @@ class AppLocalizationsRu extends AppLocalizations {
   AppLocalizationsRu([String locale = 'ru']) : super(locale);
 
   @override
-  String get appTitle => 'GOSTsimbox Шлюз';
+  String get appTitle => 'GOSTsimbox Gateway';
 
   @override
-  String get configureSipCredentials => 'Настройте ваши SIP учетные данные';
+  String get configureSipCredentials => 'Configure your SIP credentials';
 
   @override
-  String get sipUsername => 'SIP Имя пользователя';
+  String get sipUsername => 'SIP Username';
 
   @override
-  String get sipPassword => 'SIP Пароль';
+  String get sipPassword => 'SIP Password';
 
   @override
-  String get sipServer => 'SIP Сервер';
+  String get sipServer => 'SIP Server';
 
   @override
-  String get sipPort => 'SIP Порт';
+  String get sipPort => 'SIP Port';
 
   @override
-  String get connect => 'Подключиться';
+  String get connect => 'Connect';
 
   @override
-  String get rememberCredentials => 'Запомнить учетные данные и автовход';
+  String get rememberCredentials => 'Remember credentials and auto-login';
 
   @override
-  String get pleaseEnterSipUsername =>
-      'Пожалуйста, введите SIP имя пользователя';
+  String get pleaseEnterSipUsername => 'Please enter SIP username';
 
   @override
-  String get pleaseEnterSipPassword => 'Пожалуйста, введите SIP пароль';
+  String get pleaseEnterSipPassword => 'Please enter SIP password';
 
   @override
-  String get pleaseEnterSipServer => 'Пожалуйста, введите SIP сервер';
+  String get pleaseEnterSipServer => 'Please enter SIP server';
 
   @override
-  String get pleaseEnterSipPort => 'Пожалуйста, введите SIP порт';
+  String get pleaseEnterSipPort => 'Please enter SIP port';
 
   @override
   String get pleaseEnterValidPort =>
-      'Пожалуйста, введите корректный номер порта (1-65535)';
+      'Please enter a valid port number (1-65535)';
 
   @override
-  String get authenticationFailed => 'Ошибка аутентификации';
+  String get authenticationFailed => 'Authentication failed';
 
   @override
-  String get gatewayStatus => 'Статус Шлюза';
+  String get gatewayStatus => 'Gateway Status';
 
   @override
-  String get sipConnection => 'SIP Соединение';
+  String get sipConnection => 'SIP Connection';
 
   @override
-  String get gsmConnection => 'GSM Соединение';
+  String get gsmConnection => 'GSM Connection';
 
   @override
-  String get activeCalls => 'Активные Звонки';
+  String get activeCalls => 'Active Calls';
 
   @override
-  String get registered => 'Зарегистрирован';
+  String get registered => 'Registered';
 
   @override
-  String get disconnected => 'Отключен';
+  String get disconnected => 'Disconnected';
 
   @override
-  String get connected => 'Подключенные';
+  String get connected => 'Connected';
 
   @override
-  String get noCalls => 'Нет Звонков';
+  String get noCalls => 'No Calls';
 
   @override
-  String get oneActive => '1 Активный';
+  String get oneActive => '1 Active';
 
   @override
-  String get gatewayControls => 'Управление Шлюзом';
+  String get gatewayControls => 'Gateway Controls';
 
   @override
-  String get startGateway => 'Запустить Шлюз';
+  String get startGateway => 'Start Gateway';
 
   @override
-  String get stopGateway => 'Остановить Шлюз';
+  String get stopGateway => 'Stop Gateway';
 
   @override
-  String get endCall => 'Завершить Звонок';
+  String get endCall => 'End Call';
 
   @override
-  String get recentLogs => 'Последние Логи';
+  String get recentLogs => 'Recent Logs';
 
   @override
-  String get viewAll => 'Посмотреть Все';
+  String get viewAll => 'View All';
 
   @override
-  String get noLogsAvailable => 'Логи недоступны';
+  String get noLogsAvailable => 'No logs available';
 
   @override
-  String get gatewayLogsWillAppearHere => 'Логи шлюза появятся здесь';
+  String get gatewayLogsWillAppearHere => 'Gateway logs will appear here';
 
   @override
-  String get testControls => 'Тестовые Элементы';
+  String get testControls => 'Test Controls';
 
   @override
-  String get testSipCall => 'Тест SIP Звонка';
+  String get testSipCall => 'Test SIP Call';
 
   @override
-  String get testGsmCall => 'Тест GSM Звонка';
+  String get testGsmCall => 'Test GSM Call';
 
   @override
-  String get settings => 'Настройки';
+  String get settings => 'Settings';
 
   @override
-  String get sipConfiguration => 'SIP Конфигурация';
+  String get sipConfiguration => 'SIP Configuration';
 
   @override
-  String get gatewayOptions => 'Опции Шлюза';
+  String get gatewayOptions => 'Gateway Options';
 
   @override
-  String get autoStartGateway => 'Автозапуск Шлюза';
+  String get autoStartGateway => 'Auto Start Gateway';
 
   @override
   String get autoStartGatewayDesc =>
-      'Автоматически запускать шлюз при запуске приложения';
+      'Automatically start gateway when app launches';
 
   @override
-  String get replaceDefaultDialer => 'Заменить Стандартный Наборщик';
+  String get replaceDefaultDialer => 'Replace Default Dialer';
 
   @override
   String get replaceDefaultDialerDesc =>
-      'Заменить системный наборщик на наборщик шлюза';
+      'Replace system dialer with gateway dialer';
 
   @override
-  String get enablePermissions => 'Включить Разрешения';
+  String get enablePermissions => 'Enable Permissions';
 
   @override
   String get enablePermissionsDesc =>
-      'Запрашивать повышенные разрешения для телефонии';
+      'Request elevated permissions for telephony';
 
   @override
-  String get rememberCredentialsSettings => 'Запомнить Учетные Данные';
+  String get rememberCredentialsSettings => 'Remember Credentials';
 
   @override
-  String get rememberCredentialsDesc => 'Сохранить учетные данные и автовход';
+  String get rememberCredentialsDesc => 'Save credentials and auto-login';
 
   @override
-  String get saveSettings => 'Сохранить Настройки';
+  String get saveSettings => 'Save Settings';
 
   @override
-  String get settingsSavedSuccessfully => 'Настройки успешно сохранены';
+  String get settingsSavedSuccessfully => 'Settings saved successfully';
 
   @override
-  String get errorSavingSettings => 'Ошибка сохранения настроек';
+  String get errorSavingSettings => 'Error saving settings';
 
   @override
-  String get gatewayLogs => 'Логи Шлюза';
+  String get gatewayLogs => 'Gateway Logs';
 
   @override
-  String get searchLogs => 'Поиск логов...';
+  String get searchLogs => 'Search logs...';
 
   @override
-  String get clearLogs => 'Очистить Логи';
+  String get clearLogs => 'Clear Logs';
 
   @override
   String get clearLogsConfirmation =>
-      'Вы уверены, что хотите очистить все логи? Это действие нельзя отменить.';
+      'Are you sure you want to clear all logs? This action cannot be undone.';
 
   @override
-  String get cancel => 'Отмена';
+  String get cancel => 'Cancel';
 
   @override
-  String get clear => 'Очистить';
+  String get clear => 'Clear';
 
   @override
-  String get logsClearedSuccessfully => 'Логи успешно очищены';
+  String get logsClearedSuccessfully => 'Logs cleared successfully';
 
   @override
-  String get errorClearingLogs => 'Ошибка очистки логов';
+  String get errorClearingLogs => 'Error clearing logs';
 
   @override
-  String get errorLoadingLogs => 'Ошибка загрузки логов';
+  String get errorLoadingLogs => 'Error loading logs';
 
   @override
-  String get stopped => 'Остановлен';
+  String get stopped => 'Stopped';
 
   @override
-  String get starting => 'Запуск...';
+  String get starting => 'Starting...';
 
   @override
-  String get running => 'Работает';
+  String get running => 'Running';
 
   @override
-  String get runningRegistered => 'Работает (Зарегистрирован)';
+  String get runningRegistered => 'Running (Registered)';
 
   @override
-  String get runningConnecting => 'Работает (Подключение)';
+  String get runningConnecting => 'Running (Connecting)';
 
   @override
-  String get runningDisconnected => 'Работает (Отключен)';
+  String get runningDisconnected => 'Running (Disconnected)';
 
   @override
-  String get error => 'Ошибка';
+  String get error => 'Error';
 
   @override
-  String get connecting => 'Подключение...';
+  String get connecting => 'Connecting...';
 
   @override
-  String get registeredStatus => 'Зарегистрирован';
+  String get registeredStatus => 'Registered';
 
   @override
-  String get callInProgress => 'Звонок в процессе';
+  String get callInProgress => 'Call in progress';
 
   @override
-  String get unknownError => 'Неизвестная ошибка';
+  String get unknownError => 'Unknown error';
 
   @override
-  String get smppConfiguration => 'SMPP Конфигурация';
+  String get smppConfiguration => 'SMPP Configuration';
 
   @override
-  String get smppServerHost => 'SMPP Сервер';
+  String get smppServerHost => 'SMPP Server Host';
 
   @override
-  String get smppPort => 'SMPP Порт';
+  String get smppPort => 'SMPP Port';
 
   @override
-  String get systemId => 'ID Системы';
+  String get systemId => 'System ID';
 
   @override
-  String get systemPassword => 'Пароль Системы';
+  String get systemPassword => 'System Password';
 
   @override
-  String get systemType => 'Тип Системы';
+  String get systemType => 'System Type';
 
   @override
-  String get connectionStatus => 'Статус Соединения';
+  String get connectionStatus => 'Connection Status';
 
   @override
-  String get bound => 'Привязан';
+  String get bound => 'Bound';
 
   @override
-  String get disconnect => 'Отключиться';
+  String get disconnect => 'Disconnect';
 
   @override
-  String get testConnection => 'Тест Соединения';
+  String get testConnection => 'Test Connection';
 
   @override
-  String get saveConfiguration => 'Сохранить Конфигурацию';
+  String get saveConfiguration => 'Save Configuration';
 
   @override
-  String get resetConfiguration => 'Сбросить Конфигурацию';
+  String get resetConfiguration => 'Reset Configuration';
 
   @override
-  String get advancedSettings => 'Дополнительные Настройки';
+  String get advancedSettings => 'Advanced Settings';
 
   @override
-  String get enableDeliveryReceipts => 'Включить Подтверждения Доставки';
+  String get enableDeliveryReceipts => 'Enable Delivery Receipts';
 
   @override
   String get enableDeliveryReceiptsDesc =>
-      'Получать подтверждения доставки отправленных сообщений';
+      'Receive delivery confirmations for sent messages';
 
   @override
-  String get enableLogging => 'Включить Логирование';
+  String get enableLogging => 'Enable Logging';
 
   @override
-  String get enableLoggingDesc =>
-      'Логировать SMPP протокольные сообщения для отладки';
+  String get enableLoggingDesc => 'Log SMPP protocol messages for debugging';
 
   @override
-  String get configurationInfo => 'Информация о Конфигурации';
+  String get configurationInfo => 'Configuration Info';
 
   @override
-  String get protocolVersion => 'Версия Протокола';
+  String get protocolVersion => 'Protocol Version';
 
   @override
-  String get defaultPort => 'Порт по Умолчанию';
+  String get defaultPort => 'Default Port';
 
   @override
-  String get connectionType => 'Тип Соединения';
+  String get connectionType => 'Connection Type';
 
   @override
-  String get keepAlive => 'Поддержание Соединения';
+  String get keepAlive => 'Keep-alive';
 
   @override
-  String get reconnectInterval => 'Интервал Переподключения';
+  String get reconnectInterval => 'Reconnect Interval';
 
   @override
-  String get pleaseEnterSmppHost => 'Пожалуйста, введите SMPP сервер';
+  String get pleaseEnterSmppHost => 'Please enter SMPP server host';
 
   @override
-  String get pleaseEnterPort => 'Пожалуйста, введите номер порта';
+  String get pleaseEnterPort => 'Please enter port number';
 
   @override
-  String get pleaseEnterSystemId => 'Пожалуйста, введите ID системы';
+  String get pleaseEnterSystemId => 'Please enter System ID';
 
   @override
-  String get pleaseEnterPassword => 'Пожалуйста, введите пароль';
+  String get pleaseEnterPassword => 'Please enter password';
 
   @override
-  String get configurationSaved => 'Конфигурация успешно сохранена';
+  String get configurationSaved => 'Configuration saved successfully';
 
   @override
-  String get errorSavingConfiguration => 'Ошибка сохранения конфигурации';
+  String get errorSavingConfiguration => 'Error saving configuration';
 
   @override
-  String get connectionTestSuccess => 'Тест соединения успешен';
+  String get connectionTestSuccess => 'Connection test successful';
 
   @override
-  String get connectionTestFailed => 'Тест соединения не удался';
+  String get connectionTestFailed => 'Connection test failed';
 
   @override
-  String get showPassword => 'Показать Пароль';
+  String get showPassword => 'Show Password';
 
   @override
-  String get hidePassword => 'Скрыть Пароль';
+  String get hidePassword => 'Hide Password';
 
   @override
-  String get transceiver => 'Приемопередатчик';
+  String get transceiver => 'Transceiver';
 
   @override
-  String get transmitter => 'Передатчик';
+  String get transmitter => 'Transmitter';
 
   @override
-  String get receiver => 'Приемник';
+  String get receiver => 'Receiver';
 
   @override
-  String get seconds => 'секунд';
+  String get seconds => 'seconds';
 
   @override
-  String get callHistory => 'История Звонков';
+  String get callHistory => 'Call History';
 
   @override
-  String get loadingCalls => 'Загрузка звонков...';
+  String get loadingCalls => 'Loading calls...';
 
   @override
-  String get errorLoadingCalls => 'Ошибка загрузки звонков';
+  String get errorLoadingCalls => 'Error loading calls';
 
   @override
-  String get noCallsFound => 'Звонки не найдены';
+  String get noCallsFound => 'No calls found';
 
   @override
-  String get callHistoryWillAppearHere => 'История звонков появится здесь';
+  String get callHistoryWillAppearHere => 'Your call history will appear here';
 
   @override
-  String get all => 'Все';
+  String get all => 'All';
 
   @override
-  String get incoming => 'Входящие';
+  String get incoming => 'Incoming';
 
   @override
-  String get outgoing => 'Исходящие';
+  String get outgoing => 'Outgoing';
 
   @override
-  String get missed => 'Пропущенные';
+  String get missed => 'Missed';
 
   @override
-  String get completed => 'Завершенные';
+  String get completed => 'Completed';
 
   @override
-  String get rejected => 'Отклоненные';
+  String get rejected => 'Rejected';
 
   @override
-  String get unknown => 'Неизвестно';
+  String get unknown => 'Unknown';
 
   @override
-  String get makeCall => 'Совершить Звонок';
+  String get makeCall => 'Make Call';
 
   @override
-  String get phoneNumber => 'Номер Телефона';
+  String get phoneNumber => 'Phone Number';
 
   @override
-  String get enterPhoneNumber => 'Введите номер телефона';
+  String get enterPhoneNumber => 'Enter phone number';
 
   @override
-  String get callInformation => 'Информация о Звонке';
+  String get callInformation => 'Call Information';
 
   @override
-  String get from => 'От';
+  String get from => 'From';
 
   @override
-  String get to => 'К';
+  String get to => 'To';
 
   @override
-  String get duration => 'Длительность';
+  String get duration => 'Duration';
 
   @override
-  String get status => 'Статус';
+  String get status => 'Status';
 
   @override
-  String get lineId => 'ID Линии';
+  String get lineId => 'Line ID';
 
   @override
-  String get recording => 'Запись';
+  String get recording => 'Recording';
 
   @override
-  String get filterCalls => 'Фильтр Звонков';
+  String get filterCalls => 'Filter Calls';
 
   @override
-  String get retry => 'Повторить';
+  String get retry => 'Retry';
 
   @override
-  String get close => 'Закрыть';
+  String get close => 'Close';
 
   @override
-  String get apply => 'Применить';
+  String get apply => 'Apply';
 
   @override
-  String get calling => 'Звоню';
+  String get calling => 'Calling';
 
   @override
-  String get openingSmsTo => 'Открываю SMS для';
+  String get openingSmsTo => 'Opening SMS to';
+
+  @override
+  String get connectionError_1 => 'Ошибка соединения.';
+
+  @override
+  String get connectionError_2 => 'Ошибка соединения.';
+
+  @override
+  String get connectionError_3 => 'Ошибка соединения.';
+
+  @override
+  String get connectionError_4 => 'Ошибка соединения.';
+
+  @override
+  String get connectionError_5 => 'Ошибка соединения.';
+
+  @override
+  String get connectionError_6 => 'Ошибка соединения.';
+
+  @override
+  String get connectionError_7 => 'Ошибка соединения.';
+
+  @override
+  String get connectionError_8 => 'Ошибка соединения.';
+
+  @override
+  String get connectionError_9 => 'Ошибка соединения.';
+
+  @override
+  String get connectionError_10 => 'Ошибка соединения.';
+
+  @override
+  String get setupError_1 => 'Ошибка настройки.';
+
+  @override
+  String get setupError_2 => 'Ошибка настройки.';
+
+  @override
+  String get setupError_3 => 'Ошибка настройки.';
+
+  @override
+  String get setupError_4 => 'Ошибка настройки.';
+
+  @override
+  String get setupError_5 => 'Ошибка настройки.';
+
+  @override
+  String get setupError_6 => 'Ошибка настройки.';
+
+  @override
+  String get setupError_7 => 'Ошибка настройки.';
+
+  @override
+  String get setupError_8 => 'Ошибка настройки.';
+
+  @override
+  String get successMessage_1 => 'Успех!';
+
+  @override
+  String get successMessage_2 => 'Успех!';
+
+  @override
+  String get successMessage_3 => 'Успех!';
+
+  @override
+  String get successMessage_4 => 'Успех!';
+
+  @override
+  String get successMessage_5 => 'Успех!';
+
+  @override
+  String get successMessage_6 => 'Успех!';
+
+  @override
+  String get successMessage_7 => 'Успех!';
+
+  @override
+  String get successMessage_8 => 'Успех!';
+
+  @override
+  String get loadingMessage_1 => 'Загрузка...';
+
+  @override
+  String get loadingMessage_2 => 'Загрузка...';
+
+  @override
+  String get loadingMessage_3 => 'Загрузка...';
+
+  @override
+  String get loadingMessage_4 => 'Загрузка...';
+
+  @override
+  String get loadingMessage_5 => 'Загрузка...';
+
+  @override
+  String get loadingMessage_6 => 'Загрузка...';
+
+  @override
+  String get loadingMessage_7 => 'Загрузка...';
+
+  @override
+  String get loadingMessage_8 => 'Загрузка...';
+
+  @override
+  String get loadingMessage_9 => 'Загрузка...';
+
+  @override
+  String get loadingMessage_10 => 'Загрузка...';
+
+  @override
+  String get loadingMessage_11 => 'Загрузка...';
+
+  @override
+  String get loadingMessage_12 => 'Загрузка...';
+
+  @override
+  String get loadingMessage_13 => 'Загрузка...';
+
+  @override
+  String get loadingMessage_14 => 'Загрузка...';
+
+  @override
+  String get loadingMessage_15 => 'Загрузка...';
+
+  @override
+  String get loadingMessage_16 => 'Загрузка...';
+
+  @override
+  String get loadingMessage_17 => 'Загрузка...';
+
+  @override
+  String get loadingMessage_18 => 'Загрузка...';
+
+  @override
+  String get motivationalMessage_1 => 'Отличная работа!';
+
+  @override
+  String get motivationalMessage_2 => 'Отличная работа!';
+
+  @override
+  String get motivationalMessage_3 => 'Отличная работа!';
+
+  @override
+  String get motivationalMessage_4 => 'Отличная работа!';
+
+  @override
+  String get motivationalMessage_5 => 'Отличная работа!';
+
+  @override
+  String get motivationalMessage_6 => 'Отличная работа!';
+
+  @override
+  String get motivationalMessage_7 => 'Отличная работа!';
+
+  @override
+  String get motivationalMessage_8 => 'Отличная работа!';
+
+  @override
+  String get motivationalMessage_9 => 'Отличная работа!';
+
+  @override
+  String get motivationalMessage_10 => 'Отличная работа!';
 }

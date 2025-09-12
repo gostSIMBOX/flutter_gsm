@@ -9,208 +9,213 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
-  String get appTitle => 'GOSTsimbox 网关';
+  String get appTitle => 'GOSTsimbox Gateway';
 
   @override
-  String get configureSipCredentials => '配置您的 SIP 凭据';
+  String get configureSipCredentials => 'Configure your SIP credentials';
 
   @override
-  String get sipUsername => 'SIP 用户名';
+  String get sipUsername => 'SIP Username';
 
   @override
-  String get sipPassword => 'SIP 密码';
+  String get sipPassword => 'SIP Password';
 
   @override
-  String get sipServer => 'SIP 服务器';
+  String get sipServer => 'SIP Server';
 
   @override
-  String get sipPort => 'SIP 端口';
+  String get sipPort => 'SIP Port';
 
   @override
-  String get connect => '连接';
+  String get connect => 'Connect';
 
   @override
-  String get rememberCredentials => '记住凭据并自动登录';
+  String get rememberCredentials => 'Remember credentials and auto-login';
 
   @override
-  String get pleaseEnterSipUsername => '请输入 SIP 用户名';
+  String get pleaseEnterSipUsername => 'Please enter SIP username';
 
   @override
-  String get pleaseEnterSipPassword => '请输入 SIP 密码';
+  String get pleaseEnterSipPassword => 'Please enter SIP password';
 
   @override
-  String get pleaseEnterSipServer => '请输入 SIP 服务器';
+  String get pleaseEnterSipServer => 'Please enter SIP server';
 
   @override
-  String get pleaseEnterSipPort => '请输入 SIP 端口';
+  String get pleaseEnterSipPort => 'Please enter SIP port';
 
   @override
-  String get pleaseEnterValidPort => '请输入有效的端口号';
+  String get pleaseEnterValidPort =>
+      'Please enter a valid port number (1-65535)';
 
   @override
-  String get authenticationFailed => '身份验证失败';
+  String get authenticationFailed => 'Authentication failed';
 
   @override
-  String get gatewayStatus => '网关状态';
+  String get gatewayStatus => 'Gateway Status';
 
   @override
-  String get sipConnection => 'SIP 连接';
+  String get sipConnection => 'SIP Connection';
 
   @override
-  String get gsmConnection => 'GSM 连接';
+  String get gsmConnection => 'GSM Connection';
 
   @override
-  String get activeCalls => '活跃通话';
+  String get activeCalls => 'Active Calls';
 
   @override
-  String get registered => '已注册';
+  String get registered => 'Registered';
 
   @override
-  String get disconnected => '已断开';
+  String get disconnected => 'Disconnected';
 
   @override
-  String get connected => '已连接';
+  String get connected => 'Connected';
 
   @override
-  String get noCalls => '无通话';
+  String get noCalls => 'No Calls';
 
   @override
-  String get oneActive => '1 个活跃';
+  String get oneActive => '1 Active';
 
   @override
-  String get gatewayControls => '网关控制';
+  String get gatewayControls => 'Gateway Controls';
 
   @override
-  String get startGateway => '启动网关';
+  String get startGateway => 'Start Gateway';
 
   @override
-  String get stopGateway => '停止网关';
+  String get stopGateway => 'Stop Gateway';
 
   @override
-  String get endCall => '结束通话';
+  String get endCall => 'End Call';
 
   @override
-  String get recentLogs => '最近日志';
+  String get recentLogs => 'Recent Logs';
 
   @override
-  String get viewAll => '查看全部';
+  String get viewAll => 'View All';
 
   @override
-  String get noLogsAvailable => '无可用日志';
+  String get noLogsAvailable => 'No logs available';
 
   @override
-  String get gatewayLogsWillAppearHere => '网关日志将在此显示';
+  String get gatewayLogsWillAppearHere => 'Gateway logs will appear here';
 
   @override
-  String get testControls => '测试控制';
+  String get testControls => 'Test Controls';
 
   @override
-  String get testSipCall => '测试 SIP 通话';
+  String get testSipCall => 'Test SIP Call';
 
   @override
-  String get testGsmCall => '测试 GSM 通话';
+  String get testGsmCall => 'Test GSM Call';
 
   @override
-  String get settings => '设置';
+  String get settings => 'Settings';
 
   @override
-  String get sipConfiguration => 'SIP 配置';
+  String get sipConfiguration => 'SIP Configuration';
 
   @override
-  String get gatewayOptions => '网关选项';
+  String get gatewayOptions => 'Gateway Options';
 
   @override
-  String get autoStartGateway => '自动启动网关';
+  String get autoStartGateway => 'Auto Start Gateway';
 
   @override
-  String get autoStartGatewayDesc => '应用启动时自动启动网关';
+  String get autoStartGatewayDesc =>
+      'Automatically start gateway when app launches';
 
   @override
-  String get replaceDefaultDialer => '替换默认拨号器';
+  String get replaceDefaultDialer => 'Replace Default Dialer';
 
   @override
-  String get replaceDefaultDialerDesc => '用网关拨号器替换系统拨号器';
+  String get replaceDefaultDialerDesc =>
+      'Replace system dialer with gateway dialer';
 
   @override
-  String get enablePermissions => '启用权限';
+  String get enablePermissions => 'Enable Permissions';
 
   @override
-  String get enablePermissionsDesc => '请求电话功能的高级权限';
+  String get enablePermissionsDesc =>
+      'Request elevated permissions for telephony';
 
   @override
-  String get rememberCredentialsSettings => '记住凭据';
+  String get rememberCredentialsSettings => 'Remember Credentials';
 
   @override
-  String get rememberCredentialsDesc => '保存凭据并自动登录';
+  String get rememberCredentialsDesc => 'Save credentials and auto-login';
 
   @override
-  String get saveSettings => '保存设置';
+  String get saveSettings => 'Save Settings';
 
   @override
-  String get settingsSavedSuccessfully => '设置保存成功';
+  String get settingsSavedSuccessfully => 'Settings saved successfully';
 
   @override
-  String get errorSavingSettings => '保存设置时出错';
+  String get errorSavingSettings => 'Error saving settings';
 
   @override
-  String get gatewayLogs => '网关日志';
+  String get gatewayLogs => 'Gateway Logs';
 
   @override
-  String get searchLogs => '搜索日志...';
+  String get searchLogs => 'Search logs...';
 
   @override
-  String get clearLogs => '清除日志';
+  String get clearLogs => 'Clear Logs';
 
   @override
-  String get clearLogsConfirmation => '您确定要清除所有日志吗？此操作无法撤销。';
+  String get clearLogsConfirmation =>
+      'Are you sure you want to clear all logs? This action cannot be undone.';
 
   @override
-  String get cancel => '取消';
+  String get cancel => 'Cancel';
 
   @override
-  String get clear => '清除';
+  String get clear => 'Clear';
 
   @override
-  String get logsClearedSuccessfully => '日志清除成功';
+  String get logsClearedSuccessfully => 'Logs cleared successfully';
 
   @override
-  String get errorClearingLogs => '清除日志时出错';
+  String get errorClearingLogs => 'Error clearing logs';
 
   @override
-  String get errorLoadingLogs => '加载日志时出错';
+  String get errorLoadingLogs => 'Error loading logs';
 
   @override
-  String get stopped => '已停止';
+  String get stopped => 'Stopped';
 
   @override
-  String get starting => '启动中...';
+  String get starting => 'Starting...';
 
   @override
-  String get running => '运行中';
+  String get running => 'Running';
 
   @override
-  String get runningRegistered => '运行中（已注册）';
+  String get runningRegistered => 'Running (Registered)';
 
   @override
-  String get runningConnecting => '运行中（连接中）';
+  String get runningConnecting => 'Running (Connecting)';
 
   @override
-  String get runningDisconnected => '运行中（已断开）';
+  String get runningDisconnected => 'Running (Disconnected)';
 
   @override
-  String get error => '错误';
+  String get error => 'Error';
 
   @override
-  String get connecting => '连接中...';
+  String get connecting => 'Connecting...';
 
   @override
-  String get registeredStatus => '已注册';
+  String get registeredStatus => 'Registered';
 
   @override
-  String get callInProgress => '通话进行中';
+  String get callInProgress => 'Call in progress';
 
   @override
-  String get unknownError => '未知错误';
+  String get unknownError => 'Unknown error';
 
   @override
   String get smppConfiguration => 'SMPP Configuration';
@@ -407,4 +412,166 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get openingSmsTo => 'Opening SMS to';
+
+  @override
+  String get connectionError_1 => 'Connection error.';
+
+  @override
+  String get connectionError_2 => 'Connection error.';
+
+  @override
+  String get connectionError_3 => 'Connection error.';
+
+  @override
+  String get connectionError_4 => 'Connection error.';
+
+  @override
+  String get connectionError_5 => 'Connection error.';
+
+  @override
+  String get connectionError_6 => 'Connection error.';
+
+  @override
+  String get connectionError_7 => 'Connection error.';
+
+  @override
+  String get connectionError_8 => 'Connection error.';
+
+  @override
+  String get connectionError_9 => 'Connection error.';
+
+  @override
+  String get connectionError_10 => 'Connection error.';
+
+  @override
+  String get setupError_1 => 'Setup error.';
+
+  @override
+  String get setupError_2 => 'Setup error.';
+
+  @override
+  String get setupError_3 => 'Setup error.';
+
+  @override
+  String get setupError_4 => 'Setup error.';
+
+  @override
+  String get setupError_5 => 'Setup error.';
+
+  @override
+  String get setupError_6 => 'Setup error.';
+
+  @override
+  String get setupError_7 => 'Setup error.';
+
+  @override
+  String get setupError_8 => 'Setup error.';
+
+  @override
+  String get successMessage_1 => 'Success!';
+
+  @override
+  String get successMessage_2 => 'Success!';
+
+  @override
+  String get successMessage_3 => 'Success!';
+
+  @override
+  String get successMessage_4 => 'Success!';
+
+  @override
+  String get successMessage_5 => 'Success!';
+
+  @override
+  String get successMessage_6 => 'Success!';
+
+  @override
+  String get successMessage_7 => 'Success!';
+
+  @override
+  String get successMessage_8 => 'Success!';
+
+  @override
+  String get loadingMessage_1 => 'Loading...';
+
+  @override
+  String get loadingMessage_2 => 'Loading...';
+
+  @override
+  String get loadingMessage_3 => 'Loading...';
+
+  @override
+  String get loadingMessage_4 => 'Loading...';
+
+  @override
+  String get loadingMessage_5 => 'Loading...';
+
+  @override
+  String get loadingMessage_6 => 'Loading...';
+
+  @override
+  String get loadingMessage_7 => 'Loading...';
+
+  @override
+  String get loadingMessage_8 => 'Loading...';
+
+  @override
+  String get loadingMessage_9 => 'Loading...';
+
+  @override
+  String get loadingMessage_10 => 'Loading...';
+
+  @override
+  String get loadingMessage_11 => 'Loading...';
+
+  @override
+  String get loadingMessage_12 => 'Loading...';
+
+  @override
+  String get loadingMessage_13 => 'Loading...';
+
+  @override
+  String get loadingMessage_14 => 'Loading...';
+
+  @override
+  String get loadingMessage_15 => 'Loading...';
+
+  @override
+  String get loadingMessage_16 => 'Loading...';
+
+  @override
+  String get loadingMessage_17 => 'Loading...';
+
+  @override
+  String get loadingMessage_18 => 'Loading...';
+
+  @override
+  String get motivationalMessage_1 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_2 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_3 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_4 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_5 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_6 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_7 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_8 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_9 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_10 => 'You\'re doing great!';
 }

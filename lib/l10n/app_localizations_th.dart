@@ -9,211 +9,213 @@ class AppLocalizationsTh extends AppLocalizations {
   AppLocalizationsTh([String locale = 'th']) : super(locale);
 
   @override
-  String get appTitle => 'เกตเวย์ GOSTsimbox';
+  String get appTitle => 'GOSTsimbox Gateway';
 
   @override
-  String get configureSipCredentials => 'กำหนดค่าข้อมูลประจำตัว SIP ของคุณ';
+  String get configureSipCredentials => 'Configure your SIP credentials';
 
   @override
-  String get sipUsername => 'ชื่อผู้ใช้ SIP';
+  String get sipUsername => 'SIP Username';
 
   @override
-  String get sipPassword => 'รหัสผ่าน SIP';
+  String get sipPassword => 'SIP Password';
 
   @override
-  String get sipServer => 'เซิร์ฟเวอร์ SIP';
+  String get sipServer => 'SIP Server';
 
   @override
-  String get sipPort => 'พอร์ต SIP';
+  String get sipPort => 'SIP Port';
 
   @override
-  String get connect => 'เชื่อมต่อ';
+  String get connect => 'Connect';
 
   @override
-  String get rememberCredentials => 'จดจำข้อมูลประจำตัวและเข้าสู่ระบบอัตโนมัติ';
+  String get rememberCredentials => 'Remember credentials and auto-login';
 
   @override
-  String get pleaseEnterSipUsername => 'กรุณาป้อนชื่อผู้ใช้ SIP';
+  String get pleaseEnterSipUsername => 'Please enter SIP username';
 
   @override
-  String get pleaseEnterSipPassword => 'กรุณาป้อนรหัสผ่าน SIP';
+  String get pleaseEnterSipPassword => 'Please enter SIP password';
 
   @override
-  String get pleaseEnterSipServer => 'กรุณาป้อนเซิร์ฟเวอร์ SIP';
+  String get pleaseEnterSipServer => 'Please enter SIP server';
 
   @override
-  String get pleaseEnterSipPort => 'กรุณาป้อนพอร์ต SIP';
+  String get pleaseEnterSipPort => 'Please enter SIP port';
 
   @override
-  String get pleaseEnterValidPort => 'กรุณาป้อนหมายเลขพอร์ตที่ถูกต้อง';
+  String get pleaseEnterValidPort =>
+      'Please enter a valid port number (1-65535)';
 
   @override
-  String get authenticationFailed => 'การยืนยันตัวตนล้มเหลว';
+  String get authenticationFailed => 'Authentication failed';
 
   @override
-  String get gatewayStatus => 'สถานะเกตเวย์';
+  String get gatewayStatus => 'Gateway Status';
 
   @override
-  String get sipConnection => 'การเชื่อมต่อ SIP';
+  String get sipConnection => 'SIP Connection';
 
   @override
-  String get gsmConnection => 'การเชื่อมต่อ GSM';
+  String get gsmConnection => 'GSM Connection';
 
   @override
-  String get activeCalls => 'การโทรที่ใช้งานอยู่';
+  String get activeCalls => 'Active Calls';
 
   @override
-  String get registered => 'ลงทะเบียนแล้ว';
+  String get registered => 'Registered';
 
   @override
-  String get disconnected => 'ตัดการเชื่อมต่อ';
+  String get disconnected => 'Disconnected';
 
   @override
-  String get connected => 'เชื่อมต่อแล้ว';
+  String get connected => 'Connected';
 
   @override
-  String get noCalls => 'ไม่มีสาย';
+  String get noCalls => 'No Calls';
 
   @override
-  String get oneActive => '1 ใช้งาน';
+  String get oneActive => '1 Active';
 
   @override
-  String get gatewayControls => 'การควบคุมเกตเวย์';
+  String get gatewayControls => 'Gateway Controls';
 
   @override
-  String get startGateway => 'เริ่มเกตเวย์';
+  String get startGateway => 'Start Gateway';
 
   @override
-  String get stopGateway => 'หยุดเกตเวย์';
+  String get stopGateway => 'Stop Gateway';
 
   @override
-  String get endCall => 'จบการโทร';
+  String get endCall => 'End Call';
 
   @override
-  String get recentLogs => 'บันทึกล่าสุด';
+  String get recentLogs => 'Recent Logs';
 
   @override
-  String get viewAll => 'ดูทั้งหมด';
+  String get viewAll => 'View All';
 
   @override
-  String get noLogsAvailable => 'ไม่มีบันทึก';
+  String get noLogsAvailable => 'No logs available';
 
   @override
-  String get gatewayLogsWillAppearHere => 'บันทึกเกตเวย์จะปรากฏที่นี่';
+  String get gatewayLogsWillAppearHere => 'Gateway logs will appear here';
 
   @override
-  String get testControls => 'การควบคุมทดสอบ';
+  String get testControls => 'Test Controls';
 
   @override
-  String get testSipCall => 'ทดสอบการโทร SIP';
+  String get testSipCall => 'Test SIP Call';
 
   @override
-  String get testGsmCall => 'ทดสอบการโทร GSM';
+  String get testGsmCall => 'Test GSM Call';
 
   @override
-  String get settings => 'การตั้งค่า';
+  String get settings => 'Settings';
 
   @override
-  String get sipConfiguration => 'การกำหนดค่า SIP';
+  String get sipConfiguration => 'SIP Configuration';
 
   @override
-  String get gatewayOptions => 'ตัวเลือกเกตเวย์';
+  String get gatewayOptions => 'Gateway Options';
 
   @override
-  String get autoStartGateway => 'เริ่มเกตเวย์อัตโนมัติ';
+  String get autoStartGateway => 'Auto Start Gateway';
 
   @override
-  String get autoStartGatewayDesc => 'เริ่มเกตเวย์อัตโนมัติเมื่อเปิดแอป';
+  String get autoStartGatewayDesc =>
+      'Automatically start gateway when app launches';
 
   @override
-  String get replaceDefaultDialer => 'แทนที่เครื่องโทรเริ่มต้น';
+  String get replaceDefaultDialer => 'Replace Default Dialer';
 
   @override
   String get replaceDefaultDialerDesc =>
-      'แทนที่เครื่องโทรระบบด้วยเครื่องโทรเกตเวย์';
+      'Replace system dialer with gateway dialer';
 
   @override
-  String get enablePermissions => 'เปิดใช้งานสิทธิ์';
+  String get enablePermissions => 'Enable Permissions';
 
   @override
-  String get enablePermissionsDesc => 'ขอสิทธิ์ขั้นสูงสำหรับโทรศัพท์';
+  String get enablePermissionsDesc =>
+      'Request elevated permissions for telephony';
 
   @override
-  String get rememberCredentialsSettings => 'จดจำข้อมูลประจำตัว';
+  String get rememberCredentialsSettings => 'Remember Credentials';
 
   @override
-  String get rememberCredentialsDesc =>
-      'บันทึกข้อมูลประจำตัวและเข้าสู่ระบบอัตโนมัติ';
+  String get rememberCredentialsDesc => 'Save credentials and auto-login';
 
   @override
-  String get saveSettings => 'บันทึกการตั้งค่า';
+  String get saveSettings => 'Save Settings';
 
   @override
-  String get settingsSavedSuccessfully => 'บันทึกการตั้งค่าสำเร็จแล้ว';
+  String get settingsSavedSuccessfully => 'Settings saved successfully';
 
   @override
-  String get errorSavingSettings => 'เกิดข้อผิดพลาดในการบันทึกการตั้งค่า';
+  String get errorSavingSettings => 'Error saving settings';
 
   @override
-  String get gatewayLogs => 'บันทึกเกตเวย์';
+  String get gatewayLogs => 'Gateway Logs';
 
   @override
-  String get searchLogs => 'ค้นหาบันทึก...';
+  String get searchLogs => 'Search logs...';
 
   @override
-  String get clearLogs => 'ลบบันทึก';
+  String get clearLogs => 'Clear Logs';
 
   @override
   String get clearLogsConfirmation =>
-      'คุณแน่ใจหรือไม่ที่จะลบบันทึกทั้งหมด? การดำเนินการนี้ไม่สามารถยกเลิกได้';
+      'Are you sure you want to clear all logs? This action cannot be undone.';
 
   @override
-  String get cancel => 'ยกเลิก';
+  String get cancel => 'Cancel';
 
   @override
-  String get clear => 'ลบ';
+  String get clear => 'Clear';
 
   @override
-  String get logsClearedSuccessfully => 'ลบบันทึกสำเร็จแล้ว';
+  String get logsClearedSuccessfully => 'Logs cleared successfully';
 
   @override
-  String get errorClearingLogs => 'เกิดข้อผิดพลาดในการลบบันทึก';
+  String get errorClearingLogs => 'Error clearing logs';
 
   @override
-  String get errorLoadingLogs => 'เกิดข้อผิดพลาดในการโหลดบันทึก';
+  String get errorLoadingLogs => 'Error loading logs';
 
   @override
-  String get stopped => 'หยุดแล้ว';
+  String get stopped => 'Stopped';
 
   @override
-  String get starting => 'กำลังเริ่ม...';
+  String get starting => 'Starting...';
 
   @override
-  String get running => 'กำลังทำงาน';
+  String get running => 'Running';
 
   @override
-  String get runningRegistered => 'กำลังทำงาน (ลงทะเบียนแล้ว)';
+  String get runningRegistered => 'Running (Registered)';
 
   @override
-  String get runningConnecting => 'กำลังทำงาน (กำลังเชื่อมต่อ)';
+  String get runningConnecting => 'Running (Connecting)';
 
   @override
-  String get runningDisconnected => 'กำลังทำงาน (ตัดการเชื่อมต่อ)';
+  String get runningDisconnected => 'Running (Disconnected)';
 
   @override
-  String get error => 'ข้อผิดพลาด';
+  String get error => 'Error';
 
   @override
-  String get connecting => 'กำลังเชื่อมต่อ...';
+  String get connecting => 'Connecting...';
 
   @override
-  String get registeredStatus => 'ลงทะเบียนแล้ว';
+  String get registeredStatus => 'Registered';
 
   @override
-  String get callInProgress => 'การโทรกำลังดำเนินการ';
+  String get callInProgress => 'Call in progress';
 
   @override
-  String get unknownError => 'ข้อผิดพลาดที่ไม่ทราบสาเหตุ';
+  String get unknownError => 'Unknown error';
 
   @override
   String get smppConfiguration => 'SMPP Configuration';
@@ -410,4 +412,166 @@ class AppLocalizationsTh extends AppLocalizations {
 
   @override
   String get openingSmsTo => 'Opening SMS to';
+
+  @override
+  String get connectionError_1 => 'Connection error.';
+
+  @override
+  String get connectionError_2 => 'Connection error.';
+
+  @override
+  String get connectionError_3 => 'Connection error.';
+
+  @override
+  String get connectionError_4 => 'Connection error.';
+
+  @override
+  String get connectionError_5 => 'Connection error.';
+
+  @override
+  String get connectionError_6 => 'Connection error.';
+
+  @override
+  String get connectionError_7 => 'Connection error.';
+
+  @override
+  String get connectionError_8 => 'Connection error.';
+
+  @override
+  String get connectionError_9 => 'Connection error.';
+
+  @override
+  String get connectionError_10 => 'Connection error.';
+
+  @override
+  String get setupError_1 => 'Setup error.';
+
+  @override
+  String get setupError_2 => 'Setup error.';
+
+  @override
+  String get setupError_3 => 'Setup error.';
+
+  @override
+  String get setupError_4 => 'Setup error.';
+
+  @override
+  String get setupError_5 => 'Setup error.';
+
+  @override
+  String get setupError_6 => 'Setup error.';
+
+  @override
+  String get setupError_7 => 'Setup error.';
+
+  @override
+  String get setupError_8 => 'Setup error.';
+
+  @override
+  String get successMessage_1 => 'Success!';
+
+  @override
+  String get successMessage_2 => 'Success!';
+
+  @override
+  String get successMessage_3 => 'Success!';
+
+  @override
+  String get successMessage_4 => 'Success!';
+
+  @override
+  String get successMessage_5 => 'Success!';
+
+  @override
+  String get successMessage_6 => 'Success!';
+
+  @override
+  String get successMessage_7 => 'Success!';
+
+  @override
+  String get successMessage_8 => 'Success!';
+
+  @override
+  String get loadingMessage_1 => 'Loading...';
+
+  @override
+  String get loadingMessage_2 => 'Loading...';
+
+  @override
+  String get loadingMessage_3 => 'Loading...';
+
+  @override
+  String get loadingMessage_4 => 'Loading...';
+
+  @override
+  String get loadingMessage_5 => 'Loading...';
+
+  @override
+  String get loadingMessage_6 => 'Loading...';
+
+  @override
+  String get loadingMessage_7 => 'Loading...';
+
+  @override
+  String get loadingMessage_8 => 'Loading...';
+
+  @override
+  String get loadingMessage_9 => 'Loading...';
+
+  @override
+  String get loadingMessage_10 => 'Loading...';
+
+  @override
+  String get loadingMessage_11 => 'Loading...';
+
+  @override
+  String get loadingMessage_12 => 'Loading...';
+
+  @override
+  String get loadingMessage_13 => 'Loading...';
+
+  @override
+  String get loadingMessage_14 => 'Loading...';
+
+  @override
+  String get loadingMessage_15 => 'Loading...';
+
+  @override
+  String get loadingMessage_16 => 'Loading...';
+
+  @override
+  String get loadingMessage_17 => 'Loading...';
+
+  @override
+  String get loadingMessage_18 => 'Loading...';
+
+  @override
+  String get motivationalMessage_1 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_2 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_3 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_4 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_5 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_6 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_7 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_8 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_9 => 'You\'re doing great!';
+
+  @override
+  String get motivationalMessage_10 => 'You\'re doing great!';
 }
