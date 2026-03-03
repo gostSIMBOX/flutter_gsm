@@ -6,7 +6,11 @@ Master index of all Architecture Decision Records.
 
 | # | Name | Title | Type | Status | Created | Decided | File |
 |---|------|-------|------|--------|---------|---------|------|
-| - | - | No ADRs yet | - | - | - | - | - |
+| 001 | clean-architecture | Clean Architecture | constraining | DRAFT | 2026-03-03 | - | flows/adr-001-clean-architecture/ |
+| 002 | dependency-injection | Dependency Injection (get_it) | enabling | DRAFT | 2026-03-03 | - | flows/adr-002-dependency-injection/ |
+| 003 | state-management | State Management (Provider) | enabling | DRAFT | 2026-03-03 | - | flows/adr-003-state-management/ |
+| 004 | error-handling | Error Handling (Centralized) | enabling | DRAFT | 2026-03-03 | - | flows/adr-004-error-handling/ |
+| 005 | service-orchestration | Service Orchestration | constraining | DRAFT | 2026-03-03 | - | flows/adr-005-service-orchestration/ |
 
 ### Types
 - **constraining** - selects from options, closes alternatives
@@ -14,17 +18,18 @@ Master index of all Architecture Decision Records.
 
 ## Statistics
 
-- **Total**: 0
+- **Total**: 5
 - **Approved**: 0
 - **Review**: 0
-- **Draft**: 0
+- **Draft**: 5
 - **Rejected**: 0
 - **Superseded**: 0
 
 ## Categories
 
 ### Architecture
-- (none)
+- ADR 001: Clean Architecture
+- ADR 005: Service Orchestration
 
 ### Performance
 - (none)
@@ -33,15 +38,20 @@ Master index of all Architecture Decision Records.
 - (none)
 
 ### API
-- (none)
+- ADR 002: Dependency Injection
+- ADR 003: State Management
+- ADR 004: Error Handling
 
 ## Relationships
 
 ### Dependencies
-<!-- ADR-X depends on ADR-Y -->
+- ADR 002 depends on ADR 001 (DI supports Clean Architecture)
+- ADR 003 depends on ADR 001 (State management supports layer separation)
+- ADR 004 depends on ADR 001 (Error handling in core layer)
+- ADR 005 depends on ADR 001, 002, 003 (Orchestration uses all patterns)
 
 ### Supersedes
-<!-- ADR-X supersedes ADR-Y -->
+- (none yet)
 
 ---
 
@@ -53,5 +63,5 @@ When creating/updating ADRs:
 3. Add to relevant category
 4. Note any relationships
 
-**Last updated**: -
-**Next ADR number**: 1
+**Last updated**: 2026-03-03 (by /legacy command)
+**Next ADR number**: 6
