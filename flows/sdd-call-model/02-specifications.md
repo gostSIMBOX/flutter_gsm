@@ -400,7 +400,7 @@ Android TeleService          FlutterTelePlugin           Flutter Endpoint
 
 ## Known Issues and Limitations
 
-### Issue 1: Model Mismatch
+### Issue 1: Model Mismatch - RESOLVED (2026-03-04)
 
 **Problem**: Kotlin TeleCall has 10 fields, Dart has 40+ fields.
 
@@ -409,16 +409,26 @@ Android TeleService          FlutterTelePlugin           Flutter Endpoint
 - Dart must handle missing data gracefully
 - Some features may not work as expected (media info, status codes, etc.)
 
-**Current Mitigation**:
-- Null-safe types in Dart
-- Default values in fromMap()
-- Fallback to map values if available
+**Resolution**:
+The model mismatch is **intentional by design**:
+- Kotlin model streams only essential state changes (10 fields)
+- Dart model enriches events with computed/local fields (40+ fields)
+- Fields like duration, media info, status codes are computed/managed in Flutter
+- This separation reduces event payload and keeps Android layer minimal
 
-**Recommended Fix**:
-- Option A: Enrich Kotlin model to match Dart
-- Option B: Document intentional minimalism (only stream essential state)
+**Architecture Decision**:
+```
+Android (Kotlin)          Flutter (Dart)
+Minimal state  ─────►     Rich business logic
+(10 fields)    events     (40+ fields)
+                          - Duration computed locally
+                          - Media from separate events
+                          - Status codes from call events
+```
 
-### Issue 2: Time Zone Handling
+**Status**: RESOLVED - Documented as intentional architecture
+
+### Issue 2: Time Zone Handling - RESOLVED (2026-03-04)
 
 **Problem**: Duration calculations use `DateTime.now()` without timezone consideration.
 
@@ -426,8 +436,18 @@ Android TeleService          FlutterTelePlugin           Flutter Endpoint
 - Incorrect durations across DST transitions
 - Potential negative durations if clock changes
 
-**Recommended Fix**:
-- Use UTC timestamps: `DateTime.now().toUtc()`
+**Resolution**:
+Update duration calculations to use UTC:
+```dart
+int getTotalDuration() {
+  final now = DateTime.now().toUtc().millisecondsSinceEpoch ~/ 1000;
+  final constructionTime = creationTimeMillis ?? 0;
+  final offset = now - constructionTime;
+  return (totalDuration ?? 0) + offset;
+}
+```
+
+**Status**: RESOLVED - Fix implemented in task callmodel-005
 - Store timestamps in milliseconds (already done)
 
 ### Issue 3: Regex Fragility

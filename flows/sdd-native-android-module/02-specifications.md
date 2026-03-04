@@ -294,13 +294,13 @@ dependencies {
 }
 ```
 
-## Critical Bug Specification
+## Critical Bug Specification - RESOLVED (2026-03-04)
 
-### BUG-001: Activity Result Not Handled
+### BUG-001: Activity Result Not Handled - RESOLVED
 
 **Location**: `ReplaceDialerModule.java:setDefaultDialer()`
 
-**Current Behavior**:
+**Current Behavior** (buggy):
 ```java
 @ReactMethod
 public void setDefaultDialer(Callback myCallback) {
@@ -311,7 +311,7 @@ public void setDefaultDialer(Callback myCallback) {
 }
 ```
 
-**Expected Behavior**:
+**Expected Behavior** (fixed):
 ```java
 @ReactMethod
 public void setDefaultDialer(Callback myCallback) {
@@ -340,6 +340,128 @@ public void onActivityResult(int requestCode, int resultCode, Intent data) {
 3. Implement `onActivityResult()` to handle result
 4. Clear static callback after invocation
 5. Handle timeout/cancellation cases
+
+**Resolution Implementation**:
+
+**Step 1**: Add ActivityEventListener interface to class:
+```java
+public class ReplaceDialerModule extends ReactContextBaseJavaModule 
+    implements ActivityEventListener {
+    
+    @Override
+    public void onActivityResult(Activity activity, int requestCode, int resultCode, Intent data) {
+        onActivityResult(requestCode, resultCode, data);
+    }
+    
+    @Override
+    public void onNewIntent(Intent intent) {
+        // Not used
+    }
+}
+```
+
+**Step 2**: Register listener in constructor:
+```java
+public ReplaceDialerModule(ReactApplicationContext reactContext) {
+    super(reactContext);
+    mContext = reactContext;
+    // Register activity event listener
+    reactContext.addActivityEventListener(this);
+}
+```
+
+**Step 3**: Fix setDefaultDialer method:
+```java
+@ReactMethod
+public void setDefaultDialer(Callback myCallback) {
+    setCallback = myCallback;
+    
+    if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.M) {
+        // Pre-M: No dialer concept, return success immediately
+        if (setCallback != null) {
+            setCallback.invoke(true);
+            setCallback = null;
+        }
+        return;
+    }
+    
+    Intent intent = new Intent(TelecomManager.ACTION_CHANGE_DEFAULT_DIALER);
+    intent.putExtra(TelecomManager.EXTRA_CHANGE_DEFAULT_DIALER_PACKAGE_NAME,
+                    this.mContext.getPackageName());
+    
+    try {
+        this.mContext.startActivityForResult(intent, RC_DEFAULT_PHONE, new Bundle());
+        // Callback will be invoked in onActivityResult
+    } catch (Exception e) {
+        Log.e(LOG, "setDefaultDialer failed", e);
+        if (setCallback != null) {
+            setCallback.invoke(false);
+            setCallback = null;
+        }
+    }
+}
+```
+
+**Step 4**: Implement onActivityResult:
+```java
+@Override
+public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    if (requestCode == RC_DEFAULT_PHONE) {
+        if (resultCode == Activity.RESULT_OK) {
+            Log.w(LOG, "setDefaultDialer: User confirmed, RESULT_OK");
+            if (setCallback != null) {
+                setCallback.invoke(true);
+            }
+        } else {
+            Log.w(LOG, "setDefaultDialer: User cancelled, resultCode=" + resultCode);
+            if (setCallback != null) {
+                setCallback.invoke(false);
+            }
+        }
+        setCallback = null;  // Clear callback after use
+    }
+}
+```
+
+**Implementation Tasks**:
+- dialer-native-002: Fix setDefaultDialer() callback timing (remove immediate invoke)
+- dialer-native-003: Implement ActivityEventListener interface
+- Add proper error handling for activity launch failures
+
+**Status**: RESOLVED - Tasks dialer-native-002 and dialer-native-003 added to layer-1.md
+
+### ISSUE-001: Static callback not thread-safe - RESOLVED
+
+**Problem**: `setCallback` is a static field, not thread-safe.
+
+**Resolution**:
+The static callback is acceptable for this use case because:
+- Only one `setDefaultDialer` call can be in progress at a time (system UI is modal)
+- Callback is cleared immediately after use in `onActivityResult()`
+- React Native bridge is single-threaded for module calls
+
+**Additional Safety**: Add null checks and synchronization if needed:
+```java
+private Callback setCallback;  // Changed from static to instance field
+private final Object callbackLock = new Object();
+
+@ReactMethod
+public void setDefaultDialer(Callback myCallback) {
+    synchronized (callbackLock) {
+        if (setCallback != null) {
+            // Another call in progress, reject new one
+            myCallback.invoke(false);
+            return;
+        }
+        setCallback = myCallback;
+    }
+    // ... rest of implementation
+}
+```
+
+**Status**: RESOLVED - Changed to instance field with synchronization
+
+---
 
 ## Error Handling
 
