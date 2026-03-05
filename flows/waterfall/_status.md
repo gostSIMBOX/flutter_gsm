@@ -8,6 +8,20 @@
 
 ---
 
+## Commands
+
+| Command | Purpose | Execution |
+|---------|---------|-----------|
+| `/waterfall` | Full BFS execution | Main agent |
+| `/waterfall status` | Show current state | Main agent |
+| `/waterfall compile` | Recompile layer docs | Main agent |
+| `/duplicates` | Find and merge duplicate flows | Main agent (auto-init) |
+| `/dependencies` | Build dependency graph + critical path | **Subagent** |
+| `/index` | Build all indexes (adr/sdd/ddd/vdd/tdd) | **5 parallel subagents** |
+| `/adr start [name]` | Create new ADR | Main agent |
+
+---
+
 ## Final Summary
 
 | Metric | Value |
