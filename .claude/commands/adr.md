@@ -11,8 +11,9 @@ Parse the arguments to determine the action:
 2. Create directory `flows/adr-[NNN]-[name]/`
 3. Copy templates from `flows/.templates/adr/`
 4. Create `_status.md` with phase = DRAFT
-5. Update `adr-index.md` with new entry
+5. Update `flows/adr-index.md` with new entry
 6. Begin drafting decision context with user
+7. Ask user for ADR type: **constraining** | **enabling** | **pending**
 
 ### `resume [number-or-name]` - Resume existing ADR
 1. Find ADR by number or name in `flows/adr-*/`
@@ -27,15 +28,31 @@ Parse the arguments to determine the action:
 
 ### `list` - Show all ADRs
 1. Read `flows/adr-index.md`
-2. Display table: Number | Title | Status | Created
+2. Display table: Number | Title | Status | Type | Created
 
 ### `status` - Show active ADRs
 1. List ADRs in DRAFT or REVIEW phase
 2. Show current blockers and next actions
+3. Show ADR types distribution
 
 ### No arguments or `help`
 1. Show available commands
 2. Show summary of ADRs by status (draft/review/approved/rejected)
+3. Show summary by type (constraining/enabling/pending)
+
+---
+
+## ADR Types
+
+When starting a new ADR, ask user to specify the type:
+
+| Type | Russian | Description | When to use |
+|------|---------|-------------|-------------|
+| **constraining** | ограничивающий | Narrows solution space, closes alternatives | Selecting one option from many |
+| **enabling** | расширяющий | Adds capabilities, opens possibilities | New features, expanded scope |
+| **pending** | ожидающий принятия решения | Decision deferred, awaiting info | Missing info, external dependencies, premature timing |
+
+**Note**: `pending` ADRs should be converted to `constraining` or `enabling` when ready to decide.
 
 ---
 

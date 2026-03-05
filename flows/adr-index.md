@@ -13,8 +13,9 @@ Master index of all Architecture Decision Records.
 | 005 | service-orchestration | Service Orchestration | constraining | DRAFT | 2026-03-03 | - | flows/adr-005-service-orchestration/ |
 
 ### Types
-- **constraining** - selects from options, closes alternatives
-- **enabling** - adds new capabilities, expands scope
+- **constraining** (ограничивающий) - selects from options, closes alternatives
+- **enabling** (расширяющий) - adds new capabilities, expands scope
+- **pending** (ожидающий принятия решения) - decision deferred, awaiting more information
 
 ## Statistics
 

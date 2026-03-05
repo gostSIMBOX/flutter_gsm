@@ -3,7 +3,7 @@
 ## Meta
 
 - **Number**: ADR-[NUMBER]
-- **Type**: constraining | enabling (optional)
+- **Type**: constraining | enabling | pending
 - **Status**: DRAFT | REVIEW | APPROVED | REJECTED | SUPERSEDED
 - **Created**: [DATE]
 - **Decided**: [DATE, when decided]

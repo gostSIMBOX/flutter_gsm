@@ -240,8 +240,20 @@ In ADRs:
 - **Reviewers**: [names]
 
 ### ADR Types
-- **constraining**: Selects from options, closes alternatives (e.g., "Use PostgreSQL, not MongoDB")
-- **enabling**: Adds new capabilities, expands scope (e.g., "Add Loongson support")
+
+- **constraining** (ограничивающий): Selects from options, closes alternatives. Narrows the solution space.
+  - Example: "Use PostgreSQL, not MongoDB"
+  - Example: "REST API only, no GraphQL"
+  
+- **enabling** (расширяющий): Adds new capabilities, expands scope. Opens new possibilities.
+  - Example: "Add Loongson architecture support"
+  - Example: "Enable video calling feature"
+  
+- **pending** (ожидающий принятия решения): Decision deferred, awaiting more information or external factors.
+  - Example: "Video codec selection - awaiting license clarification"
+  - Example: "Database sharding strategy - pending scale requirements"
+  - Use when: Decision cannot be made yet due to missing information, external dependencies, or premature timing
+  - Convert to `constraining` or `enabling` when ready to decide
 
 ## Context
 
