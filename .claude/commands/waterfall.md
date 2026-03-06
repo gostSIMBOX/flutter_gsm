@@ -21,6 +21,8 @@ IF flows/waterfall/ does NOT exist:
 /waterfall compile            # Recompile layer docs from flows
 ```
 
+**Execution mode:** Documentation phases (1-5) run in main session. **Implementation phase (7) runs in subagent**, reading compiled layer docs for context-efficient execution.
+
 ---
 
 ## Core Architecture: Source of Truth + Derived Docs

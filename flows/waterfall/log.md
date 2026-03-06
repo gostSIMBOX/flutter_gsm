@@ -364,3 +364,79 @@ To resume implementation:
 
 *Log auto-updated. Add entries for each significant action.*
 *Gap Resolution Session complete. Ready for implementation.*
+
+---
+
+## Layer 1 Implementation Session (2026-03-06) - Account & Call-Model
+
+**Module: account** - COMPLETE
+
+**Tasks Completed:**
+- account-001: ✅ IMPLEMENTED - Account class with id, uri, name, username, domain, password, proxy, transport
+- account-002: ✅ IMPLEMENTED - AccountRegistration with status, code, reason, expiration, retryAfter
+- account-003: ✅ IMPLEMENTED - Account ready for Kotlin serialization (toMap/fromMap)
+- account-004: ✅ IMPLEMENTED - Registration status codes (200, 401, 403, 404, 408, 503) in statusText
+- account-005: ✅ IMPLEMENTED - Multiple accounts support (equality by ID)
+
+**Files Created:**
+- `lib/domain/entities/account.dart` - Account entity (140 lines)
+- `lib/domain/entities/account_registration.dart` - Registration status (95 lines)
+- `flows/sdd-account/_status.md` - Status tracking
+
+**Design Decisions:**
+- Placed in `lib/domain/entities/` following Clean Architecture
+- Immutable models with const constructors
+- Equality by ID only (as per spec)
+- Helper methods: isRegistered, isAuthenticationError, isServerError
+
+---
+
+**Module: call-model** - COMPLETE
+
+**Tasks Completed:**
+- callmodel-001: ✅ IMPLEMENTED - TeleCall Dart class with 40+ fields
+- callmodel-002: ✅ EXISTING - Kotlin TeleCall (10 fields) in native code
+- callmodel-003: ✅ RESOLVED - GAP-007 documented as intentional architecture
+- callmodel-004: ✅ IMPLEMENTED - Event types in TeleEventType class
+- callmodel-005: ✅ IMPLEMENTED - UTC time handling in duration calculations
+- callmodel-006: ✅ IMPLEMENTED - Robust URI parsing with multiple patterns
+
+**Files Created:**
+- `lib/models/tele_call.dart` - Full TeleCall model (380 lines)
+- `flows/sdd-call-model/_status.md` - Status tracking
+
+**GAP-007 Resolution:**
+The model mismatch is **intentional by design**:
+- Android streams minimal state (10 fields) via EventChannel
+- Flutter enriches with computed/local fields (40+ fields)
+- Duration, media info, status codes computed in Flutter
+
+**Key Features:**
+- URI parsing: 3 patterns (SIP with name, bare SIP, tel URI)
+- Duration calculations: getTotalDuration(), getConnectDuration()
+- Time formatting: MM:SS format
+- Immutable model with copyWith() for updates
+- UTC timestamps to avoid DST issues (GAP-005)
+
+---
+
+**Module: endpoint** - GAP-008 VERIFIED
+
+**Status:** GAP-008 (dispose method) already implemented in TeleEndpoint
+
+**File Verified:**
+- `lib/core/event_streaming/tele_endpoint.dart` - dispose() method present
+
+---
+
+## Overall Progress: 91/179 (51%)
+
+| Layer | Complete | Total | Percent |
+|-------|----------|-------|---------|
+| Layer 0 | 31 | 31 | 100% ✅ |
+| Layer 1 | 47 | 87 | 54% |
+| Layer 2 | 13 | 61 | 21% |
+
+**Tasks Added This Session:** 11 (account: 5, call-model: 6)
+
+---

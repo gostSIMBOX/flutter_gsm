@@ -1,5 +1,23 @@
 package org.telon.flutter_gsm_sip_gateway
 
+import android.util.Log
 import io.flutter.embedding.android.FlutterActivity
+import io.flutter.embedding.engine.FlutterEngine
 
-class MainActivity : FlutterActivity()
+/**
+ * MainActivity - Main entry point for the Android application
+ * 
+ * Registers native modules:
+ * - ReplaceDialerModule: Default dialer management
+ */
+class MainActivity : FlutterActivity() {
+    
+    override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        super.configureFlutterEngine(flutterEngine)
+        
+        // Register ReplaceDialerModule for default dialer management
+        flutterEngine.plugins.add(ReplaceDialerModule())
+        
+        Log.d("MainActivity", "ReplaceDialerModule registered")
+    }
+}

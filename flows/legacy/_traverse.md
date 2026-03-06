@@ -38,7 +38,8 @@ magisk-voice-recording - Voice call recording from phone line via Magisk
 
 ```
 / (root)                                    COMPLETED
-└── magisk-voice-integration                EXITING
+├── magisk-voice-integration                DONE
+└── apgateway-magisk-module                 EXITING
 ```
 
 ## Stack Operations Log
@@ -52,6 +53,11 @@ magisk-voice-recording - Voice call recording from phone line via Magisk
 | 27 | UPDATE | magisk-voice-integration | SYNTHESIZING | Understanding validated |
 | 28 | UPDATE | magisk-voice-integration | EXITING | SDD flow created |
 | 29 | POP | magisk-voice-integration | DONE | SDD: flows/sdd-magisk-voice-recording/ |
+| 30 | PUSH | apgateway-magisk-module | ENTERING | Analyze third-party module |
+| 31 | UPDATE | apgateway-magisk-module | EXPLORING | apgateway structure analyzed |
+| 32 | UPDATE | apgateway-magisk-module | SYNTHESIZING | Comparison completed |
+| 33 | UPDATE | apgateway-magisk-module | EXITING | SDD updated, gaps documented |
+| 34 | POP | apgateway-magisk-module | DONE | Analysis complete |
 
 ## Current Position
 
@@ -83,13 +89,14 @@ magisk-voice-recording - Voice call recording from phone line via Magisk
 | logging-monitoring | Connection monitoring, latency tracking | - |
 | testing-strategy | Unit/widget/integration test coverage | - |
 | **magisk-voice-integration** | **Magisk module, CAPTURE_AUDIO_OUTPUT, privapp permissions, Qualcomm restrictions** | **SDD: flows/sdd-magisk-voice-recording/** |
+| **apgateway-magisk-module** | **Third-party module analysis: enhanced system.prop, 11 permissions, APK sync service** | **SDD updated, gaps documented** |
 
 ## DFS Focus Summary: Magisk Voice Recording
 
 **Objective**: Document Magisk module for voice call recording from phone line
 
 **Sources Analyzed**:
-- `magisk/gateway/` - Magisk module structure
+- `magisk/gateway/` - Our Magisk module structure
 - `magisk/gateway/system/etc/permissions/privapp-permissions-gateway.xml` - Privileged permissions
 - `lib/models/line_info.dart` - LineInfo.canRecordVoiceToRadio capability
 - `lib/domain/entities/gateway_config.dart` - enableCallRecording config
@@ -107,6 +114,55 @@ magisk-voice-recording - Voice call recording from phone line via Magisk
 - 01-requirements.md: Functional/non-functional requirements
 - 02-specifications.md: Architecture, components, testing specs
 - _status.md: DRAFT status, progress tracking
+
+## DFS Focus Summary: apgateway Third-Party Module Analysis
+
+**Objective**: Analyze third-party developer's Magisk module implementation for voice line integration
+
+**Sources Analyzed**:
+- `3rdparty/apgateway/` - Third-party Magisk module (callagent)
+- `3rdparty/apgateway/module.prop` - Module metadata
+- `3rdparty/apgateway/install.sh` - Enhanced installer with APK fallback
+- `3rdparty/apgateway/system.prop` - Qualcomm audio restrictions (7 properties)
+- `3rdparty/apgateway/service.sh` - APK synchronization service
+- `3rdparty/apgateway/post-fs-data.sh` - Mount guarantee
+- `3rdparty/apgateway/system/etc/permissions/privapp-permissions-gateway.xml` - 11 permissions
+- `3rdparty/apgateway/META-INF/com/google/android/update-binary` - Standard Magisk install_module
+
+**Key Findings**:
+1. **system.prop ENABLED** - Disables 7 Qualcomm audio restrictions (including Fluence)
+2. **11 Privileged Permissions** - Full telephony/telecom integration (we have only 4)
+3. **APK Sync Service** - Automatically syncs app updates to priv-app overlay
+4. **Mount Guarantee** - post-fs-data.sh removes skip_mount
+5. **Enhanced Installer** - APK fallback copying, user guidance
+6. **Standard update-binary** - Uses Magisk install_module function
+
+**Comparison Result**: apgateway module is MORE COMPLETE than our implementation
+
+**Critical Gaps in Our Module**:
+1. system.prop DISABLED (PROPFILE=false) - Cannot disable Qualcomm restrictions
+2. Only 4 permissions vs 11 - Limited telephony/telecom capabilities
+3. No service.sh - No APK sync or permission logging
+4. No post-fs-data.sh - May fail if skip_mount exists
+5. Basic install.sh - No fallback logic
+
+**Actions Taken**:
+1. ✅ Updated `flows/sdd-magisk-voice-recording/02-specifications.md` with Legacy Additions
+2. ✅ Created `flows/legacy/apgateway-analysis.md` with gaps and recommendations
+3. ✅ Created `flows/legacy/understanding/apgateway-magisk-module/_node.md`
+
+**Recommendations for apgateway Developer**:
+- ✅ No critical changes needed - module is production-ready
+- ℹ️ Optional: Add more inline documentation
+- ℹ️ Optional: Use semantic versioning in module.prop
+- ℹ️ Optional: Consider lowering Magisk requirement to v20.0+
+
+**What We're Adopting from apgateway**:
+- ✅ Enhanced system.prop configuration (7 properties)
+- ✅ Extended privileged permissions (11 total)
+- ✅ service.sh for APK synchronization
+- ✅ post-fs-data.sh for mount guarantee
+- ✅ Enhanced install.sh with fallback logic
 
 ## Next Action
 

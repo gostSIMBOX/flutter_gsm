@@ -86,7 +86,7 @@ class ErrorHandler {
   static void _sendErrorToAnalytics(dynamic error, StackTrace? stackTrace) {
     try {
       _logger.d('Sending error to analytics: ${error.toString()}');
-      
+
       // Получаем экземпляр AnalyticsUseCases через DI
       final analyticsUseCases = _getAnalyticsUseCases();
       if (analyticsUseCases != null) {
@@ -103,6 +103,18 @@ class ErrorHandler {
     } catch (e) {
       _logger.e('Failed to send error to analytics', error: e);
     }
+  }
+
+  /// Получение экземпляра AnalyticsUseCases
+  static AnalyticsUseCases? _getAnalyticsUseCases() {
+    try {
+      if (DependencyInjection.isRegistered<AnalyticsUseCases>()) {
+        return DependencyInjection.get<AnalyticsUseCases>();
+      }
+    } catch (e) {
+      // Ignore silently - analytics is optional
+    }
+    return null;
   }
 
   /// Показ пользовательской ошибки
@@ -300,17 +312,5 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
       });
       ErrorHandler.handleError(details.exception, details.stack);
     };
-  }
-
-  /// Получение экземпляра AnalyticsUseCases
-  static AnalyticsUseCases? _getAnalyticsUseCases() {
-    try {
-      if (DependencyInjection.isRegistered<AnalyticsUseCases>()) {
-        return DependencyInjection.get<AnalyticsUseCases>();
-      }
-    } catch (e) {
-      _logger.w('AnalyticsUseCases not available: $e');
-    }
-    return null;
   }
 }

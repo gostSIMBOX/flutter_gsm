@@ -21,6 +21,8 @@ IF flows/roadmap/ does NOT exist:
 /roadmap status               # Show current state without executing
 ```
 
+**Execution mode:** Runs in **subagent**. Flow commands (`/sdd`, `/ddd`, `/vdd`, `/tdd`) are invoked directly in the subagent with relevant ADR context injected.
+
 ### Arguments
 
 | Arguments | Mode | Behavior |

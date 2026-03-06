@@ -34,7 +34,6 @@ import '../../domain/usecases/analytics_usecases.dart';
 
 // Models
 import '../../domain/models/gateway_config.dart';
-import '../../domain/models/device_info.dart';
 
 /// Глобальный экземпляр GetIt для dependency injection
 final GetIt getIt = GetIt.instance;
@@ -91,7 +90,6 @@ class DependencyInjection {
         lineLength: 120,
         colors: true,
         printEmojis: true,
-        printTime: true,
       ),
     ));
   }
@@ -217,10 +215,6 @@ class DependencyInjection {
     getIt.registerLazySingleton<GatewayConfig>(
       () => GatewayConfig.defaultConfig(),
     );
-
-    getIt.registerLazySingleton<DeviceInfo>(
-      () => DeviceInfo(),
-    );
   }
 
   /// Получение экземпляра по типу
@@ -237,11 +231,6 @@ class DependencyInjection {
   static Future<void> reset() async {
     await getIt.reset();
     _logger.i('Dependency injection reset');
-  }
-
-  /// Получение всех зарегистрированных зависимостей
-  static Map<String, dynamic> getAllDependencies() {
-    return getIt.all;
   }
 
   /// Проверка состояния dependency injection

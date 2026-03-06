@@ -2,7 +2,73 @@
 
 ## Session History
 
-### 2026-03-06 - DFS: Magisk Voice Recording Integration
+### 2026-03-06 - DFS #2: apgateway Third-Party Module Analysis
+
+**Mode**: DFS (Depth-First Search) - Comparative Analysis
+**Target**: 3rdparty/apgateway - Third-party Magisk module for voice line integration
+**Command**: `/legacy проанализируй папку стороннего разработчика /3rdparty/apgateway на работу с линией через Magisk`
+
+**Analyzed**:
+- `3rdparty/apgateway/` - Third-party Magisk module by callagent
+- `3rdparty/apgateway/module.prop` - Module metadata (sip-gsm-gateway)
+- `3rdparty/apgateway/install.sh` - Enhanced installer with APK fallback
+- `3rdparty/apgateway/system.prop` - 7 Qualcomm audio restrictions properties
+- `3rdparty/apgateway/service.sh` - APK synchronization service
+- `3rdparty/apgateway/post-fs-data.sh` - Mount guarantee
+- `3rdparty/apgateway/system/etc/permissions/privapp-permissions-gateway.xml` - 11 privileged permissions
+- `3rdparty/apgateway/META-INF/com/google/android/update-binary` - Standard install_module
+- Compared with our `magisk/gateway/` module
+
+**Key Findings**:
+1. **apgateway is MORE COMPLETE** than our implementation
+2. **system.prop ENABLED** - 7 Qualcomm properties (voice.record.conc.disabled, Fluence disable, etc.)
+3. **11 Privileged Permissions** - Full telephony/telecom (we have only 4)
+4. **APK Sync Service** - Automatically syncs updates from /data/app to priv-app
+5. **Mount Guarantee** - post-fs-data.sh removes skip_mount
+6. **Enhanced Installer** - APK fallback, user guidance, SKIPUNZIP=1
+7. **Standard update-binary** - Uses Magisk install_module function (requires v20.4+)
+
+**Comparison Table**:
+
+| Feature | apgateway | Our Module | Gap |
+|---------|-----------|------------|-----|
+| system.prop | ✅ ENABLED (7 properties) | ❌ DISABLED | ⚠️ Critical |
+| Permissions | 11 | 4 | ⚠️ Missing 7 |
+| service.sh | ✅ APK sync + logging | ❌ None | ⚠️ Missing |
+| post-fs-data.sh | ✅ Mount guarantee | ❌ Empty | ⚠️ Missing |
+| install.sh | ✅ Enhanced with fallback | ❌ Basic | ⚠️ Missing features |
+| update-binary | ✅ Standard install_module | ❌ Manual | ⚠️ Less robust |
+| APK Bundling | ✅ Bundled | ❌ Not bundled | ℹ️ Design choice |
+
+**Updated**:
+- `flows/sdd-magisk-voice-recording/02-specifications.md` - Added "Legacy Additions" section with:
+  - Enhanced system.prop configuration (7 properties)
+  - Extended privileged permissions (11 total)
+  - service.sh implementation example
+  - post-fs-data.sh implementation example
+  - Enhanced install.sh recommendations
+  - update-binary standardization recommendations
+
+**Created**:
+- `flows/legacy/understanding/apgateway-magisk-module/_node.md` - Understanding tree node
+- `flows/legacy/apgateway-analysis.md` - Gaps and recommendations document
+
+**Recommendations for apgateway Developer (callagent)**:
+- ✅ **No critical changes needed** - Module is production-ready
+- ℹ️ Optional: Add more inline documentation
+- ℹ️ Optional: Use semantic versioning in module.prop
+- ℹ️ Optional: Consider lowering Magisk requirement to v20.0+
+
+**What We're Adopting from apgateway**:
+- ✅ Enhanced system.prop configuration (7 properties for Qualcomm)
+- ✅ Extended privileged permissions (11 total)
+- ✅ service.sh for APK synchronization
+- ✅ post-fs-data.sh for mount guarantee
+- ✅ Enhanced install.sh with fallback logic
+
+---
+
+### 2026-03-06 - DFS #1: Magisk Voice Recording Integration
 
 **Mode**: DFS (Depth-First Search)
 **Target**: magisk-voice-recording - Voice call recording from phone line via Magisk
