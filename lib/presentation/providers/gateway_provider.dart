@@ -1,286 +1,302 @@
-/// Провайдер для управления состоянием шлюза в UI
-/// Связывает презентационный слой с доменной логикой
-import 'dart:async';
+/// Gateway Provider
+/// State management for gateway operations using Provider pattern
+
 import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
-import '../../core/di/dependency_injection.dart';
-import '../../domain/entities/gateway_entity.dart';
-import '../../domain/entities/gateway_config_entity.dart';
-import '../../domain/entities/sms_entity.dart';
-import '../../domain/exceptions/gateway_exceptions.dart';
-import '../../domain/usecases/gateway_usecases.dart';
+import '../entities/gateway_config.dart';
+import '../entities/gateway_status.dart';
+import '../entities/call_routing.dart';
+import '../repositories/gateway_repository.dart';
 
+/// Gateway State
+///
+/// Immutable state object for gateway provider
+class GatewayState {
+  /// Whether gateway is running
+  final bool isRunning;
+
+  /// Current gateway status
+  final GatewayStatus? status;
+
+  /// Active routings
+  final Map<String, CallRouting> activeRoutings;
+
+  /// Error message (if any)
+  final String? errorMessage;
+
+  /// Whether is initializing
+  final bool isInitializing;
+
+  const GatewayState({
+    this.isRunning = false,
+    this.status,
+    this.activeRoutings = const {},
+    this.errorMessage,
+    this.isInitializing = false,
+  });
+
+  /// Create a copy with updated fields
+  GatewayState copyWith({
+    bool? isRunning,
+    GatewayStatus? status,
+    Map<String, CallRouting>? activeRoutings,
+    String? errorMessage,
+    bool? isInitializing,
+  }) {
+    return GatewayState(
+      isRunning: isRunning ?? this.isRunning,
+      status: status ?? this.status,
+      activeRoutings: activeRoutings ?? this.activeRoutings,
+      errorMessage: errorMessage ?? this.errorMessage,
+      isInitializing: isInitializing ?? this.isInitializing,
+    );
+  }
+
+  /// Get active routing count
+  int get activeRoutingCount => activeRoutings.length;
+
+  /// Get active call count
+  int get activeCallCount =>
+      activeRoutings.values.where((r) => r.isActive).length;
+}
+
+/// Gateway Provider
+///
+/// Manages gateway state and operations using Provider pattern.
+/// Listens to gateway events and updates state accordingly.
 class GatewayProvider extends ChangeNotifier {
-  final Logger _logger = Logger();
+  final GatewayRepository _repository;
+  final Logger _logger;
 
-  // Состояние
-  GatewayStatus _status = GatewayStatus(
-    state: GatewayState.stopped,
-    isConnected: false,
-    isRegistered: false,
-    lastUpdate: DateTime.now(),
-  );
+  GatewayState _state = const GatewayState();
+  StreamSubscription? _statusSubscription;
+  StreamSubscription? _routingSubscription;
 
-  GatewayConfig? _config;
-  List<String> _logs = [];
-  List<SmsMessage> _smsMessages = [];
-  bool _isInitialized = false;
-  bool _isLoading = false;
-  String? _error;
-
-  // Геттеры
-  GatewayStatus get status => _status;
-  GatewayConfig? get config => _config;
-  List<String> get logs => _logs;
-  List<SmsMessage> get smsMessages => _smsMessages;
-  bool get isInitialized => _isInitialized;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
-
-  // Подписки
-  StreamSubscription<GatewayStatus>? _statusSubscription;
-  StreamSubscription<String>? _logSubscription;
-
-  GatewayProvider() {
-    _initialize();
+  GatewayProvider(this._repository, this._logger) {
+    _setupEventListeners();
   }
 
-  /// Инициализация провайдера
-  Future<void> _initialize() async {
-    try {
-      _isLoading = true;
-      _error = null;
-      notifyListeners();
+  /// Current gateway state
+  GatewayState get state => _state;
 
-      // Загрузка конфигурации
-      final getConfigUseCase = getIt<GetGatewayConfigUseCase>();
-      _config = await getConfigUseCase.execute();
+  /// Get current status
+  GatewayStatus? get status => _state.status;
 
-      // Подписка на обновления статуса
-      final getStatusUseCase = getIt<GetGatewayStatusUseCase>();
-      _status = await getStatusUseCase.execute();
+  /// Check if running
+  bool get isRunning => _state.isRunning;
 
-      // Настройка подписок
-      _setupSubscriptions();
+  /// Get active routings
+  Map<String, CallRouting> get activeRoutings => _state.activeRoutings;
 
-      _isInitialized = true;
-      _logger.i('Gateway provider initialized successfully');
-    } catch (e) {
-      _error = e.toString();
-      _logger.e('Error initializing gateway provider: $e');
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
+  /// Get error message
+  String? get errorMessage => _state.errorMessage;
 
-  /// Настройка подписок на обновления
-  void _setupSubscriptions() {
-    // Подписка на статус
-    _statusSubscription = getIt<GatewayRepository>().statusStream.listen(
+  /// Setup event listeners
+  void _setupEventListeners() {
+    _statusSubscription = _repository.statusStream.listen(
       (status) {
-        _status = status;
+        _updateState((state) => state.copyWith(status: status));
         notifyListeners();
       },
-      onError: (error) {
-        _error = error.toString();
-        _logger.e('Status stream error: $error');
-        notifyListeners();
-      },
+      onError: _handleError,
     );
 
-    // Подписка на логи
-    _logSubscription = getIt<GatewayRepository>().logStream.listen(
-      (log) {
-        _logs.add(log);
-        if (_logs.length > 100) {
-          _logs.removeAt(0);
-        }
+    _routingSubscription = _repository.routingStream.listen(
+      (routing) {
+        _updateState((state) {
+          final routings = {...state.activeRoutings, routing.id: routing};
+          return state.copyWith(activeRoutings: routings);
+        });
         notifyListeners();
       },
-      onError: (error) {
-        _logger.e('Log stream error: $error');
-      },
+      onError: _handleError,
     );
   }
 
-  /// Обновление конфигурации
-  Future<void> updateConfig(GatewayConfig config) async {
-    try {
-      _isLoading = true;
-      _error = null;
-      notifyListeners();
-
-      final saveConfigUseCase = getIt<SaveGatewayConfigUseCase>();
-      await saveConfigUseCase.execute(config);
-      
-      _config = config;
-      _logger.i('Configuration updated successfully');
-    } catch (e) {
-      _error = e.toString();
-      _logger.e('Error updating config: $e');
-      rethrow;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  /// Запуск шлюза
-  Future<void> startGateway() async {
-    try {
-      _isLoading = true;
-      _error = null;
-      notifyListeners();
-
-      final startGatewayUseCase = getIt<StartGatewayUseCase>();
-      await startGatewayUseCase.execute();
-
-      _logger.i('Gateway started successfully');
-    } catch (e) {
-      _error = e.toString();
-      _logger.e('Error starting gateway: $e');
-      rethrow;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  /// Остановка шлюза
-  Future<void> stopGateway() async {
-    try {
-      _isLoading = true;
-      _error = null;
-      notifyListeners();
-
-      final stopGatewayUseCase = getIt<StopGatewayUseCase>();
-      await stopGatewayUseCase.execute();
-
-      _logger.i('Gateway stopped successfully');
-    } catch (e) {
-      _error = e.toString();
-      _logger.e('Error stopping gateway: $e');
-      rethrow;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  /// Сделать звонок
-  Future<void> makeCall(String number) async {
-    try {
-      _isLoading = true;
-      _error = null;
-      notifyListeners();
-
-      final makeCallUseCase = getIt<MakeCallUseCase>();
-      await makeCallUseCase.execute(number);
-
-      _logger.i('Call initiated successfully');
-    } catch (e) {
-      _error = e.toString();
-      _logger.e('Error making call: $e');
-      rethrow;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  /// Ответить на звонок
-  Future<void> answerCall(String callId) async {
-    try {
-      _isLoading = true;
-      _error = null;
-      notifyListeners();
-
-      final answerCallUseCase = getIt<AnswerCallUseCase>();
-      await answerCallUseCase.execute(callId);
-
-      _logger.i('Call answered successfully');
-    } catch (e) {
-      _error = e.toString();
-      _logger.e('Error answering call: $e');
-      rethrow;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  /// Завершить звонок
-  Future<void> endCall() async {
-    try {
-      _isLoading = true;
-      _error = null;
-      notifyListeners();
-
-      final endCallUseCase = getIt<EndCallUseCase>();
-      await endCallUseCase.execute();
-
-      _logger.i('Call ended successfully');
-    } catch (e) {
-      _error = e.toString();
-      _logger.e('Error ending call: $e');
-      rethrow;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
-  /// Получить историю звонков
-  Future<List<CallInfo>> getCallHistory({int limit = 100}) async {
-    try {
-      final getCallHistoryUseCase = getIt<GetCallHistoryUseCase>();
-      return await getCallHistoryUseCase.execute(limit: limit);
-    } catch (e) {
-      _logger.e('Error getting call history: $e');
-      return [];
-    }
-  }
-
-  /// Получить информацию об устройстве
-  Future<Map<String, dynamic>> getDeviceInfo() async {
-    try {
-      final getDeviceInfoUseCase = getIt<GetDeviceInfoUseCase>();
-      return await getDeviceInfoUseCase.execute();
-    } catch (e) {
-      _logger.e('Error getting device info: $e');
-      return {'error': e.toString()};
-    }
-  }
-
-  /// Очистить логи
-  Future<void> clearLogs() async {
-    _logs.clear();
+  /// Handle error
+  void _handleError(dynamic error) {
+    _logger.e('Gateway event stream error', error: error);
+    _updateState((state) => state.copyWith(
+          errorMessage: error.toString(),
+        ));
     notifyListeners();
   }
 
-  /// Очистить ошибку
-  void clearError() {
-    _error = null;
-    notifyListeners();
+  /// Update state
+  void _updateState(GatewayState Function(GatewayState) update) {
+    _state = update(_state);
   }
 
-  /// Обновить SMS сообщения
-  void updateSmsMessages(List<SmsMessage> messages) {
-    _smsMessages = messages;
-    notifyListeners();
+  // ==================== Lifecycle ====================
+
+  /// Initialize gateway
+  Future<bool> initialize(GatewayConfig config) async {
+    try {
+      _updateState((state) => state.copyWith(
+            isInitializing: true,
+            errorMessage: null,
+          ));
+      notifyListeners();
+
+      final result = await _repository.initialize(config);
+
+      return result.fold(
+        (failure) {
+          _logger.e('Failed to initialize gateway', error: failure);
+          _updateState((state) => state.copyWith(
+                isInitializing: false,
+                errorMessage: failure.message,
+              ));
+          notifyListeners();
+          return false;
+        },
+        (_) {
+          _updateState((state) => state.copyWith(
+                isInitializing: false,
+                isRunning: false, // Initialized but not started yet
+              ));
+          notifyListeners();
+          _logger.i('Gateway initialized successfully');
+          return true;
+        },
+      );
+    } catch (e) {
+      _logger.e('Gateway initialization error', error: e);
+      _updateState((state) => state.copyWith(
+            isInitializing: false,
+            errorMessage: e.toString(),
+          ));
+      notifyListeners();
+      return false;
+    }
   }
 
-  /// Добавить SMS сообщение
-  void addSmsMessage(SmsMessage message) {
-    _smsMessages.insert(0, message);
-    notifyListeners();
+  /// Start gateway
+  Future<bool> start() async {
+    try {
+      final result = await _repository.start();
+
+      return result.fold(
+        (failure) {
+          _logger.e('Failed to start gateway', error: failure);
+          _updateState((state) => state.copyWith(
+                errorMessage: failure.message,
+              ));
+          notifyListeners();
+          return false;
+        },
+        (_) {
+          _updateState((state) => state.copyWith(
+                isRunning: true,
+              ));
+          notifyListeners();
+          _logger.i('Gateway started successfully');
+          return true;
+        },
+      );
+    } catch (e) {
+      _logger.e('Gateway start error', error: e);
+      _updateState((state) => state.copyWith(
+            errorMessage: e.toString(),
+          ));
+      notifyListeners();
+      return false;
+    }
+  }
+
+  /// Stop gateway
+  Future<bool> stop() async {
+    try {
+      final result = await _repository.stop();
+
+      return result.fold(
+        (failure) {
+          _logger.e('Failed to stop gateway', error: failure);
+          return false;
+        },
+        (_) {
+          _updateState((state) => state.copyWith(
+                isRunning: false,
+              ));
+          notifyListeners();
+          _logger.i('Gateway stopped');
+          return true;
+        },
+      );
+    } catch (e) {
+      _logger.e('Gateway stop error', error: e);
+      return false;
+    }
+  }
+
+  // ==================== Call Operations ====================
+
+  /// Make call via SIP
+  Future<String?> makeCall(String number) async {
+    final result = await _repository.makeCallViaSip(number);
+    return result.fold(
+      (failure) {
+        _logger.e('Failed to make call', error: failure);
+        return null;
+      },
+      (routingId) {
+        _logger.i('Call made, routing: $routingId');
+        return routingId;
+      },
+    );
+  }
+
+  /// Send SMS
+  Future<String?> sendSms(String recipient, String content) async {
+    final result = await _repository.sendSms(recipient, content);
+    return result.fold(
+      (failure) {
+        _logger.e('Failed to send SMS', error: failure);
+        return null;
+      },
+      (messageId) {
+        _logger.i('SMS sent, id: $messageId');
+        return messageId;
+      },
+    );
+  }
+
+  /// End routing
+  Future<bool> endRouting(String routingId) async {
+    final result = await _repository.endRouting(routingId);
+    return result.fold(
+      (failure) {
+        _logger.e('Failed to end routing', error: failure);
+        return false;
+      },
+      (_) {
+        _updateState((state) {
+          final routings = {...state.activeRoutings};
+          routings.remove(routingId);
+          return state.copyWith(activeRoutings: routings);
+        });
+        notifyListeners();
+        return true;
+      },
+    );
+  }
+
+  /// Get current status
+  GatewayStatus? getStatus() {
+    final result = _repository.getStatus();
+    return result.fold(
+      (failure) {
+        _logger.e('Failed to get status', error: failure);
+        return null;
+      },
+      (status) => status,
+    );
   }
 
   @override
   void dispose() {
     _statusSubscription?.cancel();
-    _logSubscription?.cancel();
+    _routingSubscription?.cancel();
     super.dispose();
   }
 }

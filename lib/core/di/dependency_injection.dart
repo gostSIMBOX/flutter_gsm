@@ -18,8 +18,21 @@ import '../../presentation/services/network_service.dart';
 import '../../presentation/services/device_service.dart';
 import '../../presentation/services/permission_service.dart';
 
+// SIP Services
+import '../../data/services/sip_service.dart';
+import '../../data/repositories/sip_repository_impl.dart';
+import '../../domain/repositories/sip_repository.dart';
+import '../../domain/usecases/sip_usecases.dart';
+import '../../presentation/providers/sip_provider.dart';
+
+// Gateway Services
+import '../../data/services/gateway_service.dart';
+import '../../data/repositories/gateway_repository_impl.dart';
+import '../../domain/repositories/gateway_repository.dart';
+import '../../domain/usecases/gateway_usecases.dart';
+import '../../presentation/providers/gateway_provider.dart';
+
 // Repositories
-import '../../data/repositories/gateway_repository.dart';
 import '../../data/repositories/settings_repository.dart';
 import '../../data/repositories/analytics_repository.dart';
 
@@ -62,12 +75,15 @@ class DependencyInjection {
       // Регистрация use cases
       _registerUseCases();
 
+      // Регистрация провайдеров
+      _registerProviders();
+
       // Регистрация моделей
       _registerModels();
 
       _logger.i('Dependency injection initialized successfully');
     } catch (error, stackTrace) {
-      _logger.e('Failed to initialize dependency injection', 
+      _logger.e('Failed to initialize dependency injection',
                 error: error, stackTrace: stackTrace);
       rethrow;
     }
@@ -150,6 +166,20 @@ class DependencyInjection {
         getIt<Logger>(),
       ),
     );
+
+    // SIP services
+    getIt.registerLazySingleton<SipService>(() => SipService());
+
+    getIt.registerLazySingleton<SipRepository>(
+      () => SipRepositoryImpl(getIt<SipService>(), getIt<Logger>()),
+    );
+
+    // Gateway services
+    getIt.registerLazySingleton<GatewayService>(() => GatewayService());
+
+    getIt.registerLazySingleton<GatewayRepository>(
+      () => GatewayRepositoryImpl(getIt<GatewayService>(), getIt<Logger>()),
+    );
   }
 
   /// Регистрация data sources
@@ -206,6 +236,68 @@ class DependencyInjection {
 
     getIt.registerLazySingleton<AnalyticsUseCases>(
       () => AnalyticsUseCases(getIt<AnalyticsRepository>()),
+    );
+
+    // SIP use cases
+    getIt.registerLazySingleton<InitializeSip>(
+      () => InitializeSip(getIt<SipRepository>()),
+    );
+    getIt.registerLazySingleton<DestroySip>(
+      () => DestroySip(getIt<SipRepository>()),
+    );
+    getIt.registerLazySingleton<CreateSipAccount>(
+      () => CreateSipAccount(getIt<SipRepository>()),
+    );
+    getIt.registerLazySingleton<DeleteSipAccount>(
+      () => DeleteSipAccount(getIt<SipRepository>()),
+    );
+    getIt.registerLazySingleton<GetSipAccount>(
+      () => GetSipAccount(getIt<SipRepository>()),
+    );
+    getIt.registerLazySingleton<GetAllSipAccounts>(
+      () => GetAllSipAccounts(getIt<SipRepository>()),
+    );
+    getIt.registerLazySingleton<MakeSipCall>(
+      () => MakeSipCall(getIt<SipRepository>()),
+    );
+    getIt.registerLazySingleton<AnswerSipCall>(
+      () => AnswerSipCall(getIt<SipRepository>()),
+    );
+    getIt.registerLazySingleton<HangupSipCall>(
+      () => HangupSipCall(getIt<SipRepository>()),
+    );
+
+    // Gateway use cases
+    getIt.registerLazySingleton<InitializeGateway>(
+      () => InitializeGateway(getIt<GatewayRepository>()),
+    );
+    getIt.registerLazySingleton<StartGateway>(
+      () => StartGateway(getIt<GatewayRepository>()),
+    );
+    getIt.registerLazySingleton<StopGateway>(
+      () => StopGateway(getIt<GatewayRepository>()),
+    );
+    getIt.registerLazySingleton<MakeGatewaySipCall>(
+      () => MakeGatewaySipCall(getIt<GatewayRepository>()),
+    );
+    getIt.registerLazySingleton<SendGatewaySms>(
+      () => SendGatewaySms(getIt<GatewayRepository>()),
+    );
+    getIt.registerLazySingleton<GetGatewayStatus>(
+      () => GetGatewayStatus(getIt<GatewayRepository>()),
+    );
+  }
+
+  /// Регистрация провайдеров
+  static void _registerProviders() {
+    // SIP Provider
+    getIt.registerFactory<SipProvider>(
+      () => SipProvider(getIt<SipRepository>(), getIt<Logger>()),
+    );
+
+    // Gateway Provider
+    getIt.registerFactory<GatewayProvider>(
+      () => GatewayProvider(getIt<GatewayRepository>(), getIt<Logger>()),
     );
   }
 

@@ -99,37 +99,210 @@ enum SmppConnectionState {
   error 
 }
 
+/// SMS Receiver for handling incoming SMS via Android broadcast
+///
+/// Task: sms-002 - Implement SMS receiver (broadcast receiver for incoming SMS)
+class SmsReceiver {
+  static const MethodChannel _channel = MethodChannel('flutter_smsussd');
+
+  final Logger _logger = Logger();
+  final StreamController<SmsMessage> _incomingSmsController =
+      StreamController<SmsMessage>.broadcast();
+
+  bool _isRegistered = false;
+
+  /// Get stream of incoming SMS messages
+  Stream<SmsMessage> get incomingSmsStream => _incomingSmsController.stream;
+
+  /// Check if receiver is registered
+  bool get isRegistered => _isRegistered;
+
+  /// Register the SMS broadcast receiver
+  ///
+  /// This sets up native Android broadcast receiver for SMS_DELIVER broadcasts.
+  /// Returns true if successfully registered.
+  Future<bool> register() async {
+    if (_isRegistered) {
+      _logger.w('SmsReceiver already registered');
+      return true;
+    }
+
+    try {
+      _logger.i('SmsReceiver: Registering broadcast receiver...');
+
+      // Request permissions first
+      final hasPermissions = await hasPermissions();
+      if (!hasPermissions) {
+        _logger.w('SmsReceiver: SMS permissions not granted');
+        return false;
+      }
+
+      // Register native broadcast receiver
+      await _channel.invokeMethod<void>('registerSmsReceiver', {});
+      _isRegistered = true;
+      _logger.i('SmsReceiver: Broadcast receiver registered successfully');
+      return true;
+    } on PlatformException catch (e) {
+      _logger.e('SmsReceiver: Failed to register', error: e);
+      return false;
+    } catch (e, stackTrace) {
+      _logger.e('SmsReceiver: Error registering', error: e, stackTrace: stackTrace);
+      return false;
+    }
+  }
+
+  /// Unregister the SMS broadcast receiver
+  Future<bool> unregister() async {
+    if (!_isRegistered) {
+      return true;
+    }
+
+    try {
+      _logger.i('SmsReceiver: Unregistering broadcast receiver...');
+      await _channel.invokeMethod<void>('unregisterSmsReceiver', {});
+      _isRegistered = false;
+      _logger.i('SmsReceiver: Broadcast receiver unregistered');
+      return true;
+    } on PlatformException catch (e) {
+      _logger.e('SmsReceiver: Failed to unregister', error: e);
+      return false;
+    } catch (e, stackTrace) {
+      _logger.e('SmsReceiver: Error unregistering', error: e, stackTrace: stackTrace);
+      return false;
+    }
+  }
+
+  /// Handle incoming SMS from native broadcast receiver
+  ///
+  /// Called by native code when SMS_DELIVER broadcast is received.
+  void handleIncomingSms(Map<String, dynamic> smsData) {
+    try {
+      final message = SmsMessage(
+        id: smsData['id'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        sender: smsData['sender'] ?? smsData['address'] ?? '',
+        recipient: smsData['recipient'] ?? '',
+        content: smsData['body'] ?? smsData['message'] ?? '',
+        timestamp: smsData['timestamp'] != null
+            ? DateTime.fromMillisecondsSinceEpoch(smsData['timestamp'])
+            : DateTime.now(),
+        type: SmsMessageType.incoming,
+        status: SmsMessageStatus.received,
+      );
+
+      _logger.i('SmsReceiver: Incoming SMS from ${message.sender}');
+      _incomingSmsController.add(message);
+    } catch (e, stackTrace) {
+      _logger.e('SmsReceiver: Error handling incoming SMS', error: e, stackTrace: stackTrace);
+    }
+  }
+
+  /// Check SMS permissions
+  Future<bool> hasPermissions() async {
+    try {
+      final result = await _channel.invokeMethod<bool>('hasSmsPermissions');
+      return result ?? false;
+    } on PlatformException catch (e) {
+      _logger.e('SmsReceiver: Permission check failed', error: e);
+      return false;
+    }
+  }
+
+  /// Request SMS permissions
+  Future<bool> requestPermissions() async {
+    try {
+      final result = await _channel.invokeMethod<bool>('requestSmsPermissions');
+      return result ?? false;
+    } on PlatformException catch (e) {
+      _logger.e('SmsReceiver: Permission request failed', error: e);
+      return false;
+    }
+  }
+
+  /// Clean up resources
+  void dispose() async {
+    await unregister();
+    await _incomingSmsController.close();
+  }
+}
+
 /// SMS Service for handling SMS via SMPP and local SMS
+///
+/// Tasks:
+/// - sms-001: Implement SmsService (SmsManager for sending SMS)
+/// - sms-002: Implement SMS receiver (broadcast receiver for incoming SMS)
 class SmsService {
   static final SmsService _instance = SmsService._internal();
   factory SmsService() => _instance;
   SmsService._internal();
 
   final Logger _logger = Logger();
-  
+
   SmppConfig? _smppConfig;
   SmppConnectionState _smppConnectionState = SmppConnectionState.disconnected;
   final Map<String, SmsMessage> _messages = {};
   int _messageCounter = 0;
-  
+
+  // SMS Receiver for incoming SMS
+  final SmsReceiver _smsReceiver = SmsReceiver();
+
   // Stream controllers
-  final StreamController<SmppConnectionState> _connectionStateController = 
+  final StreamController<SmppConnectionState> _connectionStateController =
       StreamController<SmppConnectionState>.broadcast();
-  final StreamController<SmsMessage> _messageController = 
+  final StreamController<SmsMessage> _messageController =
       StreamController<SmsMessage>.broadcast();
-  final StreamController<String> _logController = 
+  final StreamController<String> _logController =
       StreamController<String>.broadcast();
 
   // Getters
   SmppConnectionState get connectionState => _smppConnectionState;
   SmppConfig? get smppConfig => _smppConfig;
   List<SmsMessage> get messages => _messages.values.toList();
+  SmsReceiver get smsReceiver => _smsReceiver;
 
   // Streams
-  Stream<SmppConnectionState> get connectionStateStream => 
+  Stream<SmppConnectionState> get connectionStateStream =>
       _connectionStateController.stream;
   Stream<SmsMessage> get messageStream => _messageController.stream;
   Stream<String> get logStream => _logController.stream;
+
+  /// Get stream of incoming SMS messages (from broadcast receiver)
+  Stream<SmsMessage> get incomingSmsStream => _smsReceiver.incomingSmsStream;
+
+  /// Initialize SMS service
+  ///
+  /// [enableReceiver] - If true, registers broadcast receiver for incoming SMS
+  /// [smppConfig] - Optional SMPP configuration for SMPP-based SMS
+  Future<bool> initialize({bool enableReceiver = false, SmppConfig? smppConfig}) async {
+    try {
+      _logger.i('SmsService: Initializing...');
+
+      // Initialize SMS receiver if requested
+      if (enableReceiver) {
+        final receiverRegistered = await _smsReceiver.register();
+        if (receiverRegistered) {
+          // Listen for incoming SMS and add to message store
+          _smsReceiver.incomingSmsStream.listen((message) {
+            _messages[message.id] = message;
+            _messageController.add(message);
+            _log('Incoming SMS stored: ${message.id}');
+          });
+          _log('SMS receiver registered for incoming SMS broadcasts');
+        }
+      }
+
+      // Initialize SMPP if configured
+      if (smppConfig != null) {
+        await initializeSmpp(smppConfig);
+      }
+
+      _logger.i('SmsService: Initialization complete');
+      return true;
+    } catch (e, stackTrace) {
+      _logger.e('SmsService: Initialization failed', error: e, stackTrace: stackTrace);
+      _log('Initialization failed: $e');
+      return false;
+    }
+  }
 
   /// Initialize SMS service with SMPP configuration
   Future<bool> initializeSmpp(SmppConfig config) async {
@@ -376,8 +549,11 @@ class SmsService {
 
   /// Clean up resources
   void dispose() {
-        _connectionStateController.close();
+    _logger.i('SmsService: Disposing...');
+    _smsReceiver.dispose();
+    _connectionStateController.close();
     _messageController.close();
     _logController.close();
+    _messages.clear();
   }
 }
