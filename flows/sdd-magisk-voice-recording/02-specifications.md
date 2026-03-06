@@ -586,6 +586,153 @@ test('Qualcomm restrictions disabled', () async {
 
 ---
 
+## Legacy Additions - 2026-03-06
+
+> Added by /legacy after analyzing apgateway third-party module
+
+### Enhanced system.prop Configuration
+
+**Discovered from**: `3rdparty/apgateway/system.prop`
+
+**Missing in current spec**: Complete Qualcomm audio restrictions disable
+
+```properties
+# Allow concurrent VoIP audio during GSM voice calls
+voice.record.conc.disabled=false
+voice.voip.conc.disabled=false
+voice.playback.conc.disabled=false
+
+# Disable Qualcomm Fluence noise/echo processing
+ro.qc.sdk.audio.fluencetype=none
+persist.audio.fluence.voicerec=false
+persist.audio.fluence.speaker=false
+persist.audio.fluence.voicecall=false
+```
+
+**Impact**: 
+- Current spec only mentions 2 properties
+- apgateway uses 7 properties for full audio control
+- Fluence disable is critical - modem AEC cancels SIP audio from GSM uplink
+
+**Recommendation**: Update `install.sh` to set `PROPFILE=true` and use enhanced system.prop
+
+### Extended Privileged Permissions
+
+**Discovered from**: `3rdparty/apgateway/system/etc/permissions/privapp-permissions-gateway.xml`
+
+**Missing in current spec**: 7 additional permissions for full telephony integration
+
+```xml
+<!-- Additional telephony permissions -->
+<permission name="android.permission.READ_PRIVILEGED_PHONE_STATE" />
+<permission name="android.permission.CALL_PRIVILEGED" />
+
+<!-- System permissions -->
+<permission name="android.permission.WRITE_SECURE_SETTINGS" />
+<permission name="android.permission.INTERACT_ACROSS_USERS" />
+
+<!-- Telecom permissions -->
+<permission name="android.permission.REGISTER_CALL_PROVIDER" />
+<permission name="android.permission.REGISTER_SIM_SUBSCRIPTION" />
+<permission name="android.permission.BIND_INCALL_SERVICE" />
+<permission name="android.permission.BIND_TELECOM_CONNECTION_SERVICE" />
+```
+
+**Impact**:
+- Current spec has only 4 permissions
+- Missing permissions limit telephony/telecom integration capabilities
+- `BIND_INCALL_SERVICE` required for proper InCallService implementation
+- `CALL_PRIVILEGED` enables programmatic call initiation
+
+**Recommendation**: Add all 11 permissions to privapp-permissions-gateway.xml
+
+### service.sh - APK Synchronization Service
+
+**Discovered from**: `3rdparty/apgateway/service.sh`
+
+**Missing in current spec**: Automatic APK sync on boot
+
+```bash
+#!/system/bin/sh
+MODDIR="${0%/*}"
+TAG="GatewayMagisk"
+
+PRIV_DIR="$MODDIR/system/priv-app/Gateway"
+PRIV_APK="$PRIV_DIR/Gateway.apk"
+
+# Sync APK from /data/app to priv-app overlay
+APK_PATH=$(pm path com.callagent.gateway | head -1 | sed 's/^package://')
+
+if [ -f "$APK_PATH" ] && [ -f "$PRIV_APK" ]; then
+    if ! cmp -s "$APK_PATH" "$PRIV_APK" 2>/dev/null; then
+        cp "$APK_PATH" "$PRIV_APK"
+        chmod 644 "$PRIV_APK"
+        log -t "$TAG" "Synced updated APK (reboot needed)"
+    fi
+fi
+
+# Log permission status
+PERM_DUMP=$(dumpsys package com.callagent.gateway)
+if echo "$PERM_DUMP" | grep -q "CAPTURE_AUDIO_OUTPUT.*granted=true"; then
+    log -t "$TAG" "CAPTURE_AUDIO_OUTPUT: GRANTED"
+else
+    log -t "$TAG" "CAPTURE_AUDIO_OUTPUT: NOT GRANTED"
+fi
+```
+
+**Benefits**:
+- Automatically syncs APK updates from `/data/app` to priv-app overlay
+- Logs permission grant status for debugging
+- No need to reinstall Magisk module after app updates
+
+**Recommendation**: Implement service.sh with LATESTARTSERVICE=true
+
+### post-fs-data.sh - Mount Guarantee
+
+**Discovered from**: `3rdparty/apgateway/post-fs-data.sh`
+
+**Missing in current spec**: skip_mount removal
+
+```bash
+#!/system/bin/sh
+MODDIR="${0%/*}"
+rm -f "$MODDIR/skip_mount"
+```
+
+**Purpose**: Ensures module filesystem overlay is active even if skip_mount exists
+
+**Recommendation**: Implement post-fs-data.sh with POSTFSDATA=true
+
+### Enhanced install.sh
+
+**Discovered from**: `3rdparty/apgateway/install.sh`
+
+**Missing in current spec**:
+1. `SKIPUNZIP=1` for manual extraction control
+2. APK fallback copying from installed app
+3. User guidance if APK not found
+4. Explicit priv-app directory permissions
+5. skip_mount removal
+
+**Recommendation**: Update install.sh with enhanced installation logic
+
+### update-binary Standardization
+
+**Discovered from**: `3rdparty/apgateway/META-INF/com/google/android/update-binary`
+
+**Current spec uses**: Manual installation logic
+
+**apgateway uses**: Standard Magisk `install_module` function
+
+**Benefits**:
+- More robust installation
+- Better error handling
+- Standard Magisk framework integration
+
+**Recommendation**: Update update-binary to use install_module function
+
+---
+
 ## Security Considerations
 
 ### Permission Scope
