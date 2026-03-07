@@ -1,9 +1,10 @@
-# Requirements: Voice Line Hardware Jack Mode
+# Requirements: Voice Line Mode Magisk
 
-> **Version**: 1.1
+> **Version**: 1.3
 > **Status**: DRAFT
 > **Last Updated**: 2026-03-06
-> **Module**: voiceline-hardwarejack-mode
+> **Module**: voiceline-mode-magisk
+> **Dependencies**: `sdd-pjsip-mode-inversion` (right channel inversion)
 
 ---
 
@@ -11,7 +12,7 @@
 
 **What problem are we solving?**
 
-The GOSTsimbox Android Gateway needs to support physical hardware adapter connectivity for voice line integration with GSM radio equipment. Hardware adapters use differential signaling (stereo with inverted channel) to transmit mono audio over a TRRS jack or USB connection.
+The GOSTsimbox Android Gateway needs to support physical hardware adapter connectivity for voice line integration with GSM radio equipment via **Magisk system module**. Hardware adapters use differential signaling (stereo with inverted channel) to transmit mono audio over a TRRS jack or USB connection.
 
 **Why does this matter?**
 
@@ -21,12 +22,75 @@ This enables the gateway to:
 - Bridge SIP media streams to physical telephony hardware
 - Enable bidirectional voice communication between SIP and GSM radio
 - **Prevent echo** by using differential signaling with phone's echo cancellation
+- **System-level integration** via Magisk module for privileged audio access
 
 ### Original Problem Description (from user)
 
 > "Нам от SIP поступает сигнал на проигрывание в телефонную линию. Если он моно, то мы проигрываем его в левый канал обычно, а в правый инвертировано. Если он стерео то проигрываем левый канал как есть, а правый инвертируем. Это даст то, что по факту в телефонную линию уйдет сложенный сигнал (казалось бы что сложенный сигнал L минус R должна уйти в линию пустота, но за счет того что в телефонах добавлено эхоподавление - из пустоты вычитается эхоподавление и по факту происходит именно проигрывание в телефонную линию). Ноухау с инвертированием правого канала нужен для того чтобы одновременно обратно в линию не уходил сигнал полученный с самой линии и не создавалось эхо."
 
 **Key Insight**: The differential signaling (L - R) combined with phone's echo cancellation results in clean audio playback into the phone line without echo feedback.
+
+---
+
+## Dependencies
+
+This module **depends on** the following SDD flows:
+
+| SDD Flow | Purpose | Status |
+|----------|---------|--------|
+| **`sdd-pjsip-mode-inversion`** | Right channel inversion for differential signaling | In development |
+
+**Note**: The inversion logic has been **extracted** to a separate SDD flow (`sdd-pjsip-mode-inversion`) for reusability. This flow uses the `InversionPort` component from that flow.
+
+### Magisk Module Dependency
+
+This flow also requires:
+- **`sdd-magisk-voice-recording`** - Magisk module for privileged permissions (CAPTURE_AUDIO_OUTPUT)
+
+### Hardware Adapter Implementation Detail
+
+**Important**: The TRRS/USB hardware adapter performs right channel inversion **at the hardware level** using a passive analog circuit:
+
+```
+TRRS/USB Hardware Adapter Circuit:
+┌─────────────────────────────────────────────────────────┐
+│  Hardware Implementation (Analog Circuit)                │
+│                                                          │
+│  Input (from device):  Left ─────────┬─────> Tip (TRRS) │
+│                                      │                  │
+│  Input (from device):  Right ────[R1]┴─[R2]─┬─[C1]─> Ring (TRRS)
+│                                      │      │           │
+│  Component Values (typical):         │     [R3]        [R4]
+│  - R1, R2, R3, R4: 4 resistors       │      │          │
+│  - C1: 1 capacitor                   │     GND        GND
+│                                      │                  │
+│  Function:                           │                  │
+│  - Inverts right channel polarity    │                  │
+│  - Creates differential signal       │                  │
+│  - Passively sums L + (-R)           │                  │
+└─────────────────────────────────────────────────────────┘
+```
+
+**Why This Matters**:
+- Software inversion (HardwareAdapterPort) + Hardware inversion (adapter circuit) = Double inversion
+- **Result**: Right channel is inverted twice, returning to original polarity
+- **But**: Phone still sees differential signal (L - R) for echo cancellation
+- **Benefit**: Hardware adapter expects inverted input, we provide it digitally
+
+**Signal Chain**:
+```
+SIP Audio → HardwareAdapterPort (software: L, -R) 
+              ↓
+          Android Audio Device
+              ↓
+          TRRS/USB Adapter (hardware: inverts R again)
+              ↓
+          Phone sees: L - R (differential)
+              ↓
+          Echo canceller works correctly
+              ↓
+          Clean audio in phone line (no echo)
+```
 
 ---
 

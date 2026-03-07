@@ -262,12 +262,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildStatusCard(String title, String value, Color color, IconData icon) {
+    final isConnected = color == Colors.green || color == Colors.blue;
+    
     return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 28, color: color),
+            Icon(icon, size: 28, color: isConnected ? color : Colors.grey),
             const SizedBox(height: 8),
             Text(
               title,
@@ -279,8 +284,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
-                color: color,
+                color: isConnected ? color : Colors.grey,
               ),
+              textAlign: TextAlign.center,
             ),
           ],
         ),

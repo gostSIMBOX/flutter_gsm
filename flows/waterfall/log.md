@@ -440,3 +440,129 @@ The model mismatch is **intentional by design**:
 **Tasks Added This Session:** 11 (account: 5, call-model: 6)
 
 ---
+
+## Layer 2 Implementation Session (2026-03-06) - Testing + UI Theming
+
+### Module: testing - COMPLETE
+
+**Tasks Completed:**
+- test-001: ✅ VERIFIED - Test directory structure already exists
+  - `test/unit/` - Unit tests
+  - `test/core/` - Core layer tests (di, error)
+  - `test/services/` - Service tests
+  - `test/widgets/` - Widget tests
+  - `test/integration/` - Integration tests
+
+- test-002: ✅ IMPLEMENTED - Unit tests for domain layer use cases
+  - `test/unit/sip_usecases_test.dart` - SIP use case tests (11 test groups)
+  - Tests for: InitializeSip, DestroySip, CreateSipAccount, DeleteSipAccount, MakeSipCall, AnswerSipCall, HangupSipCall
+  - AAA pattern (Arrange-Act-Assert) used throughout
+  - Mockito for repository mocking
+
+- test-003: ✅ IMPLEMENTED - Widget tests for presentation layer
+  - `test/widgets/status_indicators_test.dart` - Status indicator widget tests
+  - Tests for: StatusIndicator, SignalIndicator, CallStatusIndicator
+  - Theme integration tests
+  - Color verification tests
+
+- test-004: ✅ IMPLEMENTED - Integration tests
+  - `test/integration/theme_service_integration_test.dart` - Theme + Service integration
+  - Tests for: Theme persistence, widget integration, error handling
+  - Full app theme integration tests
+
+- test-005: ✅ VERIFIED - Mockito setup complete
+  - `mockito: ^5.4.4` in pubspec.yaml
+  - `@GenerateMocks` annotations used
+  - Mock files generated via build_runner
+
+- test-006: ✅ VERIFIED - Test naming convention implemented
+  - Pattern: 'ClassName.method should expectedBehavior when condition'
+  - Example: 'should initialize SIP endpoint successfully'
+  - Example: 'should return validation failure when account ID is empty'
+
+- test-007: ✅ VERIFIED - Test dependencies configured
+  - `flutter_test` (SDK)
+  - `mockito: ^5.4.4`
+  - `build_runner: ^2.4.7`
+
+**Files Created:**
+- `test/unit/sip_usecases_test.dart` - SIP use case unit tests (340 lines)
+- `test/services/theme_service_test.dart` - ThemeService tests (280 lines)
+- `test/widgets/status_indicators_test.dart` - Status indicator widget tests (316 lines)
+- `test/integration/theme_service_integration_test.dart` - Integration tests (260 lines)
+
+**Test Coverage:**
+- Unit tests: 30+ test cases for SIP use cases
+- Widget tests: 25+ test cases for status indicators
+- Service tests: 40+ test cases for ThemeService
+- Integration tests: 15+ test cases for theme + service integration
+
+**Test Naming Convention Examples:**
+```dart
+test('should initialize SIP endpoint successfully', ...)
+test('should return validation failure when account ID is empty', ...)
+test('should persist theme selection', ...)
+testWidgets('should display connected status with green color', ...)
+```
+
+---
+
+### Module: ui-theming - COMPLETE (VERIFIED)
+
+**Tasks Verified:**
+- theme-001: ✅ VERIFIED - ThemeService extending ChangeNotifier
+  - File: `lib/services/theme_service.dart` (220 lines)
+  - Methods: initialize(), setLightTheme(), setDarkTheme(), setSystemTheme(), toggleTheme()
+  - Getters: themeMode, isDarkMode, isLightMode
+
+- theme-002: ✅ VERIFIED - ThemeMode enum
+  - Values: light, dark, system (default: dark)
+  - Uses Flutter's built-in ThemeMode enum
+
+- theme-003: ✅ VERIFIED - ThemeOption class
+  - Fields: mode, name, description, icon
+  - Used for theme selection UI
+
+- theme-004: ✅ VERIFIED - Persistent storage
+  - SharedPreferences key: 'gost_simbox_theme'
+  - Saves theme index for persistence
+  - Auto-loads on initialize()
+
+- theme-005: ✅ VERIFIED - Status color palette
+  - Connection colors: Green (#10B981), Yellow (#F59E0B), Red (#EF4444), Gray (#6B7280)
+  - Signal colors: 5 levels (Excellent to Critical)
+  - Call colors: Green (active), Red (ended), Yellow (idle)
+
+- theme-006: ✅ VERIFIED - Material 3 customization
+  - useMaterial3: true in app_theme.dart
+  - seedColor: #1E88E5 (via AppColors.primary)
+  - centerTitle: true in AppBarTheme
+  - Card elevation: 2
+
+**Files Verified:**
+- `lib/services/theme_service.dart` - ThemeService implementation
+- `lib/theme/app_theme.dart` - Material 3 theme definitions
+- `lib/theme/app_colors.dart` - Color palette (light/dark themes)
+- `lib/theme/app_dimensions.dart` - Design tokens
+- `lib/theme/app_widgets.dart` - Reusable widgets
+
+**Theme Features:**
+- Light/Dark/System theme modes
+- Persistent theme selection
+- Status color helpers for connection, signal, call states
+- Material 3 design system
+- Consistent color palette across app
+
+---
+
+## Overall Progress: 104/179 (58%)
+
+| Layer | Complete | Total | Percent |
+|-------|----------|-------|---------|
+| Layer 0 | 31 | 31 | 100% ✅ |
+| Layer 1 | 47 | 87 | 54% |
+| Layer 2 | 26 | 61 | 43% |
+
+**Tasks Added This Session:** 13 (testing: 7, ui-theming: 6)
+
+---

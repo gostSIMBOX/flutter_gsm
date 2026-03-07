@@ -247,4 +247,43 @@ class SipAccount extends Equatable {
         'port: $port, transport: $transport, '
         'registrationState: $registrationState, isActive: $isActive)';
   }
+
+  /// Convert to JSON
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'username': username,
+      'password': password,
+      'domain': domain,
+      'port': port,
+      'transport': transport.name.toUpperCase(),
+      'registrationTimeout': registrationTimeout,
+      'enableKeepAlive': enableKeepAlive,
+      'keepAliveInterval': keepAliveInterval,
+      'displayName': displayName,
+      'isDefault': isDefault,
+      'isActive': isActive,
+    };
+  }
+
+  /// Create from JSON
+  factory SipAccount.fromJson(Map<String, dynamic> json) {
+    return SipAccount(
+      id: json['id'] ?? '',
+      username: json['username'] ?? '',
+      password: json['password'] ?? '',
+      domain: json['domain'] ?? '',
+      port: json['port'] ?? 5060,
+      transport: SipTransport.values.firstWhere(
+        (e) => e.name.toUpperCase() == (json['transport'] ?? 'UDP'),
+        orElse: () => SipTransport.udp,
+      ),
+      registrationTimeout: json['registrationTimeout'] ?? 3600,
+      enableKeepAlive: json['enableKeepAlive'] ?? true,
+      keepAliveInterval: json['keepAliveInterval'] ?? 30,
+      displayName: json['displayName'],
+      isDefault: json['isDefault'] ?? false,
+      isActive: json['isActive'] ?? true,
+    );
+  }
 }

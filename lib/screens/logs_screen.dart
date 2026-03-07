@@ -85,6 +85,8 @@ class _LogsScreenState extends State<LogsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final filteredLogs = _getFilteredLogs();
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Логи 📝'),
@@ -98,6 +100,338 @@ class _LogsScreenState extends State<LogsScreen> {
             },
             tooltip: 'Автопрокрутка (следим за логами 👀)',
           ),
+          IconButton(
+            icon: const Icon(Icons.filter_list),
+            onPressed: _showFilterDialog,
+            tooltip: 'Filter logs',
+          ),
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            onPressed: _clearAllLogs,
+            tooltip: 'Clear all logs',
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          // Search bar
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: 'Search logs...',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _searchQuery.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          setState(() {
+                            _searchQuery = '';
+                            _searchController.clear();
+                          });
+                        },
+                      )
+                    : null,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value.toLowerCase();
+                });
+              },
+            ),
+          ),
+
+          // Stats bar
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Showing ${filteredLogs.length} of ${_logs.length} logs',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+                if (_selectedLevel != LogLevel.all)
+                  Chip(
+                    label: Text(_selectedLevel.name.toUpperCase(),
+                        style: const TextStyle(fontSize: 10, color: Colors.white)),
+                    backgroundColor: _getLevelColor(_selectedLevel),
+                    deleteIcon: const Icon(Icons.close, size: 14),
+                    onDeleted: () {
+                      setState(() {
+                        _selectedLevel = LogLevel.all;
+                      });
+                    },
+                  ),
+              ],
+            ),
+          ),
+
+          // Logs list
+          Expanded(
+            child: ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              itemCount: filteredLogs.length,
+              itemBuilder: (context, index) {
+                final log = filteredLogs[index];
+                return _buildLogCard(log);
+              },
+            ),
+          ),
+
+          // Scroll FABs
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: Column(
+              children: [
+                FloatingActionButton(
+                  mini: true,
+                  heroTag: 'scrollTop',
+                  onPressed: () {
+                    _scrollController.animateTo(
+                      0,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOut,
+                    );
+                  },
+                  child: const Icon(Icons.keyboard_arrow_up),
+                ),
+                const SizedBox(height: 8),
+                FloatingActionButton(
+                  mini: true,
+                  heroTag: 'scrollBottom',
+                  onPressed: () {
+                    _scrollController.animateTo(
+                      _scrollController.position.maxScrollExtent,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOut,
+                    );
+                  },
+                  child: const Icon(Icons.keyboard_arrow_down),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  List<LogEntry> _getFilteredLogs() {
+    return _logs.where((log) {
+      // Filter by level
+      if (_selectedLevel != LogLevel.all && log.level != _selectedLevel) {
+        return false;
+      }
+      // Filter by search query
+      if (_searchQuery.isNotEmpty &&
+          !log.message.toLowerCase().contains(_searchQuery) &&
+          !log.source.toLowerCase().contains(_searchQuery)) {
+        return false;
+      }
+      return true;
+    }).toList();
+  }
+
+  Widget _buildLogCard(LogEntry log) {
+    final levelColor = _getLevelColor(log.level);
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      elevation: 1,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(8),
+        side: BorderSide(color: levelColor.withOpacity(0.3), width: 4),
+      ),
+      child: InkWell(
+        onTap: () => _showLogDetails(log),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  // Level badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: levelColor.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      log.level.name.toUpperCase(),
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: levelColor,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  // Source badge
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      log.source,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  // Timestamp
+                  Text(
+                    _formatTime(log.timestamp),
+                    style: const TextStyle(fontSize: 11, color: Colors.grey),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // Message
+              Text(
+                log.message,
+                style: const TextStyle(fontSize: 13, color: Colors.black87),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Color _getLevelColor(LogLevel level) {
+    switch (level) {
+      case LogLevel.debug:
+        return const Color(0xFF9CA3AF);
+      case LogLevel.info:
+        return const Color(0xFF3B82F6);
+      case LogLevel.warning:
+        return const Color(0xFFF59E0B);
+      case LogLevel.error:
+        return const Color(0xFFEF4444);
+      case LogLevel.success:
+        return const Color(0xFF10B981);
+      case LogLevel.all:
+        return Colors.grey;
+    }
+  }
+
+  void _showFilterDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Filter Logs'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: LogLevel.values.where((l) => l != LogLevel.all).map((level) {
+            return RadioListTile<LogLevel>(
+              title: Text(level.name.toUpperCase()),
+              value: level,
+              groupValue: _selectedLevel,
+              onChanged: (value) {
+                setState(() {
+                  _selectedLevel = value!;
+                });
+                Navigator.pop(context);
+              },
+            );
+          }).toList(),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _selectedLevel = LogLevel.all;
+              });
+              Navigator.pop(context);
+            },
+            child: const Text('Clear Filter'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showLogDetails(LogEntry log) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('${log.level.name.toUpperCase()} - ${log.source}'),
+        content: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: SelectableText(
+            log.message,
+            style: const TextStyle(fontFamily: 'monospace'),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              ClipboardService.copy(log.message);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Log copied to clipboard')),
+              );
+            },
+            child: const Text('Copy'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Close'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _clearAllLogs() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear All Logs'),
+        content: const Text('Are you sure you want to clear all logs?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _logs.clear();
+              });
+              Navigator.pop(context);
+            },
+            child: const Text('Clear'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatTime(DateTime time) {
+    return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}:${time.second.toString().padLeft(2, '0')}';
+  }
           IconButton(
             icon: const Icon(Icons.clear_all),
             onPressed: _clearLogs,
