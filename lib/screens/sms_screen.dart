@@ -133,12 +133,20 @@ class _SmsScreenState extends State<SmsScreen> {
               controller: _messageController,
               maxLines: 3,
               maxLength: 160,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
                 labelText: 'Message',
                 hintText: 'Type your message here...',
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.message),
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.message),
+                suffixText: '${_messageController.text.length}/160',
+                suffixStyle: TextStyle(
+                  color: _messageController.text.length > 160 ? Colors.red : Colors.grey,
+                  fontSize: 12,
+                ),
               ),
+              onChanged: (value) {
+                setState(() {}); // Trigger rebuild for character counter
+              },
             ),
             const SizedBox(height: 12),
             

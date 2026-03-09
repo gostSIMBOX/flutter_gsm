@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
 import '../services/gateway_service.dart';
+import '../services/theme_service.dart';
 import '../core/error/error_handler.dart';
 import 'setup_screen.dart';
 
@@ -14,11 +14,13 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   GatewayConfig? _config;
+  ThemeMode? _currentThemeMode;
 
   @override
   void initState() {
     super.initState();
     _loadConfig();
+    _loadTheme();
   }
 
   Future<void> _loadConfig() async {
@@ -31,17 +33,27 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  void _loadTheme() {
+    final themeService = context.read<ThemeService>();
+    setState(() {
+      _currentThemeMode = themeService.themeMode;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
+        elevation: 0,
       ),
       body: _config == null
           ? const Center(child: CircularProgressIndicator())
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                _buildThemeSection(),
+                const SizedBox(height: 16),
                 _buildSipConfigSection(),
                 const SizedBox(height: 16),
                 _buildSmppConfigSection(),
@@ -51,6 +63,101 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 _buildActionsSection(),
               ],
             ),
+    );
+  }
+
+  Widget _buildThemeSection() {
+    return Card(
+      elevation: 1,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(Icons.palette, color: Theme.of(context).colorScheme.primary),
+                const SizedBox(width: 12),
+                const Text(
+                  'Theme',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildThemeOption(
+                    'Light',
+                    Icons.wb_sunny,
+                    ThemeMode.light,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildThemeOption(
+                    'Dark',
+                    Icons.nightlight_round,
+                    ThemeMode.dark,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: _buildThemeOption(
+                    'System',
+                    Icons.settings_system_daydream,
+                    ThemeMode.system,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThemeOption(String label, IconData icon, ThemeMode mode) {
+    final isSelected = _currentThemeMode == mode;
+    return InkWell(
+      onTap: () async {
+        final themeService = context.read<ThemeService>();
+        await themeService.setThemeMode(mode);
+        setState(() {
+          _currentThemeMode = mode;
+        });
+      },
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: BoxDecoration(
+          color: isSelected ? Theme.of(context).colorScheme.primary.withOpacity(0.1) : null,
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey.shade300,
+            width: isSelected ? 2 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                color: isSelected ? Theme.of(context).colorScheme.primary : Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
