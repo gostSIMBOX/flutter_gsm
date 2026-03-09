@@ -104,6 +104,7 @@ When coupling SIP audio to phone lines via acoustic or direct electrical connect
 
 ## Hardware Schematic (4R+1C Differential Coupling)
 
+
 ```
     LEFT    ──────────────────────────┬──────────────────┐
                                       │                  │
