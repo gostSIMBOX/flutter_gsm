@@ -2,11 +2,11 @@
 
 ## Current Phase
 
-REQUIREMENTS | **VISUAL** | SPECIFICATIONS | PLAN | IMPLEMENTATION | DOCUMENTATION
+REQUIREMENTS | VISUAL | SPECIFICATIONS | PLAN | **IMPLEMENTATION** | DOCUMENTATION
 
 ## Phase Status
 
-APPROVED | **REVIEW** | PENDING | PENDING | PENDING | PENDING
+APPROVED | APPROVED | APPROVED | APPROVED | **IN PROGRESS** | PENDING
 
 ## Last Updated
 
@@ -14,7 +14,7 @@ APPROVED | **REVIEW** | PENDING | PENDING | PENDING | PENDING
 
 ## Blockers
 
-- None - visual mockups ready for review
+- None - implementation starting
 
 ## Progress
 
@@ -22,12 +22,12 @@ APPROVED | **REVIEW** | PENDING | PENDING | PENDING | PENDING
 - [x] Requirements drafted
 - [x] Requirements approved
 - [x] Visual mockups drafted
-- [ ] Visual mockups approved
-- [ ] Specifications drafted
-- [ ] Specifications approved
-- [ ] Plan drafted
-- [ ] Plan approved
-- [ ] Implementation started
+- [x] Visual mockups approved
+- [x] Specifications drafted
+- [x] Specifications approved
+- [x] Plan drafted
+- [x] Plan approved
+- [x] Implementation started
 - [ ] Implementation complete
 - [ ] Documentation drafted
 - [ ] Documentation approved
@@ -78,6 +78,8 @@ Voice Line Access Layer
 
 ## Next Actions
 
-1. Review visual mockups with user
-2. Get approval on screen designs
-3. Proceed to specifications phase
+1. Begin Phase 1: Domain Layer
+2. Create VoiceLineMethod enum и модели
+3. Create VoiceLineConfig entity
+4. Create VoiceLineRepository interface
+5. Update LineInfo

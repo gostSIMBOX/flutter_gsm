@@ -6,7 +6,7 @@ REQUIREMENTS | **VISUAL** | SPECIFICATIONS | PLAN | IMPLEMENTATION | DOCUMENTATI
 
 ## Phase Status
 
-**DRAFTING** | REVIEW | APPROVED | BLOCKED
+REVIEW | APPROVED | PENDING | PENDING | PENDING | PENDING
 
 ## Last Updated
 
@@ -14,12 +14,13 @@ REQUIREMENTS | **VISUAL** | SPECIFICATIONS | PLAN | IMPLEMENTATION | DOCUMENTATI
 
 ## Blockers
 
-- None - visual mockups updated, awaiting review
+- None - visual mockups ready for review
 
 ## Progress
 
 - [x] Requirements analyzed (from sdd-dongle-* flows)
 - [x] Visual mockups drafted
+- [x] Visual mockups reviewed
 - [ ] Visual mockups approved
 - [ ] Specifications drafted
 - [ ] Specifications approved
@@ -37,7 +38,6 @@ Key decisions and context for resuming:
 - **Source**: Analyzed from multiple SDD flows (see _status.md)
 - **Purpose**: UI screens for dongle configuration and management
 - **Interfaces**:
-  - Direct Line (built-in phone line codec)
   - USB-C with DAC (digital, external DAC)
   - USB-C Audio Accessory (analog, uses device DAC)
   - TRRS 3.5mm (analog)
@@ -53,7 +53,7 @@ Key decisions and context for resuming:
   - Audio signal visualization
 - **Changes made**:
   - Removed "Network Loopback" (doesn't exist as hardware)
-  - Added "Direct Line" mode (built-in phone line codec)
+  - Removed "Direct Line" mode (not a dongle)
 
 ## Next Actions
 
