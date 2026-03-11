@@ -1,6 +1,7 @@
 /// Доменная сущность конфигурации шлюза
 /// Представляет настройки шлюза в бизнес-логике
 import 'package:equatable/equatable.dart';
+import 'voice_line_config.dart';
 
 /// Конфигурация SIP
 class SipConfig extends Equatable {
@@ -127,6 +128,7 @@ class GatewayConfig extends Equatable {
   final String name;
   final SipConfig sipConfig;
   final GsmConfig gsmConfig;
+  final VoiceLineConfig voiceLineConfig;
   final bool enableSms;
   final bool enableCallLog;
   final bool enableStatistics;
@@ -138,6 +140,7 @@ class GatewayConfig extends Equatable {
     required this.name,
     required this.sipConfig,
     required this.gsmConfig,
+    this.voiceLineConfig = const VoiceLineConfig(),
     this.enableSms = true,
     this.enableCallLog = true,
     this.enableStatistics = true,
@@ -150,6 +153,7 @@ class GatewayConfig extends Equatable {
     String? name,
     SipConfig? sipConfig,
     GsmConfig? gsmConfig,
+    VoiceLineConfig? voiceLineConfig,
     bool? enableSms,
     bool? enableCallLog,
     bool? enableStatistics,
@@ -161,6 +165,7 @@ class GatewayConfig extends Equatable {
       name: name ?? this.name,
       sipConfig: sipConfig ?? this.sipConfig,
       gsmConfig: gsmConfig ?? this.gsmConfig,
+      voiceLineConfig: voiceLineConfig ?? this.voiceLineConfig,
       enableSms: enableSms ?? this.enableSms,
       enableCallLog: enableCallLog ?? this.enableCallLog,
       enableStatistics: enableStatistics ?? this.enableStatistics,
@@ -175,6 +180,7 @@ class GatewayConfig extends Equatable {
         name,
         sipConfig,
         gsmConfig,
+        voiceLineConfig,
         enableSms,
         enableCallLog,
         enableStatistics,

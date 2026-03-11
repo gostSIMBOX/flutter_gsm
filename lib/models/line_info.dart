@@ -1,3 +1,5 @@
+import '../domain/models/voice_line_method.dart';
+
 class LineInfo {
   final String id;
   final String phoneNumber;
@@ -19,6 +21,12 @@ class LineInfo {
   final bool canRecordVoiceToRadio;
   final bool canGetVoiceFromRadio;
   final bool canWriteToVoiceCommunication;
+  
+  /// Текущий метод доступа к голосовой линии
+  final VoiceLineMethod? currentVoiceLineMethod;
+  
+  /// Доступные методы доступа
+  final List<VoiceLineMethod> availableVoiceLineMethods;
 
   LineInfo({
     required this.id,
@@ -41,6 +49,8 @@ class LineInfo {
     required this.canRecordVoiceToRadio,
     required this.canGetVoiceFromRadio,
     required this.canWriteToVoiceCommunication,
+    this.currentVoiceLineMethod,
+    this.availableVoiceLineMethods = const [],
   });
 
   factory LineInfo.fromJson(Map<String, dynamic> json) {
@@ -65,6 +75,13 @@ class LineInfo {
       canRecordVoiceToRadio: json['canRecordVoiceToRadio'] ?? false,
       canGetVoiceFromRadio: json['canGetVoiceFromRadio'] ?? false,
       canWriteToVoiceCommunication: json['canWriteToVoiceCommunication'] ?? false,
+      currentVoiceLineMethod: VoiceLineMethodExtension.fromJson(
+          json['currentVoiceLineMethod'] as String?),
+      availableVoiceLineMethods: (json['availableVoiceLineMethods'] as List?)
+              ?.map((e) => VoiceLineMethodExtension.fromJson(e as String) ??
+                  VoiceLineMethod.acoustic)
+              .toList() ??
+          [],
     );
   }
 
@@ -90,6 +107,9 @@ class LineInfo {
       'canRecordVoiceToRadio': canRecordVoiceToRadio,
       'canGetVoiceFromRadio': canGetVoiceFromRadio,
       'canWriteToVoiceCommunication': canWriteToVoiceCommunication,
+      'currentVoiceLineMethod': currentVoiceLineMethod?.toJson(),
+      'availableVoiceLineMethods':
+          availableVoiceLineMethods.map((e) => e.toJson()).toList(),
     };
   }
 
@@ -114,6 +134,8 @@ class LineInfo {
     bool? canRecordVoiceToRadio,
     bool? canGetVoiceFromRadio,
     bool? canWriteToVoiceCommunication,
+    VoiceLineMethod? currentVoiceLineMethod,
+    List<VoiceLineMethod>? availableVoiceLineMethods,
   }) {
     return LineInfo(
       id: id ?? this.id,
@@ -136,6 +158,8 @@ class LineInfo {
       canRecordVoiceToRadio: canRecordVoiceToRadio ?? this.canRecordVoiceToRadio,
       canGetVoiceFromRadio: canGetVoiceFromRadio ?? this.canGetVoiceFromRadio,
       canWriteToVoiceCommunication: canWriteToVoiceCommunication ?? this.canWriteToVoiceCommunication,
+      currentVoiceLineMethod: currentVoiceLineMethod ?? this.currentVoiceLineMethod,
+      availableVoiceLineMethods: availableVoiceLineMethods ?? this.availableVoiceLineMethods,
     );
   }
 } 
