@@ -1,4 +1,5 @@
 import '../domain/models/voice_line_method.dart';
+import '../domain/models/dongle_status.dart';
 
 class LineInfo {
   final String id;
@@ -24,9 +25,12 @@ class LineInfo {
   
   /// Текущий метод доступа к голосовой линии
   final VoiceLineMethod? currentVoiceLineMethod;
-  
+
   /// Доступные методы доступа
   final List<VoiceLineMethod> availableVoiceLineMethods;
+
+  /// Статус донгла (если подключён)
+  final DongleStatus? dongleStatus;
 
   LineInfo({
     required this.id,
@@ -51,6 +55,7 @@ class LineInfo {
     required this.canWriteToVoiceCommunication,
     this.currentVoiceLineMethod,
     this.availableVoiceLineMethods = const [],
+    this.dongleStatus,
   });
 
   factory LineInfo.fromJson(Map<String, dynamic> json) {
@@ -82,6 +87,9 @@ class LineInfo {
                   VoiceLineMethod.acoustic)
               .toList() ??
           [],
+      dongleStatus: json['dongleStatus'] != null
+          ? DongleStatus.fromJson(json['dongleStatus'] as Map<String, dynamic>)
+          : null,
     );
   }
 
@@ -110,6 +118,7 @@ class LineInfo {
       'currentVoiceLineMethod': currentVoiceLineMethod?.toJson(),
       'availableVoiceLineMethods':
           availableVoiceLineMethods.map((e) => e.toJson()).toList(),
+      if (dongleStatus != null) 'dongleStatus': dongleStatus!.toJson(),
     };
   }
 
@@ -136,6 +145,7 @@ class LineInfo {
     bool? canWriteToVoiceCommunication,
     VoiceLineMethod? currentVoiceLineMethod,
     List<VoiceLineMethod>? availableVoiceLineMethods,
+    DongleStatus? dongleStatus,
   }) {
     return LineInfo(
       id: id ?? this.id,
@@ -160,6 +170,7 @@ class LineInfo {
       canWriteToVoiceCommunication: canWriteToVoiceCommunication ?? this.canWriteToVoiceCommunication,
       currentVoiceLineMethod: currentVoiceLineMethod ?? this.currentVoiceLineMethod,
       availableVoiceLineMethods: availableVoiceLineMethods ?? this.availableVoiceLineMethods,
+      dongleStatus: dongleStatus ?? this.dongleStatus,
     );
   }
 } 
