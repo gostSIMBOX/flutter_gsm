@@ -8,7 +8,10 @@ abstract class ITrrsDongleSource {
   /// Проверить подключение TRRS jack
   Future<bool> isJackInserted();
 
-  /// Получить состояние TRRS
+  /// Получить статус TRRS донгла
+  Future<DongleStatus> getStatus();
+
+  /// Получить состояние TRRS (0/1)
   Future<int> getTrrsState(); // 0=removed, 1=inserted
 }
 
@@ -37,7 +40,7 @@ class TrrsDongleSource implements ITrrsDongleSource {
     }
   }
 
-  /// Получить статус TRRS донгла
+  @override
   Future<DongleStatus> getStatus() async {
     final inserted = await isJackInserted();
 

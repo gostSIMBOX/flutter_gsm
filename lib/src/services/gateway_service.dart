@@ -234,18 +234,16 @@ class GatewayService {
   Future<void> stop() async {
     try {
       _log('Stopping Gateway service...');
-      
+
       // End all active routings
-      for (final routing in _activeRoutings.values) {
-        await _endRouting(routing.id);
-      }
-      
+      await endAllRoutings();
+
       // Unregister SIP
       await _sipService.unregister();
-      
+
       // Disconnect SMPP
       await _smsService.disconnectSmpp();
-      
+
       _isRunning = false;
       _startTime = null;
       _log('Gateway service stopped');
@@ -253,6 +251,14 @@ class GatewayService {
     } catch (e) {
       _log('Error stopping Gateway service: $e');
     }
+  }
+
+  /// End all active routings
+  Future<void> endAllRoutings() async {
+    for (final routing in _activeRoutings.values) {
+      await _endRouting(routing.id);
+    }
+    _log('All routings ended');
   }
 
   /// Make a call via SIP that will be routed to GSM
