@@ -229,6 +229,7 @@ git stash  # Save changes
 - [ ] Library can be imported: `import 'package:flutter_gsmsip/flutter_gsmsip.dart';`
 - [ ] Example app uses library via dependency
 - [ ] No circular dependencies
+- [ ] **Example app launches on Android device in foreground** ← CRITICAL COMPLETION CRITERION
 
 ---
 
