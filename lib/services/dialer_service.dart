@@ -441,3 +441,355 @@ class DialerService {
     _logger.d('DialerService: Disposed');
   }
 }
+
+// ============================================================================
+// Gateway-Specific Features (SIP↔GSM Bridge)
+// ============================================================================
+
+/// Gateway line status
+enum LineStatus {
+  /// Line is available
+  available,
+
+  /// Line is degraded (poor signal/quality)
+  degraded,
+
+  /// Line is unavailable
+  unavailable,
+}
+
+/// Call route type
+enum CallRoute {
+  /// SIP → Gateway → GSM bridge
+  sipBridge,
+
+  /// Direct GSM call
+  directGsm,
+
+  /// Direct SIP call (VoIP)
+  directSip,
+}
+
+/// Gateway line information
+class GatewayLineInfo {
+  final String id;
+  final String name;
+  final LineStatus status;
+  final String? signalStrength;
+  final String? networkType;
+  final bool isRegistered;
+
+  const GatewayLineInfo({
+    required this.id,
+    required this.name,
+    required this.status,
+    this.signalStrength,
+    this.networkType,
+    this.isRegistered = false,
+  });
+
+  Map<String, dynamic> toMap() => {
+    'id': id,
+    'name': name,
+    'status': status.index,
+    'signalStrength': signalStrength,
+    'networkType': networkType,
+    'isRegistered': isRegistered,
+  };
+
+  factory GatewayLineInfo.fromMap(Map<String, dynamic> map) {
+    return GatewayLineInfo(
+      id: map['id'] as String? ?? '',
+      name: map['name'] as String? ?? '',
+      status: LineStatus.values[map['status'] as int? ?? 0],
+      signalStrength: map['signalStrength'] as String?,
+      networkType: map['networkType'] as String?,
+      isRegistered: map['isRegistered'] as bool? ?? false,
+    );
+  }
+}
+
+/// Call route with cost estimate
+class CallRouteInfo {
+  final CallRoute route;
+  final String displayName;
+  final double costPerMinute;
+  final String currency;
+  final String qualityRating;
+  final GatewayLineInfo lineInfo;
+
+  const CallRouteInfo({
+    required this.route,
+    required this.displayName,
+    required this.costPerMinute,
+    this.currency = 'RUB',
+    this.qualityRating = '★★★★☆',
+    required this.lineInfo,
+  });
+
+  Map<String, dynamic> toMap() => {
+    'route': route.index,
+    'displayName': displayName,
+    'costPerMinute': costPerMinute,
+    'currency': currency,
+    'qualityRating': qualityRating,
+    'lineInfo': lineInfo.toMap(),
+  };
+
+  factory CallRouteInfo.fromMap(Map<String, dynamic> map) {
+    return CallRouteInfo(
+      route: CallRoute.values[map['route'] as int? ?? 0],
+      displayName: map['displayName'] as String? ?? '',
+      costPerMinute: map['costPerMinute'] as double? ?? 0.0,
+      currency: map['currency'] as String? ?? 'RUB',
+      qualityRating: map['qualityRating'] as String? ?? '★★★☆☆',
+      lineInfo: GatewayLineInfo.fromMap(map['lineInfo'] as Map<String, dynamic>? ?? {}),
+    );
+  }
+}
+
+/// Network quality statistics
+class NetworkQualityStats {
+  final int latencyMs;
+  final int jitterMs;
+  final double packetLossPercent;
+  final double mos;
+  final String codec;
+  final int bandwidthKbps;
+
+  const NetworkQualityStats({
+    this.latencyMs = 0,
+    this.jitterMs = 0,
+    this.packetLossPercent = 0.0,
+    this.mos = 0.0,
+    this.codec = 'Unknown',
+    this.bandwidthKbps = 0,
+  });
+
+  Map<String, dynamic> toMap() => {
+    'latencyMs': latencyMs,
+    'jitterMs': jitterMs,
+    'packetLossPercent': packetLossPercent,
+    'mos': mos,
+    'codec': codec,
+    'bandwidthKbps': bandwidthKbps,
+  };
+
+  factory NetworkQualityStats.fromMap(Map<String, dynamic> map) {
+    return NetworkQualityStats(
+      latencyMs: map['latencyMs'] as int? ?? 0,
+      jitterMs: map['jitterMs'] as int? ?? 0,
+      packetLossPercent: map['packetLossPercent'] as double? ?? 0.0,
+      mos: map['mos'] as double? ?? 0.0,
+      codec: map['codec'] as String? ?? 'Unknown',
+      bandwidthKbps: map['bandwidthKbps'] as int? ?? 0,
+    );
+  }
+
+  /// Get quality description
+  String get qualityDescription {
+    if (mos >= 4.0) return 'Excellent';
+    if (mos >= 3.0) return 'Good';
+    if (mos >= 2.0) return 'Fair';
+    return 'Poor';
+  }
+}
+
+/// Bridge call status (SIP + GSM legs)
+class BridgeCallStatus {
+  final String callId;
+  final bool sipLegConnected;
+  final bool gsmLegConnected;
+  final bool bridgeActive;
+  final Duration sipLegDuration;
+  final Duration gsmLegDuration;
+  final NetworkQualityStats sipStats;
+  final NetworkQualityStats gsmStats;
+
+  const BridgeCallStatus({
+    required this.callId,
+    required this.sipLegConnected,
+    required this.gsmLegConnected,
+    required this.bridgeActive,
+    this.sipLegDuration = Duration.zero,
+    this.gsmLegDuration = Duration.zero,
+    this.sipStats = const NetworkQualityStats(),
+    this.gsmStats = const NetworkQualityStats(),
+  });
+
+  Map<String, dynamic> toMap() => {
+    'callId': callId,
+    'sipLegConnected': sipLegConnected,
+    'gsmLegConnected': gsmLegConnected,
+    'bridgeActive': bridgeActive,
+    'sipLegDuration': sipLegDuration.inSeconds,
+    'gsmLegDuration': gsmLegDuration.inSeconds,
+    'sipStats': sipStats.toMap(),
+    'gsmStats': gsmStats.toMap(),
+  };
+
+  factory BridgeCallStatus.fromMap(Map<String, dynamic> map) {
+    return BridgeCallStatus(
+      callId: map['callId'] as String? ?? '',
+      sipLegConnected: map['sipLegConnected'] as bool? ?? false,
+      gsmLegConnected: map['gsmLegConnected'] as bool? ?? false,
+      bridgeActive: map['bridgeActive'] as bool? ?? false,
+      sipLegDuration: Duration(seconds: map['sipLegDuration'] as int? ?? 0),
+      gsmLegDuration: Duration(seconds: map['gsmLegDuration'] as int? ?? 0),
+      sipStats: NetworkQualityStats.fromMap(map['sipStats'] as Map<String, dynamic>? ?? {}),
+      gsmStats: NetworkQualityStats.fromMap(map['gsmStats'] as Map<String, dynamic>? ?? {}),
+    );
+  }
+}
+
+/// Gateway Dialer Service extension for SIP↔GSM bridge features
+extension GatewayDialerService on DialerService {
+  /// Get available gateway lines
+  Future<List<GatewayLineInfo>> getAvailableLines() async {
+    try {
+      final result = await DialerService._channel.invokeList<Map<dynamic, dynamic>>('getAvailableLines');
+      return result
+          ?.map((line) => GatewayLineInfo.fromMap(line as Map<String, dynamic>))
+          .toList() ?? [];
+    } on PlatformException catch (e) {
+      _logger.e('GatewayDialerService: Get available lines failed', error: e);
+      return [];
+    }
+  }
+
+  /// Get gateway status (SIP registration, GSM signal)
+  Future<Map<String, dynamic>> getGatewayStatus() async {
+    try {
+      final result = await DialerService._channel.invokeMapMethod<String, dynamic>('getGatewayStatus');
+      return result ?? {
+        'sipRegistered': false,
+        'gsmSignalStrength': 0,
+        'gsmNetworkType': 'Unknown',
+      };
+    } on PlatformException catch (e) {
+      _logger.e('GatewayDialerService: Get gateway status failed', error: e);
+      return {
+        'sipRegistered': false,
+        'gsmSignalStrength': 0,
+        'gsmNetworkType': 'Unknown',
+      };
+    }
+  }
+
+  /// Get available call routes for a phone number
+  Future<List<CallRouteInfo>> getAvailableRoutes(String phoneNumber) async {
+    try {
+      final result = await DialerService._channel.invokeList<Map<dynamic, dynamic>>(
+        'getAvailableRoutes',
+        {'phoneNumber': phoneNumber},
+      );
+      return result
+          ?.map((route) => CallRouteInfo.fromMap(route as Map<String, dynamic>))
+          .toList() ?? [];
+    } on PlatformException catch (e) {
+      _logger.e('GatewayDialerService: Get available routes failed', error: e);
+      return [];
+    }
+  }
+
+  /// Select call route
+  Future<bool> selectRoute(CallRoute route) async {
+    try {
+      final result = await DialerService._channel.invokeMethod<bool>(
+        'selectRoute',
+        {'route': route.index},
+      );
+      return result ?? false;
+    } on PlatformException catch (e) {
+      _logger.e('GatewayDialerService: Select route failed', error: e);
+      return false;
+    }
+  }
+
+  /// Get current call route
+  Future<CallRoute?> getCurrentRoute() async {
+    try {
+      final result = await DialerService._channel.invokeMethod<int>('getCurrentRoute');
+      if (result != null && result < CallRoute.values.length) {
+        return CallRoute.values[result];
+      }
+      return null;
+    } on PlatformException catch (e) {
+      _logger.e('GatewayDialerService: Get current route failed', error: e);
+      return null;
+    }
+  }
+
+  /// Get network quality stats for active call
+  Future<NetworkQualityStats> getNetworkQualityStats() async {
+    try {
+      final result = await DialerService._channel.invokeMapMethod<String, dynamic>('getNetworkQualityStats');
+      return NetworkQualityStats.fromMap(result ?? {});
+    } on PlatformException catch (e) {
+      _logger.e('GatewayDialerService: Get network quality stats failed', error: e);
+      return const NetworkQualityStats();
+    }
+  }
+
+  /// Get bridge call status
+  Future<BridgeCallStatus?> getBridgeCallStatus(String callId) async {
+    try {
+      final result = await DialerService._channel.invokeMapMethod<String, dynamic>(
+        'getBridgeCallStatus',
+        {'callId': callId},
+      );
+      if (result == null) return null;
+      return BridgeCallStatus.fromMap(result);
+    } on PlatformException catch (e) {
+      _logger.e('GatewayDialerService: Get bridge call status failed', error: e);
+      return null;
+    }
+  }
+
+  /// Get audio levels for active call
+  Future<Map<String, double>> getAudioLevels() async {
+    try {
+      final result = await DialerService._channel.invokeMapMethod<String, double>('getAudioLevels');
+      return result ?? {
+        'sipTx': 0.0,
+        'sipRx': 0.0,
+        'gsmTx': 0.0,
+        'gsmRx': 0.0,
+      };
+    } on PlatformException catch (e) {
+      _logger.e('GatewayDialerService: Get audio levels failed', error: e);
+      return {
+        'sipTx': 0.0,
+        'sipRx': 0.0,
+        'gsmTx': 0.0,
+        'gsmRx': 0.0,
+      };
+    }
+  }
+
+  /// Initiate bridge call (SIP → GSM)
+  Future<bool> initiateBridgeCall(String phoneNumber, String sipUri) async {
+    try {
+      _logger.d('GatewayDialerService: Initiating bridge call: $phoneNumber via $sipUri');
+
+      final result = await DialerService._channel.invokeMethod<bool>(
+        'initiateBridgeCall',
+        {
+          'phoneNumber': phoneNumber,
+          'sipUri': sipUri,
+        },
+      );
+
+      if (result == true) {
+        _logger.i('GatewayDialerService: Bridge call initiated successfully');
+        return true;
+      }
+
+      _logger.w('GatewayDialerService: Bridge call initiation failed');
+      return false;
+    } on PlatformException catch (e) {
+      _logger.e('GatewayDialerService: Bridge call initiation failed', error: e);
+      return false;
+    }
+  }
+}
