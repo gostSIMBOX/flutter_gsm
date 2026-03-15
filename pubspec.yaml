@@ -11,9 +11,27 @@ dependencies:
   flutter:
     sdk: flutter
   plugin_platform_interface: ^2.0.2
+  
+  # Functional
   dartz: ^0.10.1  # Either type for functional error handling
   equatable: ^2.0.5  # Value equality for entities
-  logger: ^2.0.1  # Logging utility
+  
+  # Logging
+  logger: ^2.0.1
+  
+  # Storage
+  shared_preferences: ^2.2.2
+  
+  # HTTP
+  http: ^1.2.1
+  
+  # Permissions
+  permission_handler: ^11.3.1
+  
+  # Utilities
+  intl: ^0.20.2
+  get_it: ^7.6.0
+  async: ^2.11.0
 
 dev_dependencies:
   flutter_test:
