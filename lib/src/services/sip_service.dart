@@ -2,75 +2,9 @@ import 'dart:async';
 import 'dart:io';
 import 'package:logger/logger.dart';
 import '../domain/entities/gateway_status.dart';
-
-/// SIP Account configuration
-class SipAccount {
-  final String username;
-  final String password;
-  final String domain;
-  final String? proxy;
-  final int port;
-  final bool useSecure;
-
-  const SipAccount({
-    required this.username,
-    required this.password,
-    required this.domain,
-    this.proxy,
-    this.port = 5060,
-    this.useSecure = false,
-  });
-
-  Map<String, dynamic> toJson() => {
-    'username': username,
-    'password': password,
-    'domain': domain,
-    'proxy': proxy,
-    'port': port,
-    'useSecure': useSecure,
-  };
-
-  factory SipAccount.fromJson(Map<String, dynamic> json) => SipAccount(
-    username: json['username'],
-    password: json['password'],
-    domain: json['domain'],
-    proxy: json['proxy'],
-    port: json['port'] ?? 5060,
-    useSecure: json['useSecure'] ?? false,
-  );
-}
-
-/// SIP Call information
-class SipCall {
-  final String id;
-  final String remoteNumber;
-  final SipCallDirection direction;
-  final SipCallState state;
-  final DateTime startTime;
-  final Duration? duration;
-
-  const SipCall({
-    required this.id,
-    required this.remoteNumber,
-    required this.direction,
-    required this.state,
-    required this.startTime,
-    this.duration,
-  });
-}
-
-enum SipCallDirection { incoming, outgoing }
-
-enum SipCallState { 
-  connecting, 
-  ringing, 
-  active,
-  hold,
-  ended,
-  failed
-}
-
-// SipConnectionState moved to domain/entities/gateway_status.dart to avoid duplication
+import '../domain/entities/sip_account.dart';
+import '../domain/entities/sip_call.dart';
+import '../domain/entities/sip_event.dart';
 
 /// SIP Service for handling VoIP calls
 class SipService {
@@ -175,12 +109,10 @@ class SipService {
       final callId = 'call_${DateTime.now().millisecondsSinceEpoch}';
       _log('Making call to $number (ID: $callId)');
       
-      final call = SipCall(
+      final call = SipCall.outgoing(
         id: callId,
-        remoteNumber: number,
-        direction: SipCallDirection.outgoing,
-        state: SipCallState.connecting,
-        startTime: DateTime.now(),
+        accountId: _account?.id ?? 'unknown',
+        number: number,
       );
       
       _activeCalls[callId] = call;
@@ -207,12 +139,8 @@ class SipService {
     try {
       _log('Answering call $callId');
       
-      final updatedCall = SipCall(
-        id: call.id,
-        remoteNumber: call.remoteNumber,
-        direction: call.direction,
-        state: SipCallState.active,
-        startTime: call.startTime,
+      final updatedCall = call.copyWith(
+        state: CallState.active,
       );
       
       _activeCalls[callId] = updatedCall;
@@ -236,14 +164,10 @@ class SipService {
     try {
       _log('Ending call $callId');
       
-      final duration = DateTime.now().difference(call.startTime);
-      final updatedCall = SipCall(
-        id: call.id,
-        remoteNumber: call.remoteNumber,
-        direction: call.direction,
-        state: SipCallState.ended,
-        startTime: call.startTime,
-        duration: duration,
+      final duration = call.startTime != null ? DateTime.now().difference(call.startTime!) : Duration.zero;
+      final updatedCall = call.copyWith(
+        state: CallState.terminated,
+        endTime: DateTime.now(),
       );
       
       _activeCalls.remove(callId);
@@ -259,18 +183,13 @@ class SipService {
   /// Hold a call
   Future<bool> holdCall(String callId) async {
     final call = _activeCalls[callId];
-    if (call == null || call.state != SipCallState.active) {
+    if (call == null || call.state != CallState.active) {
       return false;
     }
 
     try {
-      final updatedCall = SipCall(
-        id: call.id,
-        remoteNumber: call.remoteNumber,
-        direction: call.direction,
-        state: SipCallState.hold,
-        startTime: call.startTime,
-        duration: call.duration,
+      final updatedCall = call.copyWith(
+        state: CallState.held,
       );
       
       _activeCalls[callId] = updatedCall;
@@ -286,18 +205,13 @@ class SipService {
   /// Resume a held call
   Future<bool> resumeCall(String callId) async {
     final call = _activeCalls[callId];
-    if (call == null || call.state != SipCallState.hold) {
+    if (call == null || call.state != CallState.held) {
       return false;
     }
 
     try {
-      final updatedCall = SipCall(
-        id: call.id,
-        remoteNumber: call.remoteNumber,
-        direction: call.direction,
-        state: SipCallState.active,
-        startTime: call.startTime,
-        duration: call.duration,
+      final updatedCall = call.copyWith(
+        state: CallState.active,
       );
       
       _activeCalls[callId] = updatedCall;
@@ -319,12 +233,10 @@ class SipService {
     final callId = 'incoming_${DateTime.now().millisecondsSinceEpoch}';
     _log('Simulating incoming call from $fromNumber (ID: $callId)');
     
-    final call = SipCall(
+    final call = SipCall.incoming(
       id: callId,
-      remoteNumber: fromNumber,
-      direction: SipCallDirection.incoming,
-      state: SipCallState.ringing,
-      startTime: DateTime.now(),
+      accountId: _account?.id ?? 'unknown',
+      number: fromNumber,
     );
     
     _activeCalls[callId] = call;
@@ -335,27 +247,19 @@ class SipService {
   void _simulateCallProgression(String callId, String number) {
     Timer(const Duration(seconds: 1), () {
       final call = _activeCalls[callId];
-      if (call != null && call.state == SipCallState.connecting) {
-        final ringingCall = SipCall(
-          id: call.id,
-          remoteNumber: call.remoteNumber,
-          direction: call.direction,
-          state: SipCallState.ringing,
-          startTime: call.startTime,
+      if (call != null && call.state == CallState.initiated) {
+        final ringingCall = call.copyWith(
+          state: CallState.incoming,
         );
         _activeCalls[callId] = ringingCall;
         _callStateController.add(ringingCall);
-        
+
         // Simulate answer after 3 seconds
         Timer(const Duration(seconds: 3), () {
           final currentCall = _activeCalls[callId];
-          if (currentCall != null && currentCall.state == SipCallState.ringing) {
-            final activeCall = SipCall(
-              id: currentCall.id,
-              remoteNumber: currentCall.remoteNumber,
-              direction: currentCall.direction,
-              state: SipCallState.active,
-              startTime: currentCall.startTime,
+          if (currentCall != null && currentCall.state == CallState.incoming) {
+            final activeCall = currentCall.copyWith(
+              state: CallState.active,
             );
             _activeCalls[callId] = activeCall;
             _callStateController.add(activeCall);

@@ -1,102 +1,194 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter_gsmsip/flutter_gsmsip.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 
-void main() {
-  runApp(const MinimalExampleApp());
+import 'services/gateway_service.dart';
+import 'services/sip_service.dart';
+import 'services/sms_service.dart';
+import 'services/telephony_service.dart';
+import 'screens/dashboard_screen.dart';
+import 'screens/settings_screen.dart';
+import 'screens/setup_screen.dart';
+import 'utils/funny_messages.dart';
+
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Настройка ориентации экрана
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+  
+  // Настройка системного UI
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarColor: Colors.transparent,
+    ),
+  );
+  
+  runApp(const GOSTsimboxApp());
 }
 
-class MinimalExampleApp extends StatelessWidget {
-  const MinimalExampleApp({super.key});
+class GOSTsimboxApp extends StatelessWidget {
+  const GOSTsimboxApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'flutter_gsmsip Example',
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
-        useMaterial3: true,
+    return MultiProvider(
+      providers: [
+        Provider<GatewayService>.value(value: GatewayService()),
+        Provider<SipService>.value(value: SipService()),
+        Provider<SmsService>.value(value: SmsService()),
+        Provider<TelephonyService>.value(value: TelephonyService()),
+      ],
+      child: MaterialApp(
+        title: 'GOSTsimbox Gateway',
+        debugShowCheckedModeBanner: false,
+        theme: ThemeData(
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: const Color(0xFF1E88E5),
+            brightness: Brightness.light,
+          ),
+          useMaterial3: true,
+          appBarTheme: const AppBarTheme(
+            centerTitle: true,
+            elevation: 0,
+            scrolledUnderElevation: 1,
+          ),
+          cardTheme: CardThemeData(
+            elevation: 2,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+          elevatedButtonTheme: ElevatedButtonThemeData(
+            style: ElevatedButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+          ),
+        ),
+        home: const SetupCheckScreen(),
       ),
-      home: const ExampleHomePage(),
     );
   }
 }
 
-class ExampleHomePage extends StatelessWidget {
-  const ExampleHomePage({super.key});
+/// Screen to check if setup is complete
+class SetupCheckScreen extends StatefulWidget {
+  const SetupCheckScreen({super.key});
+
+  @override
+  State<SetupCheckScreen> createState() => _SetupCheckScreenState();
+}
+
+class _SetupCheckScreenState extends State<SetupCheckScreen> {
+  String _loadingMessage = 'Инициализация...';
+
+  @override
+  void initState() {
+    super.initState();
+    _startLoadingAnimation();
+    _checkSetup();
+  }
+
+  void _startLoadingAnimation() {
+    Timer.periodic(const Duration(milliseconds: 800), (timer) {
+      if (mounted) {
+        setState(() {
+          _loadingMessage = FunnyMessages.getLoadingMessage();
+        });
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  Future<void> _checkSetup() async {
+    final gatewayService = context.read<GatewayService>();
+    final config = await gatewayService.loadConfiguration();
+    
+    // Add a small delay to show the splash effect
+    await Future.delayed(const Duration(seconds: 1));
+    
+    if (mounted) {
+      if (config != null) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const DashboardScreen()),
+        );
+      } else {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const SetupScreen()),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('flutter_gsmsip Example'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.check_circle, size: 64, color: Colors.green),
-            const SizedBox(height: 24),
-            const Text(
-              'Library Imported Successfully!',
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'flutter_gsmsip is working',
-              style: TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 32),
-            ElevatedButton(
-              onPressed: () {
-                _showLibraryInfo(context);
-              },
-              child: const Text('Show Library Info'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showLibraryInfo(BuildContext context) {
-    // Demonstrate that library types are accessible
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Library Types Available'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildTypeRow('SipAccount'),
-            _buildTypeRow('SipCall'),
-            _buildTypeRow('SipEvent'),
-            _buildTypeRow('GatewayConfig'),
-            _buildTypeRow('GatewayStatus'),
-            _buildTypeRow('CallRouting'),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Theme.of(context).colorScheme.primary,
+              Theme.of(context).colorScheme.secondary,
+            ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTypeRow(String typeName) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        children: [
-          const Icon(Icons.check, size: 16, color: Colors.green),
-          const SizedBox(width: 8),
-          Text(typeName),
-        ],
+        ),
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                Icons.router,
+                size: 80,
+                color: Colors.white,
+              ),
+              SizedBox(height: 24),
+              Text(
+                'GOSTsimbox Gateway',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Bridging GSM and SIP networks',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.white70,
+                ),
+              ),
+              SizedBox(height: 40),
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+              ),
+              SizedBox(height: 16),
+              Text(
+                _loadingMessage,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white70,
+                  fontStyle: FontStyle.italic,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
+

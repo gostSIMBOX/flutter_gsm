@@ -305,12 +305,18 @@ class GatewayService {
     // Find routing by telephony call ID
     final routingEntry = _activeRoutings.entries.firstWhere(
       (e) => e.value.telephonyCallId == call.id,
-      orElse: () => MapEntry('', null),
+      orElse: () => MapEntry('', CallRouting(
+        id: '',
+        sipCallId: '',
+        number: '',
+        direction: CallRoutingDirection.sipToGsm,
+        state: CallRoutingState.connecting,
+      )),
     );
 
-    if (routingEntry.value == null) return;
+    if (routingEntry.value.id.isEmpty) return;
 
-    final routing = routingEntry.value!;
+    final routing = routingEntry.value;
     CallRoutingState? newState;
 
     switch (call.state) {

@@ -6,7 +6,7 @@ import 'package:dartz/dartz.dart';
 import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import '../services/gateway_service.dart';
+import '../../services/gateway_service.dart' as service;
 import '../../domain/entities/gateway_config.dart';
 import '../../domain/entities/gateway_status.dart';
 import '../../domain/entities/call_routing.dart';
@@ -18,7 +18,7 @@ import '../../core/error/failures.dart';
 /// Implements the GatewayRepository interface using GatewayService.
 /// Handles configuration persistence and Result pattern conversion.
 class GatewayRepositoryImpl implements GatewayRepository {
-  final GatewayService _service;
+  final service.GatewayService _service;
   final Logger _logger;
 
   static const String _configKey = 'gateway_config';
@@ -95,7 +95,7 @@ class GatewayRepositoryImpl implements GatewayRepository {
   @override
   AsyncGatewayResult<void> dispose() async {
     try {
-      await _service.dispose();
+      _service.dispose();
       _logger.i('Gateway disposed');
       return const Right(null);
     } catch (e) {

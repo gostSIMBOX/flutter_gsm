@@ -52,7 +52,7 @@ class TestMethodResult {
       success: json['success'] ?? false,
       error: json['error'] as String?,
       measurements: json['measurements'] as Map<String, dynamic>? ?? {},
-      quality: QualityLevel.fromJson(json['quality']) ??
+      quality: QualityLevelExtension.fromJson(json['quality'] as String?) ??
           QualityLevel.poor,
     );
   }

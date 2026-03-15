@@ -8,106 +8,11 @@ import 'sms_service.dart';
 import 'telephony_service.dart';
 import '../models/smpp_config.dart';
 import '../domain/entities/gateway_status.dart';
-
-/// Gateway configuration
-class GatewayConfig {
-  final SipAccount sipAccount;
-  final SmppConfig? smppConfig;
-  final bool autoAnswer;
-  final bool enableLogging;
-  final bool routeSipToGsm;
-  final bool routeGsmToSip;
-  final bool routeSmsToSmpp;
-  final bool routeSmppToSms;
-  final int maxConcurrentCalls;
-
-  const GatewayConfig({
-    required this.sipAccount,
-    this.smppConfig,
-    this.autoAnswer = false,
-    this.enableLogging = true,
-    this.routeSipToGsm = true,
-    this.routeGsmToSip = true,
-    this.routeSmsToSmpp = false,
-    this.routeSmppToSms = false,
-    this.maxConcurrentCalls = 5,
-  });
-
-  Map<String, dynamic> toJson() => {
-    'sipAccount': sipAccount.toJson(),
-    'smppConfig': smppConfig?.toJson(),
-    'autoAnswer': autoAnswer,
-    'enableLogging': enableLogging,
-    'routeSipToGsm': routeSipToGsm,
-    'routeGsmToSip': routeGsmToSip,
-    'routeSmsToSmpp': routeSmsToSmpp,
-    'routeSmppToSms': routeSmppToSms,
-    'maxConcurrentCalls': maxConcurrentCalls,
-  };
-
-  factory GatewayConfig.fromJson(Map<String, dynamic> json) => GatewayConfig(
-    sipAccount: SipAccount.fromJson(json['sipAccount']),
-    smppConfig: json['smppConfig'] != null 
-        ? SmppConfig.fromJson(json['smppConfig']) 
-        : null,
-    autoAnswer: json['autoAnswer'] ?? false,
-    enableLogging: json['enableLogging'] ?? true,
-    routeSipToGsm: json['routeSipToGsm'] ?? true,
-    routeGsmToSip: json['routeGsmToSip'] ?? true,
-    routeSmsToSmpp: json['routeSmsToSmpp'] ?? false,
-    routeSmppToSms: json['routeSmppToSms'] ?? false,
-    maxConcurrentCalls: json['maxConcurrentCalls'] ?? 5,
-  );
-}
-
-/// Gateway status information
-class GatewayStatus {
-  final bool isRunning;
-  final SipConnectionState sipState;
-  final SmppConnectionState smppState;
-  final TelephonyPermissionStatus telephonyPermissions;
-  final int activeCalls;
-  final int totalCallsHandled;
-  final int totalMessagesHandled;
-  final DateTime? startTime;
-  final Duration? uptime;
-
-  const GatewayStatus({
-    required this.isRunning,
-    required this.sipState,
-    required this.smppState,
-    required this.telephonyPermissions,
-    required this.activeCalls,
-    required this.totalCallsHandled,
-    required this.totalMessagesHandled,
-    this.startTime,
-    this.uptime,
-  });
-}
-
-/// Call routing information
-class CallRouting {
-  final String id;
-  final String sipCallId;
-  final String? telephonyCallId;
-  final String number;
-  final CallRoutingDirection direction;
-  final CallRoutingState state;
-  final DateTime startTime;
-
-  const CallRouting({
-    required this.id,
-    required this.sipCallId,
-    this.telephonyCallId,
-    required this.number,
-    required this.direction,
-    required this.state,
-    required this.startTime,
-  });
-}
-
-enum CallRoutingDirection { sipToGsm, gsmToSip }
-enum CallRoutingState { connecting, active, ended, failed }
+import '../domain/entities/gateway_config.dart';
+import '../domain/entities/call_routing.dart';
+import '../domain/entities/sip_account.dart';
+import '../domain/entities/sip_call.dart';
+import '../domain/entities/sip_event.dart';
 
 /// Main Gateway Service that coordinates SIP, SMS, and Telephony services
 class GatewayService {
@@ -292,7 +197,7 @@ class GatewayService {
       
       // When SIP call becomes active, make GSM call
       _sipService.callStateStream.listen((sipCall) {
-        if (sipCall.id == sipCallId && sipCall.state == SipCallState.active) {
+        if (sipCall.id == sipCallId && sipCall.state == CallState.active) {
           _makeGsmCallForRouting(routingId, number);
         }
       });
@@ -517,6 +422,57 @@ class GatewayService {
       _log('Error loading configuration: $e');
     }
     return null;
+  }
+
+  /// Make a call via GSM
+  Future<String?> makeCallViaGsm(String number) async {
+    if (!_isRunning) {
+      return null;
+    }
+    try {
+      _log('Making call via GSM: $number');
+      final callId = await _telephonyService.makeCall(number);
+      return callId;
+    } catch (e) {
+      _log('Failed to make GSM call: $e');
+      return null;
+    }
+  }
+
+  /// Get routing by ID
+  CallRouting? getRouting(String routingId) {
+    return _activeRoutings[routingId];
+  }
+
+  /// Get all active routings
+  List<CallRouting> getActiveRoutings() {
+    return _activeRoutings.values.toList();
+  }
+
+  /// End a specific routing
+  Future<void> endRouting(String routingId) async {
+    final routing = _activeRoutings.remove(routingId);
+    if (routing != null) {
+      _log('Ended routing: $routingId');
+      _routingController.add(routing);
+    }
+  }
+
+  /// Get statistics
+  Map<String, dynamic> getStatistics() {
+    return {
+      'totalCallsHandled': _totalCallsHandled,
+      'totalMessagesHandled': _totalMessagesHandled,
+      'activeRoutings': _activeRoutings.length,
+      'uptime': _startTime != null ? DateTime.now().difference(_startTime!) : Duration.zero,
+    };
+  }
+
+  /// Reset statistics
+  void resetStatistics() {
+    _totalCallsHandled = 0;
+    _totalMessagesHandled = 0;
+    _log('Statistics reset');
   }
 
   void _log(String message) {

@@ -227,7 +227,7 @@ class ResultHelper {
   /// Convert a nullable value to a Result
   static Result<T> fromNullable<T>(T? value, {required String message}) {
     if (value == null) {
-      return failure(UnknownFailure(message: message, code: 'NULL_VALUE'));
+      return failure(UnknownFailure(message: message));
     }
     return success(value);
   }
@@ -240,7 +240,7 @@ class ResultHelper {
     String? code,
   }) {
     if (!condition) {
-      return failure(UnknownFailure(message: message, code: code ?? 'CONDITION_NOT_MET'));
+      return failure(UnknownFailure(message: '$message (${code ?? 'CONDITION_NOT_MET'})'));
     }
     return success(value);
   }
@@ -255,9 +255,9 @@ class Try<T> {
   /// Create a Try from a function that may throw
   factory Try.of(T Function() fn) {
     try {
-      return Try._(Result.success(fn()));
+      return Try._(success(fn()));
     } catch (e) {
-      return Try._(Result.failure(UnknownFailure(message: e.toString(), originalError: e)));
+      return Try._(failure(UnknownFailure(message: e.toString(), originalError: e)));
     }
   }
 
@@ -266,19 +266,25 @@ class Try<T> {
 
   /// Map over the success value
   Try<R> map<R>(R Function(T) mapper) {
-    return Try._(_result.map(mapper));
+    return _result.fold(
+      (f) => Try<R>._(failure(f)),
+      (value) => Try<R>._(success(mapper(value))),
+    );
   }
 
   /// FlatMap over the success value
   Try<R> flatMap<R>(Try<R> Function(T) mapper) {
     return _result.fold(
-      (failure) => Try._(Result.failure(failure)),
+      (f) => Try<R>._(failure(f)),
       (value) => mapper(value),
     );
   }
 
   /// Get the value or a default
-  T getOrElse(T defaultValue) => _result.getOrElse(defaultValue);
+  T getOrElse(T defaultValue) => _result.fold(
+    (_) => defaultValue,
+    (value) => value,
+  );
 
   /// Fold into a single value
   R fold<R>(R Function(Failure) onFailure, R Function(T) onSuccess) {

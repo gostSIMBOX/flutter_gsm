@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../../domain/models/voice_line_method.dart';
 import '../../domain/models/test_method_result.dart';
+import '../../domain/models/quality_level.dart';
 import '../../domain/repositories/voice_line_repository.dart';
 
 /// Исключения VoiceLine
@@ -8,7 +9,7 @@ class VoiceLineException implements Exception {
   final String message;
   final VoiceLineMethod? method;
 
-  const VoiceLineException(this.message, {this.method});
+  VoiceLineException(this.message, {this.method});
 
   @override
   String toString() => 'VoiceLineException: $message';
@@ -19,7 +20,7 @@ class MethodUnavailableException extends VoiceLineException {
   final VoiceLineMethod method;
   final String reason;
 
-  const MethodUnavailableException(this.method, this.reason)
+  MethodUnavailableException(this.method, this.reason)
       : super('Method $method is unavailable: $reason', method: method);
 }
 
@@ -27,13 +28,13 @@ class MethodUnavailableException extends VoiceLineException {
 class TestFailedException extends VoiceLineException {
   final TestMethodResult result;
 
-  const TestFailedException(this.result)
+  TestFailedException(this.result)
       : super('Test failed: ${result.error}');
 }
 
 /// Ошибка конфигурации
 class ConfigException extends VoiceLineException {
-  const ConfigException(String message) : super(message);
+  ConfigException(String message) : super(message);
 }
 
 /// Сервис для обработки ошибок VoiceLine

@@ -72,7 +72,7 @@ class DongleRepositoryImpl implements DongleRepository {
       );
     } catch (e) {
       debugPrint('DongleRepositoryImpl.getStatus error: $e');
-      return const DongleStatus(
+      return DongleStatus(
         connected: false,
         interfaceType: DongleInterfaceType.none,
         quality: QualityLevel.poor,

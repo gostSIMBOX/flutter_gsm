@@ -160,12 +160,12 @@ class SipService {
 
   /// Update account cache from event data
   void _updateAccountCache(Map<String, dynamic> data) {
-    final accountData = data['account'] as Map?;
+    final accountData = data['account'] as Map<String, dynamic>?;
     if (accountData != null) {
       final model = SipAccountModel.fromJson(accountData);
       _accounts[model.id] = model;
     }
-    
+
     final accountId = data['accountId'] as String?;
     if (accountId != null && data['state'] != null) {
       // Update registration state only
@@ -181,10 +181,10 @@ class SipService {
 
   /// Update call cache from event data
   void _updateCallCache(Map<String, dynamic> data) {
-    final callData = data['call'] as Map?;
+    final callData = data['call'] as Map<String, dynamic>?;
     if (callData != null) {
       final model = SipCallModel.fromJson(callData);
-      
+
       if (data['type'] == 'call_terminated' || model.state == 'terminated' || model.state == 'failed') {
         _calls.remove(model.id);
       } else {
@@ -324,10 +324,12 @@ class SipService {
       }
       
       // Create optimistic call
-      final call = SipCallModel.outgoing(
+      final call = SipCallModel(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         accountId: accountId,
         number: number,
+        direction: 'outgoing',
+        state: 'initiated',
       );
       _calls[call.id] = call;
       return call;

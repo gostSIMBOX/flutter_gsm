@@ -120,31 +120,6 @@ class UsbDongleSource implements IUsbDongleSource {
     }
   }
 
-  /// Получить статус донгла
-  Future<DongleStatus> getStatus() async {
-    final interfaceType = await detectInterface();
-    
-    if (interfaceType == DongleInterfaceType.none) {
-      return const DongleStatus(
-        connected: false,
-        interfaceType: DongleInterfaceType.none,
-        quality: QualityLevel.poor,
-      );
-    }
-
-    final deviceInfo = await getDeviceInfo();
-    final quality = DongleStatus.calculateQuality(
-      interfaceType: interfaceType,
-    );
-
-    return DongleStatus(
-      connected: true,
-      interfaceType: interfaceType,
-      quality: quality,
-      statusMessage: deviceInfo?.productName ?? interfaceType.displayName,
-    );
-  }
-
   // Заглушка для получения USB информации
   Future<UsbDeviceInfo?> _getUsbDeviceInfo() async {
     // В реальной реализации - platform channel
