@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:logger/logger.dart';
+import '../models/smpp_config.dart';
 
 /// SMS Message model
 class SmsMessage {
@@ -46,51 +47,6 @@ class SmsMessage {
 
 enum SmsMessageType { incoming, outgoing }
 enum SmsMessageStatus { pending, sent, delivered, failed, received }
-
-/// SMPP Configuration
-class SmppConfig {
-  final String host;
-  final int port;
-  final String systemId;
-  final String password;
-  final String systemType;
-  final String sourceAddrTon;
-  final String sourceAddrNpi;
-  final String addressRange;
-
-  const SmppConfig({
-    required this.host,
-    required this.port,
-    required this.systemId,
-    required this.password,
-    this.systemType = '',
-    this.sourceAddrTon = '0',
-    this.sourceAddrNpi = '0',
-    this.addressRange = '',
-  });
-
-  Map<String, dynamic> toJson() => {
-    'host': host,
-    'port': port,
-    'systemId': systemId,
-    'password': password,
-    'systemType': systemType,
-    'sourceAddrTon': sourceAddrTon,
-    'sourceAddrNpi': sourceAddrNpi,
-    'addressRange': addressRange,
-  };
-
-  factory SmppConfig.fromJson(Map<String, dynamic> json) => SmppConfig(
-    host: json['host'],
-    port: json['port'],
-    systemId: json['systemId'],
-    password: json['password'],
-    systemType: json['systemType'] ?? '',
-    sourceAddrTon: json['sourceAddrTon'] ?? '0',
-    sourceAddrNpi: json['sourceAddrNpi'] ?? '0',
-    addressRange: json['addressRange'] ?? '',
-  );
-}
 
 enum SmppConnectionState { 
   disconnected, 

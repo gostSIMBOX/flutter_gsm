@@ -3,10 +3,10 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
-import '../entities/sip_account.dart';
-import '../entities/sip_call.dart';
-import '../entities/sip_event.dart';
-import '../repositories/sip_repository.dart';
+import '../../domain/entities/sip_account.dart';
+import '../../domain/entities/sip_call.dart';
+import '../../domain/entities/sip_event.dart';
+import '../../domain/repositories/sip_repository.dart';
 import 'sip_event_handlers.dart';
 
 /// SIP connection state

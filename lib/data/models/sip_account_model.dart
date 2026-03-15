@@ -2,7 +2,7 @@
 /// Data layer model for SIP account
 
 import 'package:equatable/equatable.dart';
-import '../entities/sip_account.dart';
+import '../../domain/entities/sip_account.dart';
 
 /// SIP Account model
 class SipAccountModel extends Equatable {

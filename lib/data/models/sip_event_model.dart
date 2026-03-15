@@ -2,7 +2,7 @@
 /// Data layer model for SIP events from native layer
 
 import 'package:equatable/equatable.dart';
-import '../entities/sip_event.dart';
+import '../../domain/entities/sip_event.dart';
 
 /// SIP Event model
 class SipEventModel extends Equatable {

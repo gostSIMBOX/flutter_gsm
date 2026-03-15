@@ -199,14 +199,6 @@ class DependencyInjection {
 
   /// Регистрация repositories
   static void _registerRepositories() {
-    getIt.registerLazySingleton<GatewayRepository>(
-      () => GatewayRepository(
-        getIt<LocalDataSource>(),
-        getIt<RemoteDataSource>(),
-        getIt<Logger>(),
-      ),
-    );
-
     getIt.registerLazySingleton<SettingsRepository>(
       () => SettingsRepository(
         getIt<LocalDataSource>(),
@@ -226,10 +218,6 @@ class DependencyInjection {
 
   /// Регистрация use cases
   static void _registerUseCases() {
-    getIt.registerLazySingleton<GatewayUseCases>(
-      () => GatewayUseCases(getIt<GatewayRepository>()),
-    );
-
     getIt.registerLazySingleton<SettingsUseCases>(
       () => SettingsUseCases(getIt<SettingsRepository>()),
     );

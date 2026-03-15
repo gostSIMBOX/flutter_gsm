@@ -4,13 +4,10 @@
 import 'package:dartz/dartz.dart';
 import 'package:logger/logger.dart';
 import '../services/sip_service.dart';
-import '../models/sip_account_model.dart';
-import '../models/sip_call_model.dart';
-import '../models/sip_event_model.dart';
-import '../../entities/sip_account.dart';
-import '../../entities/sip_call.dart';
-import '../../entities/sip_event.dart';
-import '../../repositories/sip_repository.dart';
+import '../../domain/entities/sip_account.dart';
+import '../../domain/entities/sip_call.dart';
+import '../../domain/entities/sip_event.dart';
+import '../../domain/repositories/sip_repository.dart';
 import '../../../core/error/failures.dart';
 
 /// SIP Repository Implementation

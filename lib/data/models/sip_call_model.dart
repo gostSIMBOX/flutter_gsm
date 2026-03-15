@@ -2,7 +2,7 @@
 /// Data layer model for SIP call
 
 import 'package:equatable/equatable.dart';
-import '../entities/sip_call.dart';
+import '../../domain/entities/sip_call.dart';
 
 /// SIP Call model
 class SipCallModel extends Equatable {

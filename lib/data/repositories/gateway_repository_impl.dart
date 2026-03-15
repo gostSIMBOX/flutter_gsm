@@ -7,10 +7,10 @@ import 'package:logger/logger.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import '../services/gateway_service.dart';
-import '../entities/gateway_config.dart';
-import '../entities/gateway_status.dart';
-import '../entities/call_routing.dart';
-import '../../repositories/gateway_repository.dart';
+import '../../domain/entities/gateway_config.dart';
+import '../../domain/entities/gateway_status.dart';
+import '../../domain/entities/call_routing.dart';
+import '../../domain/repositories/gateway_repository.dart';
 import '../../../core/error/failures.dart';
 
 /// Gateway Repository Implementation

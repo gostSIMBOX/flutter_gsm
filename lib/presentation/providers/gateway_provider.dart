@@ -3,10 +3,10 @@
 
 import 'package:flutter/foundation.dart';
 import 'package:logger/logger.dart';
-import '../entities/gateway_config.dart';
-import '../entities/gateway_status.dart';
-import '../entities/call_routing.dart';
-import '../repositories/gateway_repository.dart';
+import '../../domain/entities/gateway_config.dart';
+import '../../domain/entities/gateway_status.dart';
+import '../../domain/entities/call_routing.dart';
+import '../../domain/repositories/gateway_repository.dart';
 
 /// Gateway State
 ///

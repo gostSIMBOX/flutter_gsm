@@ -1,199 +1,69 @@
-/// Модель данных для конфигурации шлюза
-/// Используется для сериализации/десериализации данных
+/// Gateway Configuration Model
+/// Used for JSON serialization/deserialization
 import 'dart:convert';
-import '../../domain/entities/gateway_config_entity.dart';
+import '../../domain/entities/gateway_config.dart';
+import '../../domain/entities/sip_account.dart';
+import '../../models/smpp_config.dart';
 
-/// Модель конфигурации SIP
-class SipConfigModel {
-  final String server;
-  final int port;
-  final String username;
-  final String password;
-  final String transport;
-  final int registrationTimeout;
-  final bool enableKeepAlive;
-  final int keepAliveInterval;
-
-  SipConfigModel({
-    required this.server,
-    required this.port,
-    required this.username,
-    required this.password,
-    this.transport = 'UDP',
-    this.registrationTimeout = 3600,
-    this.enableKeepAlive = true,
-    this.keepAliveInterval = 30,
-  });
-
-  factory SipConfigModel.fromJson(Map<String, dynamic> json) {
-    return SipConfigModel(
-      server: json['server'] ?? '',
-      port: json['port'] ?? 5060,
-      username: json['username'] ?? '',
-      password: json['password'] ?? '',
-      transport: json['transport'] ?? 'UDP',
-      registrationTimeout: json['registrationTimeout'] ?? 3600,
-      enableKeepAlive: json['enableKeepAlive'] ?? true,
-      keepAliveInterval: json['keepAliveInterval'] ?? 30,
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'server': server,
-      'port': port,
-      'username': username,
-      'password': password,
-      'transport': transport,
-      'registrationTimeout': registrationTimeout,
-      'enableKeepAlive': enableKeepAlive,
-      'keepAliveInterval': keepAliveInterval,
-    };
-  }
-
-  factory SipConfigModel.fromEntity(SipConfig entity) {
-    return SipConfigModel(
-      server: entity.server,
-      port: entity.port,
-      username: entity.username,
-      password: entity.password,
-      transport: entity.transport,
-      registrationTimeout: entity.registrationTimeout,
-      enableKeepAlive: entity.enableKeepAlive,
-      keepAliveInterval: entity.keepAliveInterval,
-    );
-  }
-
-  SipConfig toEntity() {
-    return SipConfig(
-      server: server,
-      port: port,
-      username: username,
-      password: password,
-      transport: transport,
-      registrationTimeout: registrationTimeout,
-      enableKeepAlive: enableKeepAlive,
-      keepAliveInterval: keepAliveInterval,
-    );
-  }
-}
-
-/// Модель конфигурации GSM
-class GsmConfigModel {
-  final bool enableAutoAnswer;
-  final int callTimeout;
-  final bool enableCallForwarding;
-  final String? forwardNumber;
-  final bool enableCallRecording;
-  final String recordingPath;
-  final List<String> blacklistNumbers;
-  final List<String> whitelistNumbers;
-  final List<String> emergencyNumbers;
-
-  GsmConfigModel({
-    this.enableAutoAnswer = false,
-    this.callTimeout = 300,
-    this.enableCallForwarding = false,
-    this.forwardNumber,
-    this.enableCallRecording = false,
-    this.recordingPath = '/storage/recordings',
-    this.blacklistNumbers = const [],
-    this.whitelistNumbers = const [],
-    this.emergencyNumbers = const ['112', '911', '999'],
-  });
-
-  factory GsmConfigModel.fromJson(Map<String, dynamic> json) {
-    return GsmConfigModel(
-      enableAutoAnswer: json['enableAutoAnswer'] ?? false,
-      callTimeout: json['callTimeout'] ?? 300,
-      enableCallForwarding: json['enableCallForwarding'] ?? false,
-      forwardNumber: json['forwardNumber'],
-      enableCallRecording: json['enableCallRecording'] ?? false,
-      recordingPath: json['recordingPath'] ?? '/storage/recordings',
-      blacklistNumbers: List<String>.from(json['blacklistNumbers'] ?? []),
-      whitelistNumbers: List<String>.from(json['whitelistNumbers'] ?? []),
-      emergencyNumbers: List<String>.from(json['emergencyNumbers'] ?? ['112', '911', '999']),
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'enableAutoAnswer': enableAutoAnswer,
-      'callTimeout': callTimeout,
-      'enableCallForwarding': enableCallForwarding,
-      'forwardNumber': forwardNumber,
-      'enableCallRecording': enableCallRecording,
-      'recordingPath': recordingPath,
-      'blacklistNumbers': blacklistNumbers,
-      'whitelistNumbers': whitelistNumbers,
-      'emergencyNumbers': emergencyNumbers,
-    };
-  }
-
-  factory GsmConfigModel.fromEntity(GsmConfig entity) {
-    return GsmConfigModel(
-      enableAutoAnswer: entity.enableAutoAnswer,
-      callTimeout: entity.callTimeout,
-      enableCallForwarding: entity.enableCallForwarding,
-      forwardNumber: entity.forwardNumber,
-      enableCallRecording: entity.enableCallRecording,
-      recordingPath: entity.recordingPath,
-      blacklistNumbers: entity.blacklistNumbers,
-      whitelistNumbers: entity.whitelistNumbers,
-      emergencyNumbers: entity.emergencyNumbers,
-    );
-  }
-
-  GsmConfig toEntity() {
-    return GsmConfig(
-      enableAutoAnswer: enableAutoAnswer,
-      callTimeout: callTimeout,
-      enableCallForwarding: enableCallForwarding,
-      forwardNumber: forwardNumber,
-      enableCallRecording: enableCallRecording,
-      recordingPath: recordingPath,
-      blacklistNumbers: blacklistNumbers,
-      whitelistNumbers: whitelistNumbers,
-      emergencyNumbers: emergencyNumbers,
-    );
-  }
-}
-
-/// Модель конфигурации шлюза
+/// Gateway configuration model
 class GatewayConfigModel {
   final String id;
   final String name;
-  final SipConfigModel sipConfig;
-  final GsmConfigModel gsmConfig;
-  final bool enableSms;
-  final bool enableCallLog;
-  final bool enableStatistics;
-  final String logLevel;
-  final int maxLogEntries;
+  final String sipUsername;
+  final String sipPassword;
+  final String sipDomain;
+  final int? sipPort;
+  final String? smppSystemId;
+  final String? smppPassword;
+  final String? smppHost;
+  final int? smppPort;
+  final bool autoAnswer;
+  final bool enableLogging;
+  final bool routeSipToGsm;
+  final bool routeGsmToSip;
+  final bool routeSmsToSmpp;
+  final bool routeSmppToSms;
+  final int maxConcurrentCalls;
 
   GatewayConfigModel({
     required this.id,
     required this.name,
-    required this.sipConfig,
-    required this.gsmConfig,
-    this.enableSms = true,
-    this.enableCallLog = true,
-    this.enableStatistics = true,
-    this.logLevel = 'INFO',
-    this.maxLogEntries = 1000,
+    required this.sipUsername,
+    required this.sipPassword,
+    required this.sipDomain,
+    this.sipPort,
+    this.smppSystemId,
+    this.smppPassword,
+    this.smppHost,
+    this.smppPort,
+    this.autoAnswer = false,
+    this.enableLogging = true,
+    this.routeSipToGsm = true,
+    this.routeGsmToSip = true,
+    this.routeSmsToSmpp = false,
+    this.routeSmppToSms = false,
+    this.maxConcurrentCalls = 5,
   });
 
   factory GatewayConfigModel.fromJson(Map<String, dynamic> json) {
     return GatewayConfigModel(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
-      sipConfig: SipConfigModel.fromJson(json['sipConfig'] ?? {}),
-      gsmConfig: GsmConfigModel.fromJson(json['gsmConfig'] ?? {}),
-      enableSms: json['enableSms'] ?? true,
-      enableCallLog: json['enableCallLog'] ?? true,
-      enableStatistics: json['enableStatistics'] ?? true,
-      logLevel: json['logLevel'] ?? 'INFO',
-      maxLogEntries: json['maxLogEntries'] ?? 1000,
+      sipUsername: json['sipUsername'] ?? '',
+      sipPassword: json['sipPassword'] ?? '',
+      sipDomain: json['sipDomain'] ?? '',
+      sipPort: json['sipPort'],
+      smppSystemId: json['smppSystemId'],
+      smppPassword: json['smppPassword'],
+      smppHost: json['smppHost'],
+      smppPort: json['smppPort'],
+      autoAnswer: json['autoAnswer'] ?? false,
+      enableLogging: json['enableLogging'] ?? true,
+      routeSipToGsm: json['routeSipToGsm'] ?? true,
+      routeGsmToSip: json['routeGsmToSip'] ?? true,
+      routeSmsToSmpp: json['routeSmsToSmpp'] ?? false,
+      routeSmppToSms: json['routeSmppToSms'] ?? false,
+      maxConcurrentCalls: json['maxConcurrentCalls'] ?? 5,
     );
   }
 
@@ -201,41 +71,70 @@ class GatewayConfigModel {
     return {
       'id': id,
       'name': name,
-      'sipConfig': sipConfig.toJson(),
-      'gsmConfig': gsmConfig.toJson(),
-      'enableSms': enableSms,
-      'enableCallLog': enableCallLog,
-      'enableStatistics': enableStatistics,
-      'logLevel': logLevel,
-      'maxLogEntries': maxLogEntries,
+      'sipUsername': sipUsername,
+      'sipPassword': sipPassword,
+      'sipDomain': sipDomain,
+      if (sipPort != null) 'sipPort': sipPort,
+      if (smppSystemId != null) 'smppSystemId': smppSystemId,
+      if (smppPassword != null) 'smppPassword': smppPassword,
+      if (smppHost != null) 'smppHost': smppHost,
+      if (smppPort != null) 'smppPort': smppPort,
+      'autoAnswer': autoAnswer,
+      'enableLogging': enableLogging,
+      'routeSipToGsm': routeSipToGsm,
+      'routeGsmToSip': routeGsmToSip,
+      'routeSmsToSmpp': routeSmsToSmpp,
+      'routeSmppToSms': routeSmppToSms,
+      'maxConcurrentCalls': maxConcurrentCalls,
     };
   }
 
   factory GatewayConfigModel.fromEntity(GatewayConfig entity) {
     return GatewayConfigModel(
-      id: entity.id,
-      name: entity.name,
-      sipConfig: SipConfigModel.fromEntity(entity.sipConfig),
-      gsmConfig: GsmConfigModel.fromEntity(entity.gsmConfig),
-      enableSms: entity.enableSms,
-      enableCallLog: entity.enableCallLog,
-      enableStatistics: entity.enableStatistics,
-      logLevel: entity.logLevel,
-      maxLogEntries: entity.maxLogEntries,
+      id: entity.sipAccount.id,
+      name: entity.sipAccount.username,
+      sipUsername: entity.sipAccount.username,
+      sipPassword: entity.sipAccount.password,
+      sipDomain: entity.sipAccount.domain,
+      sipPort: entity.sipAccount.port,
+      smppSystemId: entity.smppConfig?.systemId,
+      smppPassword: entity.smppConfig?.password,
+      smppHost: entity.smppConfig?.host,
+      smppPort: entity.smppConfig?.port,
+      autoAnswer: entity.autoAnswer,
+      enableLogging: entity.enableLogging,
+      routeSipToGsm: entity.routeSipToGsm,
+      routeGsmToSip: entity.routeGsmToSip,
+      routeSmsToSmpp: entity.routeSmsToSmpp,
+      routeSmppToSms: entity.routeSmppToSms,
+      maxConcurrentCalls: entity.maxConcurrentCalls,
     );
   }
 
   GatewayConfig toEntity() {
     return GatewayConfig(
-      id: id,
-      name: name,
-      sipConfig: sipConfig.toEntity(),
-      gsmConfig: gsmConfig.toEntity(),
-      enableSms: enableSms,
-      enableCallLog: enableCallLog,
-      enableStatistics: enableStatistics,
-      logLevel: logLevel,
-      maxLogEntries: maxLogEntries,
+      sipAccount: SipAccount(
+        id: id,
+        username: sipUsername,
+        password: sipPassword,
+        domain: sipDomain,
+        port: sipPort ?? 5060,
+      ),
+      smppConfig: smppSystemId != null
+          ? SmppConfig(
+              systemId: smppSystemId!,
+              password: smppPassword ?? '',
+              host: smppHost ?? '',
+              port: smppPort ?? 2775,
+            )
+          : null,
+      autoAnswer: autoAnswer,
+      enableLogging: enableLogging,
+      routeSipToGsm: routeSipToGsm,
+      routeGsmToSip: routeGsmToSip,
+      routeSmsToSmpp: routeSmsToSmpp,
+      routeSmppToSms: routeSmppToSms,
+      maxConcurrentCalls: maxConcurrentCalls,
     );
   }
 

@@ -432,6 +432,13 @@ class _LogsScreenState extends State<LogsScreen> {
   String _formatTime(DateTime time) {
     return '${time.hour.toString().padLeft(2, '0')}:${time.minute.toString().padLeft(2, '0')}:${time.second.toString().padLeft(2, '0')}';
   }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Logs'),
+        actions: [
           IconButton(
             icon: const Icon(Icons.clear_all),
             onPressed: _clearLogs,
