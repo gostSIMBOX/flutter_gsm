@@ -2,11 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_gsmsip/flutter_gsmsip.dart';
 
-import 'services/gateway_service.dart';
-import 'services/sip_service.dart';
-import 'services/sms_service.dart';
-import 'services/telephony_service.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/setup_screen.dart';

@@ -3,6 +3,10 @@ description: "Flutter GSM SIP SMPP library for Android - Enables voice calls and
 version: 0.1.0
 homepage: "https://github.com/telon/flutter_gsmsip"
 
+# Ignore false secrets in legacy folder
+false_secrets:
+  - /legacy/**
+
 environment:
   sdk: ^3.10.8
   flutter: '>=3.3.0'
