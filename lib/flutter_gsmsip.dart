@@ -78,9 +78,13 @@ export 'src/data/datasources/local/local_data_source.dart';
 export 'src/data/datasources/remote/remote_data_source.dart';
 
 // Services - Core API
+export 'src/services/gateway_service.dart';
+export 'src/services/sip_service.dart';
+export 'src/services/sms_service.dart';
+export 'src/services/telephony_service.dart';
 export 'src/services/smpp_service.dart';
 export 'src/services/smpp_logger.dart';
 
 // Models (preferred versions - no duplicates)
 export 'src/models/smpp_config.dart';
-export 'src/models/sms_message.dart';
+// SmsMessage is exported from services/sms_service.dart

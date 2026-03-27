@@ -1,32 +1,7 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_gsmsip/flutter_gsmsip.dart';
 
-import 'screens/dashboard_screen.dart';
-import 'screens/settings_screen.dart';
-import 'screens/setup_screen.dart';
-import 'utils/funny_messages.dart';
-
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  // Настройка ориентации экрана
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
-  
-  // Настройка системного UI
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      systemNavigationBarColor: Colors.transparent,
-    ),
-  );
-  
+void main() {
   runApp(const GOSTsimboxApp());
 }
 
@@ -35,157 +10,215 @@ class GOSTsimboxApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        Provider<GatewayService>.value(value: GatewayService()),
-        Provider<SipService>.value(value: SipService()),
-        Provider<SmsService>.value(value: SmsService()),
-        Provider<TelephonyService>.value(value: TelephonyService()),
-      ],
-      child: MaterialApp(
-        title: 'GOSTsimbox Gateway',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF1E88E5),
-            brightness: Brightness.light,
-          ),
-          useMaterial3: true,
-          appBarTheme: const AppBarTheme(
-            centerTitle: true,
-            elevation: 0,
-            scrolledUnderElevation: 1,
-          ),
-          cardTheme: CardThemeData(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          elevatedButtonTheme: ElevatedButtonThemeData(
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            ),
-          ),
-        ),
-        home: const SetupCheckScreen(),
+    return MaterialApp(
+      title: 'GOSTsimbox Gateway',
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
+        useMaterial3: true,
       ),
+      home: const DashboardScreen(),
     );
   }
 }
 
-/// Screen to check if setup is complete
-class SetupCheckScreen extends StatefulWidget {
-  const SetupCheckScreen({super.key});
+class DashboardScreen extends StatefulWidget {
+  const DashboardScreen({super.key});
 
   @override
-  State<SetupCheckScreen> createState() => _SetupCheckScreenState();
+  State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _SetupCheckScreenState extends State<SetupCheckScreen> {
-  String _loadingMessage = 'Инициализация...';
+class _DashboardScreenState extends State<DashboardScreen> {
+  final GatewayService _gatewayService = GatewayService();
+  final SipService _sipService = SipService();
+  final TelephonyService _telephonyService = TelephonyService();
+  final SmsService _smsService = SmsService();
+
+  GatewayStatus? _status;
+  String _phoneNumber = 'Unknown';
+  int _signalStrength = 0;
 
   @override
   void initState() {
     super.initState();
-    _startLoadingAnimation();
-    _checkSetup();
+    _initializeServices();
   }
 
-  void _startLoadingAnimation() {
-    Timer.periodic(const Duration(milliseconds: 800), (timer) {
+  Future<void> _initializeServices() async {
+    // Initialize telephony
+    await _telephonyService.initialize();
+    _phoneNumber = await _telephonyService.getPhoneNumber() ?? 'Unknown';
+    _signalStrength = await _telephonyService.getSignalStrength() ?? 0;
+
+    // Listen to gateway status
+    _gatewayService.statusStream.listen((status) {
       if (mounted) {
         setState(() {
-          _loadingMessage = FunnyMessages.getLoadingMessage();
+          _status = status;
         });
-      } else {
-        timer.cancel();
       }
     });
-  }
 
-  Future<void> _checkSetup() async {
-    final gatewayService = context.read<GatewayService>();
-    final config = await gatewayService.loadConfiguration();
-    
-    // Add a small delay to show the splash effect
-    await Future.delayed(const Duration(seconds: 1));
-    
-    if (mounted) {
-      if (config != null) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const DashboardScreen()),
-        );
-      } else {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const SetupScreen()),
-        );
-      }
+    // Load configuration
+    final config = await _gatewayService.loadConfiguration();
+    if (config != null) {
+      await _gatewayService.initialize(config);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Theme.of(context).colorScheme.primary,
-              Theme.of(context).colorScheme.secondary,
-            ],
-          ),
-        ),
-        child: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.router,
-                size: 80,
-                color: Colors.white,
-              ),
-              SizedBox(height: 24),
-              Text(
-                'GOSTsimbox Gateway',
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+      appBar: AppBar(
+        title: const Text('GOSTsimbox Gateway'),
+        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Device Info Card
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Device Information',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Text('Phone: $_phoneNumber'),
+                    Text('Signal: $_signalStrength dBm'),
+                  ],
                 ),
               ),
-              SizedBox(height: 8),
-              Text(
-                'Bridging GSM and SIP networks',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.white70,
+            ),
+            const SizedBox(height: 16),
+
+            // Gateway Status Card
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Gateway Status',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    _buildStatusRow(
+                      'Running',
+                      _status?.isRunning ?? false,
+                    ),
+                    _buildStatusRow(
+                      'SIP',
+                      _status?.sipState == SipConnectionState.connected,
+                    ),
+                    _buildStatusRow(
+                      'SMPP',
+                      _status?.smppState == SmppConnectionState.connected,
+                    ),
+                  ],
                 ),
               ),
-              SizedBox(height: 40),
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+            ),
+            const SizedBox(height: 16),
+
+            // Controls
+            ElevatedButton(
+              onPressed: _toggleGateway,
+              style: ElevatedButton.styleFrom(
+                backgroundColor:
+                    _status?.isRunning ?? false ? Colors.red : Colors.green,
+                foregroundColor: Colors.white,
               ),
-              SizedBox(height: 16),
-              Text(
-                _loadingMessage,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.white70,
-                  fontStyle: FontStyle.italic,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ],
-          ),
+              child: Text(_status?.isRunning ?? false ? 'Stop Gateway' : 'Start Gateway'),
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: _makeTestCall,
+              child: const Text('Make Test Call'),
+            ),
+            const SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: _sendTestSms,
+              child: const Text('Send Test SMS'),
+            ),
+          ],
         ),
       ),
     );
   }
-}
 
+  Widget _buildStatusRow(String label, bool isActive) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label),
+          Container(
+            width: 12,
+            height: 12,
+            decoration: BoxDecoration(
+              color: isActive ? Colors.green : Colors.red,
+              shape: BoxShape.circle,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _toggleGateway() async {
+    if (_status?.isRunning ?? false) {
+      await _gatewayService.stop();
+    } else {
+      final config = await _gatewayService.loadConfiguration();
+      if (config != null) {
+        await _gatewayService.initialize(config);
+        await _gatewayService.start();
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('No configuration found')),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _makeTestCall() async {
+    try {
+      await _sipService.makeCall('+1234567890');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Call initiated')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Call failed: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _sendTestSms() async {
+    try {
+      await _smsService.sendSms('+1234567890', 'Test message from GOSTsimbox');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('SMS sent')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('SMS failed: $e')),
+        );
+      }
+    }
+  }
+}
