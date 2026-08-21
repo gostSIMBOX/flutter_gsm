@@ -3,7 +3,21 @@
 [![Pub Version](https://img.shields.io/pub/v/flutter_gsmsip.svg)](https://pub.dev/packages/flutter_gsmsip)
 [![License: NativeMindNONC](https://img.shields.io/badge/license-NativeMindNONC-blue.svg)](LICENSE)
 
-A Flutter plugin for Android that provides GSM, SIP, and SMPP functionality. Enables voice calls and SMS over SIP with GSM integration for building telephony gateway applications.
+A Flutter plugin for Android and Linux that provides GSM, SIP, and SMPP functionality. Enables voice calls and SMS over SIP with GSM integration for building telephony gateway applications.
+
+## 🖥️ Platform Support
+
+| Platform | Status |
+|---|---|
+| Android | Full — audio-passthrough Dongle scheme + SIP, native telephony via `TelephonyService` |
+| Linux | Interface registered (`ModemRepository`/`FlutterGsmsipPlatform` modem API), ttyUSB/AT-command driver pending [`sdd-flutter_gsmsip-channel`](flows/) |
+| Windows / macOS | Planned — not yet started |
+
+Linux telephony is modem-based (direct AT-command communication with USB
+GSM/UMTS dongles over `/dev/ttyUSBx`, chan_svistok-derived logic re-hosted
+without Asterisk), which is architecturally distinct from Android's
+audio-passthrough Dongle/SIP path — see `flows/sdd-flutter_gsmsip-interface/`
+for the full design rationale.
 
 ## 📱 Features
 

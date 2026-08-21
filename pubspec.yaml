@@ -1,5 +1,5 @@
 name: flutter_gsmsip
-description: "Flutter GSM SIP SMPP library for Android - Enables voice calls and SMS over SIP with GSM integration"
+description: "Pure-Dart SIP<->GSM voice-gateway/SMPP orchestrator, built on flutter_gsm (GSM leg) and flutter_nmsip (SIP leg)."
 version: 0.1.0
 homepage: "https://github.com/telon/flutter_gsmsip"
 
@@ -14,8 +14,16 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  plugin_platform_interface: ^2.0.2
-  
+  plugin_platform_interface: ^2.1.8
+
+  # GSM leg (modem discovery, calls, SMS) — flows/sdd-flutter_gsm
+  flutter_gsm:
+    path: ../flutter_gsm
+  # SIP leg (PJSIP-based) — see 02-specifications.md §3.1's capability-gap
+  # check against this package's real API
+  flutter_nmsip:
+    path: ../flutter_nmsip
+
   # Functional
   dartz: ^0.10.1  # Either type for functional error handling
   equatable: ^2.0.5  # Value equality for entities
@@ -42,26 +50,27 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
 
+# See flutter_gsm/pubspec.yaml for why: flutter_dialer/flutter_tele/
+# flutter_smsussd (transitive, via flutter_gsm) declare
+# `plugin_platform_interface: ^3.0.0` (never published) and flutter_tele
+# depends on flutter_dialer from pub.dev (not published, local-only).
+dependency_overrides:
+  plugin_platform_interface: ^2.1.8
+  flutter_dialer:
+    path: ../flutter_dialer
+
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
 flutter:
-  # This section identifies this Flutter project as a plugin project.
-  # The 'pluginClass' specifies the class (in Java, Kotlin, Swift, Objective-C, etc.)
-  # which should be registered in the plugin registry. This is required for
-  # using method channels.
-  # The Android 'package' specifies package in which the registered class is.
-  # This is required for using method channels on Android.
-  # The 'ffiPlugin' specifies that native code should be built and bundled.
-  # This is required for using `dart:ffi`.
-  # All these are used by the tooling to maintain consistency when
-  # adding or updating assets for this project.
-  plugin:
-    platforms:
-      android:
-        package: org.telon.flutter_gsmsip
-        pluginClass: FlutterGsmsipPlugin
+  # Pure Dart — no native platform registration of its own. The GSM leg
+  # comes from flutter_gsm's platform implementations, the SIP leg from
+  # flutter_nmsip's; this package only orchestrates them. Previously
+  # declared android/linux plugin platforms (FlutterGsmsipPlugin,
+  # LinuxFlutterGsmsip) were leftover native code from before the
+  # flutter_gsm split — removed, see
+  # flows/sdd-flutter_gsm/04-implementation-log.md.
 
   # To add assets to your plugin package, add an assets section, like this:
   # assets:

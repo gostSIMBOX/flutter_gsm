@@ -28,15 +28,14 @@ class DashboardScreen extends StatefulWidget {
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
+/// Demo of [GatewayService], the SIP<->GSM gateway orchestrator. Device
+/// info (phone number/signal) moved out with `TelephonyService`'s removal —
+/// see flows/sdd-flutter_gsm/04-implementation-log.md Task 11; use
+/// `flutter_gsm`'s `ModemRepository` directly for that.
 class _DashboardScreenState extends State<DashboardScreen> {
   final GatewayService _gatewayService = GatewayService();
-  final SipService _sipService = SipService();
-  final TelephonyService _telephonyService = TelephonyService();
-  final SmsService _smsService = SmsService();
 
   GatewayStatus? _status;
-  String _phoneNumber = 'Unknown';
-  int _signalStrength = 0;
 
   @override
   void initState() {
@@ -45,11 +44,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _initializeServices() async {
-    // Initialize telephony
-    await _telephonyService.initialize();
-    _phoneNumber = await _telephonyService.getPhoneNumber() ?? 'Unknown';
-    _signalStrength = await _telephonyService.getSignalStrength() ?? 0;
-
     // Listen to gateway status
     _gatewayService.statusStream.listen((status) {
       if (mounted) {
@@ -78,24 +72,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Device Info Card
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Device Information',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    Text('Phone: $_phoneNumber'),
-                    Text('Signal: $_signalStrength dBm'),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
             // Gateway Status Card
             Card(
               child: Padding(
@@ -137,7 +113,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             const SizedBox(height: 8),
             ElevatedButton(
               onPressed: _makeTestCall,
-              child: const Text('Make Test Call'),
+              child: const Text('Make Test Call (via SIP)'),
             ),
             const SizedBox(height: 8),
             ElevatedButton(
@@ -189,36 +165,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _makeTestCall() async {
-    try {
-      await _sipService.makeCall('+1234567890');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Call initiated')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Call failed: $e')),
-        );
-      }
-    }
+    final routingId = await _gatewayService.makeCallViaSip('+1234567890');
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(routingId != null ? 'Call initiated: $routingId' : 'Call failed')),
+    );
   }
 
   Future<void> _sendTestSms() async {
-    try {
-      await _smsService.sendSms('+1234567890', 'Test message from GOSTsimbox');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('SMS sent')),
-        );
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('SMS failed: $e')),
-        );
-      }
-    }
+    final messageId = await _gatewayService.sendSms('+1234567890', 'Test message from GOSTsimbox');
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(messageId != null ? 'SMS sent: $messageId' : 'SMS failed')),
+    );
   }
 }

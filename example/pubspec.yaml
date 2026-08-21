@@ -42,6 +42,12 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
 
+# See ../pubspec.yaml for why these overrides exist.
+dependency_overrides:
+  plugin_platform_interface: ^2.1.8
+  flutter_dialer:
+    path: ../../flutter_dialer
+
 flutter:
   uses-material-design: true
   generate: true
