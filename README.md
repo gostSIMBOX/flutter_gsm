@@ -1,33 +1,41 @@
-# flutter_gsmsip
+# flutter_gsm
 
-[![Pub Version](https://img.shields.io/pub/v/flutter_gsmsip.svg)](https://pub.dev/packages/flutter_gsmsip)
+[![Pub Version](https://img.shields.io/pub/v/flutter_gsm.svg)](https://pub.dev/packages/flutter_gsm)
 [![License: NativeMindNONC](https://img.shields.io/badge/license-NativeMindNONC-blue.svg)](LICENSE)
 
-A Flutter plugin for Android and Linux that provides GSM, SIP, and SMPP functionality. Enables voice calls and SMS over SIP with GSM integration for building telephony gateway applications.
+Cross-platform GSM/UMTS modem hardware abstraction for Flutter: ttyUSB
+AT-command modems (Linux/Windows/macOS) and native telephony (Android).
+Split out of `flutter_gsmsip` (see [`flows/sdd-flutter_gsm`](flows/sdd-flutter_gsm/))
+so raw GSM hardware access doesn't require pulling in SIP/SMPP bridging
+logic — `flutter_gsmsip` now depends on this package for its GSM leg,
+alongside `flutter_nmsip` for its SIP leg.
 
 ## 🖥️ Platform Support
 
 | Platform | Status |
 |---|---|
-| Android | Full — audio-passthrough Dongle scheme + SIP, native telephony via `TelephonyService` |
-| Linux | Interface registered (`ModemRepository`/`FlutterGsmsipPlatform` modem API), ttyUSB/AT-command driver pending [`sdd-flutter_gsmsip-channel`](flows/) |
-| Windows / macOS | Planned — not yet started |
+| Android | Real call control via `flutter_dialer`+`flutter_tele` (dial/answer/hangup/hold/mute/speaker); AT-command/firmware/diagnostic methods correctly unsupported (no Android equivalent) |
+| Linux | Real ttyUSB/AT-command driver — `LinuxFlutterGsm` delegates via `dart:ffi` to `libsimbox` (built by [`sdd-asterisk-chan-simbox`](../../libsCpp/asterisk_chan_simbox/flows/sdd-asterisk-chan-simbox/)), which drives chan_svistok's real, unmodified AT-command logic without a running Asterisk instance. See [`flows/sdd-flutter_gsm-ffi`](flows/sdd-flutter_gsm-ffi/) for the binding design and [Native Library Loading](#native-library-loading-linux) below for how `libsimbox` is located at runtime. `setNetworkMode`'s `auto`/`wcdmaOnly` modes and `setDiagMode(enabled: false)`/`changeImei` are flagged gaps — see Known Issues |
+| Windows / macOS | Interface registered, stub — `dart:ffi` binding is Linux-only this iteration (see `sdd-flutter_gsm-ffi`'s Non-Goals); `libsimbox`'s own Makefile already has a Darwin build branch, so a similar binding is a smaller follow-up than starting from scratch |
+| OpenWRT | Native-core cross-compile target (embedded Linux, headless — not a Flutter UI platform) — tracked in `sdd-asterisk-chan-simbox` |
 
-Linux telephony is modem-based (direct AT-command communication with USB
-GSM/UMTS dongles over `/dev/ttyUSBx`, chan_svistok-derived logic re-hosted
-without Asterisk), which is architecturally distinct from Android's
-audio-passthrough Dongle/SIP path — see `flows/sdd-flutter_gsmsip-interface/`
-for the full design rationale.
+Linux/Windows/macOS telephony is modem-based (direct AT-command
+communication with USB GSM/UMTS dongles over `/dev/ttyUSBx` or
+platform-equivalent serial ports, chan_svistok-derived logic re-hosted
+without Asterisk), architecturally distinct from Android's native
+telecom path — see `flows/sdd-flutter_gsmsip-interface/` and
+`flows/sdd-flutter_gsm/` for the full design rationale.
 
 ## 📱 Features
 
-- **Automatic Call Routing** — SIP↔GSM bidirectional routing (incoming SIP → outgoing GSM, incoming GSM → outgoing SIP)
-- **SMS over SMPP** — Receive SMS from SMPP and send via GSM automatically
-- **SIP Voice Calls** — Native PJSIP integration for VoIP calls
-- **GSM Integration** — Direct Android telephony integration
-- **SMPP Protocol** — SMPP client for SMS center connectivity
-- **Event Streaming** — Real-time status, call, and SMS event streams
-- **Error Handling** — Functional error handling with Either type
+- **Modem Discovery & State** — cross-platform `ModemDevice`/`ModemRepository` abstraction, push-style `ModemEvent` stream
+- **Calls & SMS** — dial/answer/hangup/hold/mute/speaker, SMS send (Android via `flutter_smsussd`)
+- **AT-Command / Diagnostics** — raw AT command passthrough, diag mode (real on Linux via `libsimbox`; Windows/macOS pending)
+- **Firmware / Recovery** — Huawei DIAG-mode firmware flashing and bricked-modem recovery (real on Linux via `libsimbox`; Windows/macOS pending)
+- **Error Handling** — typed `ModemException` hierarchy, distinguishes "no device" from "driver not available yet"
+
+SIP↔GSM call routing, SMPP SMS gateway, and voice-bridging logic live in
+[`flutter_gsmsip`](../flutter_gsmsip/), which depends on this package.
 
 ## 📦 Installation
 
@@ -35,15 +43,15 @@ Add this to your Flutter project's `pubspec.yaml`:
 
 ```yaml
 dependencies:
-  flutter_gsmsip: ^0.1.0
+  flutter_gsm: ^0.1.0
 ```
 
 Or use a local path for development:
 
 ```yaml
 dependencies:
-  flutter_gsmsip:
-    path: ../flutter_gsmsip
+  flutter_gsm:
+    path: ../flutter_gsm
 ```
 
 Then run:
@@ -68,236 +76,91 @@ Ensure your `AndroidManifest.xml` includes the required permissions:
 
 ## 🚀 Quick Start
 
-### 1. Initialize the Bridge
+### 1. Discover modems and listen for events
 
 ```dart
-import 'package:flutter_gsmsip/flutter_gsmsip.dart';
+import 'package:flutter_gsm/flutter_gsm.dart';
 
-final bridge = GsmSipBridge();
+final ModemRepository modems = ModemRepositoryImpl();
 
-// Load saved configuration (optional)
-final config = await bridge.loadConfiguration();
-if (config == null) {
-  // Create new configuration
-  config = GatewayConfig(
-    sipAccount: SipAccount(
-      id: 'account-1',
-      username: 'user',
-      password: 'password',
-      domain: 'sip.example.com',
-      port: 5060,
-    ),
-    smppConfig: SmppConfig(
-      host: 'smpp.example.com',
-      port: 2775,
-      systemId: 'user',
-      password: 'pass',
-    ),
-    autoAnswer: false,
-    enableLogging: true,
-  );
+final devices = await modems.listModems();
+for (final device in devices) {
+  print('${device.id}: ${device.portPath ?? device.displayName} — ${device.state}');
 }
 
-// Initialize with error handling
-final result = await bridge.initialize(config);
-result.fold(
-  (failure) => print('Initialization failed: ${failure.message}'),
-  (_) => print('Initialized successfully!'),
-);
-
-// Start the gateway (auto-routing enabled)
-await bridge.start();
-```
-
-### 2. Listen to Events
-
-```dart
-// Gateway status changes
-bridge.statusStream.listen((status) {
-  print('Gateway running: ${status.isRunning}');
-  print('SIP state: ${status.sipState}');
-  print('SMPP state: ${status.smppState}');
-  print('Active calls: ${status.activeCalls}');
-});
-
-// Incoming SMS (received from SMPP, sent to GSM)
-bridge.smsStream.listen((sms) {
-  print('SMS received: ${sms.content} from ${sms.sender}');
-});
-
-// Call events
-bridge.callEventsStream.listen((event) {
-  print('Call event: ${event.type} - ${event.data}');
+modems.modemEvents.listen((event) {
+  switch (event) {
+    case ModemAttached(:final device):
+      print('Modem attached: ${device.id}');
+    case ModemDetached(:final modemId):
+      print('Modem detached: $modemId');
+    case ModemCallStateChanged(:final call):
+      print('Call ${call.id}: ${call.state}');
+    case ModemSmsReceived(:final from, :final text):
+      print('SMS from $from: $text');
+    default:
+      break;
+  }
 });
 ```
 
-### 3. Send SMS via SMPP (automatically routed to GSM)
+### 2. Dial, answer, hang up
 
 ```dart
-// Request SMS via SMPP - library automatically sends via GSM
-await bridge.smppService.sendSmsRequest('+1234567890', 'Hello from SMPP!');
-// → Library handles: SMPP request → GSM SMS send
+final call = await modems.dial(device.id, '+1234567890');
+await modems.answerCall(call.id);
+// ...
+await modems.hangupCall(call.id);
 ```
 
-### 4. Debug Operations (for testing only)
+### 3. SMS / USSD (desktop — see Platform Support)
 
 ```dart
-// Make a test call (SIP → GSM)
-await bridge.sipService.makeCall('+1234567890');
+await modems.sendSms(device.id, '+1234567890', 'Hello from flutter_gsm');
+final response = await modems.sendUssd(device.id, '*100#');
+```
 
-// Send test SMS via GSM
-await bridge.smsService.sendSms('+1234567890', 'Test message');
+### 4. Handle "driver not available yet" vs. "no device"
 
-// Send test USSD
-await bridge.telephonyService.sendUssd('*100#');
-
-// Hangup all active calls (both SIP and GSM sides)
-if (bridge.canHangup) {
-  await bridge.endAllCalls();
+```dart
+try {
+  final devices = await modems.listModems();
+  if (devices.isEmpty) {
+    print('No modems attached.');
+  }
+} on ModemDriverNotAvailableException {
+  print('Modem driver not available on this platform yet.');
 }
-```
-
-### 5. Stop the Gateway
-
-```dart
-await bridge.stop();
-await bridge.dispose();
 ```
 
 ## 📚 API Reference
 
-### GsmSipBridge (Main Facade)
+### `ModemRepository` (main entry point)
 
-#### Lifecycle
+| Method | Description |
+|---|---|
+| `listModems()` / `getModem(id)` | Discovery & lookup |
+| `modemEvents` | `Stream<ModemEvent>` — attach/detach, state/signal/registration changes, call state, SMS/USSD, errors |
+| `sendAtCommand(modemId, command)` | Raw AT command passthrough (desktop) |
+| `setPower(modemId, on:)` / `restartModem(modemId, mode:)` | Power / lifecycle |
+| `changeImei(modemId, imei)` / `setNetworkMode(modemId, mode)` / `setGroup(modemId, groupId)` | Identity / network |
+| `dial(modemId, number)` / `hangupCall(callId)` / `answerCall(callId)` | Calling |
+| `sendSms(modemId, number, text)` / `sendUssd(modemId, code)` | SMS / USSD |
+| `setDiagMode(modemId, enabled)` | Diagnostics (desktop, firmware-adjacent) |
 
-| Method | Description | Returns |
-|--------|-------------|---------|
-| `initialize(GatewayConfig config)` | Initialize with configuration | `Either<Failure, bool>` |
-| `start()` | Start gateway (auto-routing enabled) | `Future<bool>` |
-| `stop()` | Stop gateway | `Future<void>` |
-| `dispose()` | Clean up resources | `void` |
-| `loadConfiguration()` | Load saved config from storage | `Future<GatewayConfig?>` |
-| `saveConfiguration(GatewayConfig config)` | Save config to storage | `Future<bool>` |
+See platform support above for which methods are real vs. `UnsupportedError`/`UnimplementedError` per platform.
 
-#### Streams
+### Key entities
 
-| Stream | Description |
-|--------|-------------|
-| `statusStream` | Gateway status changes (running, SIP state, SMPP state) |
-| `callEventsStream` | Call events (incoming, answered, ended, failed) |
-| `smsStream` | SMS events (received from SMPP, sent to GSM) |
+`ModemDevice`, `ModemCall`, `ModemEvent` (sealed: `ModemAttached`, `ModemDetached`, `ModemStateChanged`, `ModemSignalChanged`, `ModemRegistrationChanged`, `ModemCallStateChanged`, `ModemSmsReceived`, `ModemUssdReceived`, `ModemErrorOccurred`), `CarrierProfile` + `CarrierProfileRegistry`, `ModemGroupConfig`, `AtCommandResult`, `ModemState`, `NetworkMode`, `RestartMode`, `RegistrationState`.
 
-#### Properties
+### Error handling
 
-| Property | Type | Description |
-|----------|------|-------------|
-| `isRunning` | `bool` | Gateway is running |
-| `status` | `GatewayStatus?` | Current gateway status |
-| `canHangup` | `bool` | Can hangup active calls |
-| `sipService` | `SipService` | SIP service (debug) |
-| `smsService` | `SmsService` | SMS service (debug) |
-| `telephonyService` | `TelephonyService` | GSM service (debug) |
-| `smppService` | `SmppService` | SMPP service |
+Typed exceptions (`implements Exception`), not `Either`/`Failure`:
 
----
-
-### GatewayConfig
-
-```dart
-GatewayConfig({
-  required SipAccount sipAccount,
-  SmppConfig? smppConfig,
-  bool autoAnswer = false,
-  bool enableLogging = true,
-  bool routeSipToGsm = true,
-  bool routeGsmToSip = true,
-  bool routeSmsToSmpp = false,
-  bool routeSmppToSms = true,
-  int maxConcurrentCalls = 5,
-})
-```
-
----
-
-### SipAccount
-
-```dart
-SipAccount({
-  required String id,
-  required String username,
-  required String password,
-  required String domain,
-  int port = 5060,
-  SipTransport transport = SipTransport.udp,
-  int registrationTimeout = 3600,
-  bool enableKeepAlive = true,
-  String? displayName,
-  String? proxy,
-})
-```
-
----
-
-### SmppConfig
-
-```dart
-SmppConfig({
-  required String host,
-  required int port,
-  required String systemId,
-  required String password,
-  int interfaceVersion = 0x34,
-  bool enableDeliveryReceipts = true,
-  int requestTimeout = 30000,
-  bool enableLogging = true,
-})
-```
-
----
-
-### GatewayStatus
-
-| Property | Type | Description |
-|----------|------|-------------|
-| `isRunning` | `bool` | Gateway is running |
-| `sipState` | `SipConnectionState` | SIP connection state |
-| `smppState` | `SmppConnectionState` | SMPP connection state |
-| `activeCalls` | `int` | Number of active calls |
-| `totalCallsHandled` | `int` | Total calls handled |
-| `totalMessagesHandled` | `int` | Total messages handled |
-| `startTime` | `DateTime?` | Gateway start time |
-| `uptime` | `Duration?` | Gateway uptime |
-
----
-
-### Error Handling
-
-All async operations return `Either<Failure, T>` from the `dartz` package:
-
-```dart
-final result = await bridge.initialize(config);
-
-result.fold(
-  (failure) {
-    // Handle error
-    print('Error: ${failure.message}');
-    print('Code: ${failure.code}');
-    print('Original: ${failure.originalError}');
-  },
-  (success) {
-    // Handle success
-    print('Success: $success');
-  },
-);
-```
-
-**Failure Types:**
-- `SipFailure` — SIP operation failed
-- `SmppFailure` — SMPP operation failed
-- `TelephonyFailure` — GSM operation failed
-- `GatewayFailure` — Gateway operation failed
-- `StorageFailure` — Storage operation failed
-- `UnknownFailure` — Unknown error
+- `ModemDriverNotAvailableException` — platform implementation exists but has no real driver yet (distinct from an empty device list)
+- `ModemNotFoundException` — no modem with the given id
+- `ModemNotDefaultDialerException` (Android) — app isn't the default dialer yet, needed before call control works
 
 ---
 
@@ -306,66 +169,62 @@ result.fold(
 ### Library Structure
 
 ```
-flutter_gsmsip/
+flutter_gsm/
 ├── lib/
-│   ├── flutter_gsmsip.dart       # Main export
+│   ├── flutter_gsm.dart                  # Main export
+│   ├── flutter_gsm_platform_interface.dart
+│   ├── flutter_gsm_method_channel.dart   # Android (method-channel fallback)
 │   └── src/
-│       ├── domain/               # Business logic
-│       │   ├── entities/         # Domain models
-│       │   ├── repositories/     # Interfaces
-│       │   └── usecases/         # Use cases
-│       ├── data/                 # Implementation
-│       │   ├── repositories/     # Repository impls
-│       │   └── services/         # Service impls
-│       └── services/             # Public API
-│           ├── gateway_service.dart
-│           ├── sip_service.dart
-│           ├── sms_service.dart
-│           ├── telephony_service.dart
-│           └── smpp_service.dart
-├── android/                      # Native Kotlin code
-│   └── src/main/kotlin/...
+│       ├── domain/
+│       │   ├── entities/                 # ModemDevice, ModemCall, CarrierProfile, ModemGroupConfig
+│       │   ├── models/                   # ModemEvent, ModemState, AtCommandResult, ...
+│       │   ├── repositories/             # ModemRepository (interface)
+│       │   └── exceptions/               # ModemException hierarchy
+│       ├── data/repositories/            # ModemRepositoryImpl
+│       ├── android/                      # AndroidFlutterGsm (flutter_dialer/flutter_tele backed)
+│       ├── ffi/                          # ffigen SimboxBindings, DynamicLibrary loader
+│       └── linux/                        # LinuxFlutterGsm + SimboxModemRepository (libsimbox via dart:ffi)
+├── android/                              # Native Kotlin plugin code
+│   └── src/main/kotlin/org/telon/flutter_gsm/
 └── pubspec.yaml
 ```
 
-### Call Flow
+SIP↔GSM call routing, SMPP SMS gateway, and voice-bridging orchestration
+live in [`flutter_gsmsip`](../flutter_gsmsip/), which depends on this
+package for its GSM leg and on
+[`flutter_nmsip`](../flutter_nmsip/) for its SIP leg.
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                    Incoming SIP Call                     │
-│                          ↓                               │
-│              GsmSipBridge (auto-route)                   │
-│                          ↓                               │
-│                    Outgoing GSM Call                     │
-└─────────────────────────────────────────────────────────┘
+---
 
-┌─────────────────────────────────────────────────────────┐
-│                   Incoming GSM Call                      │
-│                          ↓                               │
-│              GsmSipBridge (auto-route)                   │
-│                          ↓                               │
-│                    Outgoing SIP Call                     │
-└─────────────────────────────────────────────────────────┘
+## 🔌 Native Library Loading (Linux)
 
-┌─────────────────────────────────────────────────────────┐
-│                    SMPP SMS Request                      │
-│                          ↓                               │
-│              GsmSipBridge (auto-send)                    │
-│                          ↓                               │
-│                      GSM SMS Send                        │
-└─────────────────────────────────────────────────────────┘
-```
+`LinuxFlutterGsm` binds to `libsimbox` (built by `libsCpp/asterisk_chan_simbox`)
+via `dart:ffi`. This is a pragmatic dev-mode loading strategy, **not** a
+packaged/redistributable one yet — a real `linux/CMakeLists.txt`
+build-and-bundle step is a flagged follow-up (`flutter_gsm`'s `linux:`
+pubspec entry is currently pure-Dart, `dartPluginClass`-registered, with
+no native CMake scaffold). Resolution order:
+
+1. `FLUTTER_GSM_SIMBOX_LIB` environment variable, if set — tried
+   directly with no fallback (an explicit override that fails to load
+   surfaces loudly, not silently).
+2. `libsimbox.so` / `libsimbox.dylib` (system-installed names).
+3. `../../libsCpp/asterisk_chan_simbox/libsimbox.so` /
+   `.dylib` (monorepo-relative dev path — works when running from
+   within this workspace, not reliable across arbitrary build outputs).
+
+If none load, `SimboxModemRepository`/`LinuxFlutterGsm` throw
+`ModemDriverNotAvailableException` at first use (not at plugin
+registration), matching this package's existing "driver not available"
+convention elsewhere — so a dev machine without `libsimbox` built still
+starts up normally, it just can't list/control modems.
 
 ---
 
 ## 📖 Example App
 
-The `example/` directory contains a complete working application demonstrating:
-
-- Gateway initialization with saved configuration
-- Real-time status monitoring
-- Call and SMS event streaming
-- Debug operations for testing
+The `example/` directory contains a working app demonstrating modem
+discovery, event streaming, and call control against `ModemRepository`.
 
 To run the example:
 
@@ -386,13 +245,17 @@ flutter run
 
 ## 🐛 Known Issues
 
-See the [GitHub Issues](https://github.com/telon/flutter_gsmsip/issues) for known issues and roadmap.
+See the [GitHub Issues](https://github.com/telon/flutter_gsm/issues) for known issues and roadmap.
 
 ### Current Limitations
 
-- **Android Only**: iOS support not yet implemented
-- **PJSIP Version**: Uses specific PJSIP version (bundled in native libs)
-- **Service Architecture**: Uses Android foreground services with Intents
+- **Windows/macOS driver pending**: only Linux is bound to `libsimbox` via `dart:ffi` so far — see [`sdd-flutter_gsm-ffi`](flows/sdd-flutter_gsm-ffi/). Windows/macOS stay stubbed.
+- **Linux `setNetworkMode`**: only `NetworkMode.gsmOnly` (`AT^SYSCFG=13,...`) is confirmed from chan_svistok's own reference source — `auto`/`wcdmaOnly` throw `UnsupportedError` rather than guessing an `AT^SYSCFG` code that could lock a real modem to an unreachable network. Confirm the real codes against attached hardware/vendor AT reference to wire them up.
+- **Linux `setDiagMode(enabled: false)`**: no "exit DIAG mode" function exists in `libsimbox` — throws `UnsupportedError`, matching this package's existing "no equivalent exists" convention.
+- **Linux `changeImei`**: genuinely blocked upstream, not an adapter gap — chan_svistok's real IMEI-change path (`ttyprog_changeimei`) is called in three places across its source but defined nowhere in the checked-in tree. Surfaces as a `ModemException` explaining the gap rather than a fabricated success.
+- **Linux native library loading is dev-mode only**: see [Native Library Loading](#native-library-loading-linux) above — no packaged/bundled distribution yet.
+- **Android AT-command/firmware surface**: correctly unsupported — no Android equivalent exists (use the modem-hardware path via desktop platforms for those operations).
+- **iOS**: not implemented.
 
 ---
 
@@ -408,8 +271,8 @@ This project is licensed under the **NativeMindNONC License** — see the [LICEN
 
 ---
 
-**Package**: `flutter_gsmsip`  
+**Package**: `flutter_gsm`  
 **Version**: 0.1.0  
 **License**: NativeMindNONC  
-**Homepage**: <https://github.com/telon/flutter_gsmsip>  
-**Issues**: <https://github.com/telon/flutter_gsmsip/issues>
+**Homepage**: <https://github.com/telon/flutter_gsm>  
+**Issues**: <https://github.com/telon/flutter_gsm/issues>

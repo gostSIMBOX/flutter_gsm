@@ -1,5 +1,5 @@
-name: flutter_gsmsip_example
-description: "Example app for flutter_gsmsip - GOSTsimbox Gateway"
+name: flutter_gsm_example
+description: "Example app for flutter_gsm - cross-platform GSM/UMTS modem hardware abstraction"
 license: NativeMindNONC
 publish_to: 'none'
 
@@ -15,7 +15,7 @@ dependencies:
     sdk: flutter
 
   # Library dependency
-  flutter_gsmsip:
+  flutter_gsm:
     path: ../
 
   cupertino_icons: ^1.0.8
@@ -42,7 +42,8 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^6.0.0
 
-# See ../pubspec.yaml for why these overrides exist.
+# See ../pubspec.yaml for why these overrides exist (flutter_dialer/
+# flutter_tele/flutter_smsussd version-constraint bugs, not this flow's).
 dependency_overrides:
   plugin_platform_interface: ^2.1.8
   flutter_dialer:

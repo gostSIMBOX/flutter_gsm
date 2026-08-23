@@ -166,13 +166,6 @@ packages:
     source: path
     version: "2.0.0+101"
   flutter_gsm:
-    dependency: transitive
-    description:
-      path: "../../flutter_gsm"
-      relative: true
-    source: path
-    version: "0.1.0"
-  flutter_gsmsip:
     dependency: "direct main"
     description:
       path: ".."
@@ -216,13 +209,6 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
-  flutter_nmsip:
-    dependency: transitive
-    description:
-      path: "../../flutter_nmsip"
-      relative: true
-    source: path
-    version: "2.1.2+108"
   flutter_smsussd:
     dependency: transitive
     description:

@@ -1,182 +1,119 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_gsmsip/flutter_gsmsip.dart';
+import 'package:flutter_gsm/flutter_gsm.dart';
 
 void main() {
-  runApp(const GOSTsimboxApp());
+  runApp(const FlutterGsmExampleApp());
 }
 
-class GOSTsimboxApp extends StatelessWidget {
-  const GOSTsimboxApp({super.key});
+class FlutterGsmExampleApp extends StatelessWidget {
+  const FlutterGsmExampleApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'GOSTsimbox Gateway',
+      title: 'flutter_gsm example',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),
         useMaterial3: true,
       ),
-      home: const DashboardScreen(),
+      home: const ModemListScreen(),
     );
   }
 }
 
-class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+/// Minimal demo of [ModemRepository]: discover modems, show live state via
+/// [ModemRepository.modemEvents], dial/send SMS/send USSD on the first one.
+class ModemListScreen extends StatefulWidget {
+  const ModemListScreen({super.key});
 
   @override
-  State<DashboardScreen> createState() => _DashboardScreenState();
+  State<ModemListScreen> createState() => _ModemListScreenState();
 }
 
-/// Demo of [GatewayService], the SIP<->GSM gateway orchestrator. Device
-/// info (phone number/signal) moved out with `TelephonyService`'s removal —
-/// see flows/sdd-flutter_gsm/04-implementation-log.md Task 11; use
-/// `flutter_gsm`'s `ModemRepository` directly for that.
-class _DashboardScreenState extends State<DashboardScreen> {
-  final GatewayService _gatewayService = GatewayService();
+class _ModemListScreenState extends State<ModemListScreen> {
+  final ModemRepository _repository = ModemRepositoryImpl();
 
-  GatewayStatus? _status;
+  List<ModemDevice> _modems = [];
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _initializeServices();
+    _repository.modemEvents.listen((_) => _refresh());
+    _refresh();
   }
 
-  Future<void> _initializeServices() async {
-    // Listen to gateway status
-    _gatewayService.statusStream.listen((status) {
-      if (mounted) {
-        setState(() {
-          _status = status;
-        });
-      }
-    });
-
-    // Load configuration
-    final config = await _gatewayService.loadConfiguration();
-    if (config != null) {
-      await _gatewayService.initialize(config);
+  Future<void> _refresh() async {
+    try {
+      final modems = await _repository.listModems();
+      if (mounted) setState(() { _modems = modems; _error = null; });
+    } on ModemException catch (e) {
+      if (mounted) setState(() => _error = e.toString());
     }
+  }
+
+  Future<void> _dial(String modemId) async {
+    try {
+      await _repository.dial(modemId, '+1234567890');
+      _showSnack('Call initiated on $modemId');
+    } on ModemException catch (e) {
+      _showSnack('Dial failed: $e');
+    }
+  }
+
+  Future<void> _sendSms(String modemId) async {
+    try {
+      await _repository.sendSms(modemId, '+1234567890', 'Test message');
+      _showSnack('SMS sent from $modemId');
+    } on ModemException catch (e) {
+      _showSnack('SMS failed: $e');
+    }
+  }
+
+  void _showSnack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('GOSTsimbox Gateway'),
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Gateway Status Card
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Gateway Status',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 8),
-                    _buildStatusRow(
-                      'Running',
-                      _status?.isRunning ?? false,
+      appBar: AppBar(title: const Text('flutter_gsm example')),
+      body: RefreshIndicator(
+        onRefresh: _refresh,
+        child: _error != null
+            ? ListView(
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Text(_error!, style: const TextStyle(color: Colors.red)),
+                  ),
+                ],
+              )
+            : ListView.builder(
+                itemCount: _modems.length,
+                itemBuilder: (context, index) {
+                  final modem = _modems[index];
+                  return ListTile(
+                    title: Text(modem.displayName ?? modem.id),
+                    subtitle: Text('${modem.state.name} · signal: ${modem.signal ?? '?'}'),
+                    trailing: Wrap(
+                      spacing: 8,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.call),
+                          onPressed: () => _dial(modem.id),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.sms),
+                          onPressed: () => _sendSms(modem.id),
+                        ),
+                      ],
                     ),
-                    _buildStatusRow(
-                      'SIP',
-                      _status?.sipState == SipConnectionState.connected,
-                    ),
-                    _buildStatusRow(
-                      'SMPP',
-                      _status?.smppState == SmppConnectionState.connected,
-                    ),
-                  ],
-                ),
+                  );
+                },
               ),
-            ),
-            const SizedBox(height: 16),
-
-            // Controls
-            ElevatedButton(
-              onPressed: _toggleGateway,
-              style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    _status?.isRunning ?? false ? Colors.red : Colors.green,
-                foregroundColor: Colors.white,
-              ),
-              child: Text(_status?.isRunning ?? false ? 'Stop Gateway' : 'Start Gateway'),
-            ),
-            const SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: _makeTestCall,
-              child: const Text('Make Test Call (via SIP)'),
-            ),
-            const SizedBox(height: 8),
-            ElevatedButton(
-              onPressed: _sendTestSms,
-              child: const Text('Send Test SMS'),
-            ),
-          ],
-        ),
       ),
-    );
-  }
-
-  Widget _buildStatusRow(String label, bool isActive) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label),
-          Container(
-            width: 12,
-            height: 12,
-            decoration: BoxDecoration(
-              color: isActive ? Colors.green : Colors.red,
-              shape: BoxShape.circle,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Future<void> _toggleGateway() async {
-    if (_status?.isRunning ?? false) {
-      await _gatewayService.stop();
-    } else {
-      final config = await _gatewayService.loadConfiguration();
-      if (config != null) {
-        await _gatewayService.initialize(config);
-        await _gatewayService.start();
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('No configuration found')),
-          );
-        }
-      }
-    }
-  }
-
-  Future<void> _makeTestCall() async {
-    final routingId = await _gatewayService.makeCallViaSip('+1234567890');
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(routingId != null ? 'Call initiated: $routingId' : 'Call failed')),
-    );
-  }
-
-  Future<void> _sendTestSms() async {
-    final messageId = await _gatewayService.sendSms('+1234567890', 'Test message from GOSTsimbox');
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(messageId != null ? 'SMS sent: $messageId' : 'SMS failed')),
     );
   }
 }

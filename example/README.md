@@ -1,6 +1,6 @@
-# flutter_gsmsip Example
+# flutter_gsm Example
 
-Example application demonstrating the use of the `flutter_gsmsip` library for GSM/SIP/SMPP gateway functionality.
+Example application demonstrating the use of the `flutter_gsm` library for GSM/SIP/SMPP gateway functionality.
 
 ## 📱 Features
 
@@ -24,8 +24,8 @@ Example application demonstrating the use of the `flutter_gsmsip` library for GS
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/telon/flutter_gsmsip.git
-cd flutter_gsmsip/example
+git clone https://github.com/telon/flutter_gsm.git
+cd flutter_gsm/example
 ```
 
 2. Install dependencies:
@@ -126,11 +126,11 @@ Actions:
 
 ## 🏗️ Architecture
 
-This example app demonstrates the **Facade Pattern** for using `flutter_gsmsip`:
+This example app demonstrates the **Facade Pattern** for using `flutter_gsm`:
 
 ```dart
 // main.dart
-import 'package:flutter_gsmsip/flutter_gsmsip.dart';
+import 'package:flutter_gsm/flutter_gsm.dart';
 
 class GatewayController {
   final bridge = GsmSipBridge();
@@ -294,12 +294,12 @@ The app requires the following Android permissions (already in `AndroidManifest.
 ## 📚 Additional Resources
 
 - [Library Documentation](../README.md)
-- [API Reference](https://pub.dev/packages/flutter_gsmsip/documentation)
-- [GitHub Issues](https://github.com/telon/flutter_gsmsip/issues)
+- [API Reference](https://pub.dev/packages/flutter_gsm/documentation)
+- [GitHub Issues](https://github.com/telon/flutter_gsm/issues)
 
 ## 📄 License
 
-This example app is part of the `flutter_gsmsip` project and is licensed under the **NativeMindNONC License**.
+This example app is part of the `flutter_gsm` project and is licensed under the **NativeMindNONC License**.
 
 See the [LICENSE](../LICENSE) file for details.
 
@@ -307,4 +307,4 @@ See the [LICENSE](../LICENSE) file for details.
 
 **Example App Version**: 1.0.0  
 **Library Version**: 0.1.0  
-**Homepage**: <https://github.com/telon/flutter_gsmsip>
+**Homepage**: <https://github.com/telon/flutter_gsm>

@@ -1,11 +1,7 @@
-name: flutter_gsmsip
-description: "Pure-Dart SIP<->GSM voice-gateway/SMPP orchestrator, built on flutter_gsm (GSM leg) and flutter_nmsip (SIP leg)."
+name: flutter_gsm
+description: "Cross-platform GSM/UMTS modem hardware abstraction — ttyUSB AT-command modems (Linux/Windows/macOS) and native telephony (Android)"
 version: 0.1.0
-homepage: "https://github.com/telon/flutter_gsmsip"
-
-# Ignore false secrets in legacy folder
-false_secrets:
-  - /legacy/**
+homepage: "https://github.com/telon/flutter_gsm"
 
 environment:
   sdk: ^3.10.8
@@ -16,18 +12,19 @@ dependencies:
     sdk: flutter
   plugin_platform_interface: ^2.1.8
 
-  # GSM leg (modem discovery, calls, SMS) — flows/sdd-flutter_gsm
-  flutter_gsm:
-    path: ../flutter_gsm
-  # SIP leg (PJSIP-based) — see 02-specifications.md §3.1's capability-gap
-  # check against this package's real API
-  flutter_nmsip:
-    path: ../flutter_nmsip
+  # Android telephony backing (AndroidFlutterGsm) — see
+  # flows/sdd-flutter_gsm/02-specifications.md §2.2
+  flutter_dialer:
+    path: ../flutter_dialer
+  flutter_tele:
+    path: ../flutter_tele
+  flutter_smsussd:
+    path: ../flutter_smsussd
 
   # Functional
   dartz: ^0.10.1  # Either type for functional error handling
   equatable: ^2.0.5  # Value equality for entities
-  
+
   # Logging
   logger: ^2.0.1
   
@@ -45,15 +42,27 @@ dependencies:
   get_it: ^7.6.0
   async: ^2.11.0
 
+  # Linux modem driver — dart:ffi bindings to libsimbox
+  # (libsCpp/asterisk_chan_simbox), see flows/sdd-flutter_gsm-ffi
+  ffi: ^2.2.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  ffigen: ^21.0.0
 
-# See flutter_gsm/pubspec.yaml for why: flutter_dialer/flutter_tele/
-# flutter_smsussd (transitive, via flutter_gsm) declare
-# `plugin_platform_interface: ^3.0.0` (never published) and flutter_tele
-# depends on flutter_dialer from pub.dev (not published, local-only).
+# flutter_dialer/flutter_tele/flutter_smsussd declare
+# `plugin_platform_interface: ^3.0.0`, but no 3.x version has ever been
+# published (pub.dev's latest is 2.1.8 as of 2026-08-21) — a bug in
+# those packages' own pubspec.yaml, not this one. Overriding here rather
+# than editing those packages (out of this flow's scope per
+# specifications' Won't-Have) — flag as an addendum to fix upstream.
+#
+# flutter_tele also depends on flutter_dialer from pub.dev (hosted,
+# `^2.0.0+101`), but flutter_dialer isn't published there — it's a local
+# monorepo package. Overriding to the local path so the whole graph
+# agrees on one source for it, same reasoning as above.
 dependency_overrides:
   plugin_platform_interface: ^2.1.8
   flutter_dialer:
@@ -64,13 +73,32 @@ dependency_overrides:
 
 # The following section is specific to Flutter packages.
 flutter:
-  # Pure Dart — no native platform registration of its own. The GSM leg
-  # comes from flutter_gsm's platform implementations, the SIP leg from
-  # flutter_nmsip's; this package only orchestrates them. Previously
-  # declared android/linux plugin platforms (FlutterGsmsipPlugin,
-  # LinuxFlutterGsmsip) were leftover native code from before the
-  # flutter_gsm split — removed, see
-  # flows/sdd-flutter_gsm/04-implementation-log.md.
+  # This section identifies this Flutter project as a plugin project.
+  # The 'pluginClass' specifies the class (in Java, Kotlin, Swift, Objective-C, etc.)
+  # which should be registered in the plugin registry. This is required for
+  # using method channels.
+  # The Android 'package' specifies package in which the registered class is.
+  # This is required for using method channels on Android.
+  # The 'ffiPlugin' specifies that native code should be built and bundled.
+  # This is required for using `dart:ffi`.
+  # All these are used by the tooling to maintain consistency when
+  # adding or updating assets for this project.
+  plugin:
+    platforms:
+      android:
+        package: org.telon.flutter_gsm
+        pluginClass: FlutterGsmPlugin
+        dartPluginClass: AndroidFlutterGsm
+        fileName: src/android/android_flutter_gsm.dart
+      linux:
+        dartPluginClass: LinuxFlutterGsm
+        fileName: src/linux/linux_flutter_gsm.dart
+      windows:
+        dartPluginClass: WindowsFlutterGsm
+        fileName: src/windows/windows_flutter_gsm.dart
+      macos:
+        dartPluginClass: MacosFlutterGsm
+        fileName: src/macos/macos_flutter_gsm.dart
 
   # To add assets to your plugin package, add an assets section, like this:
   # assets:
