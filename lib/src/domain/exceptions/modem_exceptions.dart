@@ -11,10 +11,13 @@ class ModemException implements Exception {
 /// Modem driver not available on this platform yet
 ///
 /// Distinct from an empty device list: the platform implementation exists
-/// but has no real driver behind it (e.g. the Linux stub registered by
-/// sdd-flutter_gsmsip-interface before sdd-flutter_gsmsip-channel lands).
-/// `ModemRepositoryImpl` throws this instead of letting `UnimplementedError`
-/// leak to callers, so UI code doesn't need to catch that directly.
+/// but has no real driver behind it. As of `sdd-flutter_gsm-ffi`, Linux has
+/// a real driver (`LinuxFlutterGsm` bound to `libsimbox` via `dart:ffi`) —
+/// this exception now fires only on macOS/Windows, where
+/// `MacosFlutterGsm`/`WindowsFlutterGsm` are still stubs (out of scope for
+/// that flow; see its `_status.md`). `ModemRepositoryImpl` throws this
+/// instead of letting `UnimplementedError` leak to callers, so UI code
+/// doesn't need to catch that directly.
 class ModemDriverNotAvailableException extends ModemException {
   const ModemDriverNotAvailableException()
       : super('Modem driver is not available on this platform yet');

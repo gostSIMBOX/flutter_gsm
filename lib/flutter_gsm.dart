@@ -35,3 +35,19 @@ export 'src/domain/models/restart_mode.dart';
 
 // Data - Repositories (implementations)
 export 'src/data/repositories/modem_repository_impl.dart';
+
+// Platform implementations — must be exported from this library, not just
+// present under src/, so Flutter's generated plugin registrant
+// (.dart_tool/flutter_build/dart_plugin_registrant.dart, which calls
+// `flutter_gsm.<PlatformClass>.registerWith()` through this package's
+// public import) can resolve them. Their absence broke every native
+// build (Android/Linux/macOS/Windows) with "Undefined name" errors —
+// found while attempting a real `flutter build macos` manual-verification
+// run for flows/simbox-app/vdd-simbox-app-navbar-uiux; unrelated to that
+// flow's own scope, fixed here since it's a pure, low-risk export
+// addition (no behavior change) blocking every UI flow's ability to
+// actually run the app.
+export 'src/android/android_flutter_gsm.dart';
+export 'src/linux/linux_flutter_gsm.dart';
+export 'src/macos/macos_flutter_gsm.dart';
+export 'src/windows/windows_flutter_gsm.dart';
